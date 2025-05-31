@@ -528,7 +528,7 @@ function mostrarConfirmacion(datos) {
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <span><i class="fas fa-tag"></i> Precio</span>
-                                    <span class="badge bg-success rounded-pill">$${datos.precio}</span>
+                                    <span class="badge bg-success rounded-pill">${datos.precio}</span>
                                 </li>
                             </ul>
                         </div>
@@ -551,6 +551,9 @@ function mostrarConfirmacion(datos) {
     `;
     document.body.appendChild(modal);
 }
+
+// Hacer la función global para el modal dinámico
+window.descargarConfirmacion = descargarConfirmacion;
 
 // Función para manejar la selección del método de pago
 function seleccionarMetodoPago(metodo, monto) {
