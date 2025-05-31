@@ -426,6 +426,7 @@ function mostrarExito(mensaje) {
 
 // Función para descargar el modal como imagen
 async function descargarConfirmacion() {
+    console.log('Descargar confirmación clickeado');
     try {
         // Extraer los datos de la reserva del modal visible
         const modalContent = document.querySelector('.modal-content');
