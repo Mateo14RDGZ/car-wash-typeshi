@@ -426,60 +426,54 @@ function mostrarExito(mensaje) {
 
 // Función para descargar el modal como imagen
 async function descargarConfirmacion() {
-try {
-// Extraer los datos de la reserva del modal visible
-const modalContent = document.querySelector('.modal-content');
-const nombre = modalContent.querySelector('h4.text-center').textContent.replace('¡Gracias ', '').replace(' por tu reserva!', '').trim();
-const servicio = modalContent.querySelector('.badge.bg-primary').textContent.trim();
-const fecha = modalContent.querySelectorAll('.list-group-item')[1].querySelector('span:last-child').textContent.trim();
-const hora = modalContent.querySelectorAll('.list-group-item')[2].querySelector('span:last-child').textContent.trim();
-const vehiculo = modalContent.querySelectorAll('.list-group-item')[3].querySelector('span:last-child').textContent.trim();
-const patente = modalContent.querySelectorAll('.list-group-item')[4].querySelector('span:last-child').textContent.trim();
-const precio = modalContent.querySelectorAll('.list-group-item')[5].querySelector('span:last-child').textContent.trim();
+    try {
+        // Extraer los datos de la reserva del modal visible
+        const modalContent = document.querySelector('.modal-content');
+        const nombre = modalContent.querySelector('h4.text-center').textContent.replace('¡Gracias ', '').replace(' por tu reserva!', '').trim();
+        const servicio = modalContent.querySelector('.badge.bg-primary').textContent.trim();
+        const fecha = modalContent.querySelectorAll('.list-group-item')[1].querySelector('span:last-child').textContent.trim();
+        const hora = modalContent.querySelectorAll('.list-group-item')[2].querySelector('span:last-child').textContent.trim();
+        const vehiculo = modalContent.querySelectorAll('.list-group-item')[3].querySelector('span:last-child').textContent.trim();
+        const patente = modalContent.querySelectorAll('.list-group-item')[4].querySelector('span:last-child').textContent.trim();
+        const precio = modalContent.querySelectorAll('.list-group-item')[5].querySelector('span:last-child').textContent.trim();
 
-// Crear nodo HTML simple para la imagen
-const wrapper = document.createElement('div');
-wrapper.style.background = 'white';
-wrapper.style.padding = '32px';
-wrapper.style.borderRadius = '16px';
-wrapper.style.width = '420px';
-wrapper.style.boxSizing = 'border-box';
-wrapper.style.fontFamily = 'Arial, sans-serif';
-wrapper.style.color = '#222';
-wrapper.style.textAlign = 'center';
-wrapper.style.position = 'fixed';
-wrapper.style.left = '-9999px';
-wrapper.style.top = '0';
-wrapper.style.zIndex = '-1';
-wrapper.style.display = 'block';
-wrapper.innerHTML = `
-<div style="font-size:2.2em;font-weight:bold;margin-bottom:10px;">✅ Reserva Confirmada</div>
-<div style="font-size:1.2em;margin-bottom:18px;">¡Gracias <b>${nombre}</b> por tu reserva!</div>
-<div style="background:#f8f9fa;border-radius:12px;padding:18px 10px 10px 10px;margin-bottom:18px;">
-<div style="font-size:1.1em;margin-bottom:10px;"><b>Detalles de tu reserva:</b></div>
-<div style="text-align:left;max-width:320px;margin:0 auto;">
-<div style="margin-bottom:7px;">🚗 <b>Servicio:</b> <span style="float:right;">${servicio}</span></div>
-<div style="margin-bottom:7px;">📅 <b>Fecha:</b> <span style="float:right;">${fecha}</span></div>
-<div style="margin-bottom:7px;">⏰ <b>Hora:</b> <span style="float:right;">${hora}</span></div>
-<div style="margin-bottom:7px;">🚙 <b>Vehículo:</b> <span style="float:right;">${vehiculo}</span></div>
-<div style="margin-bottom:7px;">🔢 <b>Patente:</b> <span style="float:right;">${patente}</span></div>
-<div style="margin-bottom:7px;">💲 <b>Precio:</b> <span style="float:right;">${precio}</span></div>
-</div>
-</div>
-<div style="font-size:0.95em;color:#555;">Presenta esta confirmación el día de tu turno.</div>
-`;
-document.body.appendChild(wrapper);
-await new Promise(r => setTimeout(r, 30));
-const dataUrl = await htmlToImage.toPng(wrapper);
-document.body.removeChild(wrapper);
-const link = document.createElement('a');
-link.download = 'confirmacion-reserva.png';
-link.href = dataUrl;
-link.click();
-} catch (error) {
-console.error('Error al descargar la imagen:', error);
-mostrarError('No se pudo descargar la imagen. Por favor, intente nuevamente.');
-}
+        // Usar jsPDF para crear el PDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 20;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.text('✅ Reserva Confirmada', 105, y, { align: 'center' });
+        y += 12;
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`¡Gracias ${nombre} por tu reserva!`, 105, y, { align: 'center' });
+        y += 16;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalles de tu reserva:', 20, y);
+        y += 10;
+        doc.setFont('helvetica', 'normal');
+        doc.text(`🚗 Servicio: ${servicio}`, 20, y);
+        y += 8;
+        doc.text(`📅 Fecha: ${fecha}`, 20, y);
+        y += 8;
+        doc.text(`⏰ Hora: ${hora}`, 20, y);
+        y += 8;
+        doc.text(`🚙 Vehículo: ${vehiculo}`, 20, y);
+        y += 8;
+        doc.text(`🔢 Patente: ${patente}`, 20, y);
+        y += 8;
+        doc.text(`💲 Precio: ${precio}`, 20, y);
+        y += 16;
+        doc.setFontSize(11);
+        doc.setTextColor(80,80,80);
+        doc.text('Presenta esta confirmación el día de tu turno.', 20, y);
+        doc.save('confirmacion-reserva.pdf');
+    } catch (error) {
+        console.error('Error al descargar el PDF:', error);
+        mostrarError('No se pudo descargar el PDF. Por favor, intente nuevamente.');
+    }
 }
 
 // Función para mostrar confirmación mejorada
