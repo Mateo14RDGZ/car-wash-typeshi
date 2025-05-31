@@ -550,10 +550,12 @@ function mostrarConfirmacion(datos) {
         </div>
     `;
     document.body.appendChild(modal);
+    // Asignar el event listener al botón de descarga
+    const btnDescargar = modal.querySelector('.btn-success');
+    if (btnDescargar) {
+        btnDescargar.addEventListener('click', descargarConfirmacion);
+    }
 }
-
-// Hacer la función global para el modal dinámico
-window.descargarConfirmacion = descargarConfirmacion;
 
 // Función para manejar la selección del método de pago
 function seleccionarMetodoPago(metodo, monto) {
