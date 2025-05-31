@@ -8,7 +8,7 @@ const precios = {
 };
 
 // Configuración de la API
-const API_URL = 'http://localhost:3001/api';
+const API_URL = '/api';
 
 // Animación de entrada para elementos
 document.addEventListener('DOMContentLoaded', () => {
