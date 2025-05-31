@@ -5,6 +5,7 @@
     "main": "src/backend/server.js",
     "scripts": {
         "start": "node src/backend/server.js",
+        "build": "cd src/frontend && npm run build",
         "dev": "nodemon src/backend/server.js",
         "client": "cd src/frontend && npm start",
         "dev:full": "concurrently \"npm run dev\" \"npm run client\""

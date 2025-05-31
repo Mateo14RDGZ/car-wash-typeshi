@@ -1,15 +1,47 @@
-# Sistema operativo
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+/build
+/dist
+.next/
+out/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
 .DS_Store
 Thumbs.db
 
+# Vercel
+.vercel/
+
+# ZIP files
+*.zip
+
 # IDEs y editores
-.idea/
-.vscode/
 *.sublime-workspace
 *.sublime-project
 
 # Dependencias
-node_modules/
 vendor/
 
 # Archivos compilados
@@ -26,11 +58,9 @@ vendor/
 *.sqlite
 
 # Archivos de entorno
-.env
 .env.local
 .env.*.local
 
 # Directorios de build
 dist/
-build/
-out/ 
+build/ 
