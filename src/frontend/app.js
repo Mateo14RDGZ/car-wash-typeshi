@@ -186,8 +186,7 @@ document.getElementById('fecha').addEventListener('change', async function () {
                 </div>
                 <div class="horarios-info">
                     <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
-                    <p><i class="fas fa-clock"></i> Duración del servicio: 90 minutos</p>
-                </div>
+                                    </div>
                 <div class="horarios-grid">
                     ${data.data.map(slot => {
                 if (!slot || !slot.start || !slot.end) {
@@ -203,8 +202,7 @@ document.getElementById('fecha').addEventListener('change', async function () {
                                 </div>
                                 <div class="horario-duracion">
                                     <i class="fas fa-clock"></i>
-                                    <span>90 minutos</span>
-                                </div>
+                                                                    </div>
                             </div>
                         `;
             }).join('')}
@@ -220,8 +218,7 @@ document.getElementById('fecha').addEventListener('change', async function () {
                     <h5>No hay horarios disponibles</h5>
                     <p class="mb-2">Lo sentimos, no hay horarios disponibles para esta fecha.</p>
                     <p class="mb-0">Recuerda que nuestro horario de atención este día es de ${horario}.</p>
-                    <p class="mt-3">Los turnos son de 90 minutos.</p>
-                </div>
+                                    </div>
             `;
         }
 
