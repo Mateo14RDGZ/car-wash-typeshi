@@ -426,44 +426,56 @@ function mostrarExito(mensaje) {
 
 // Función para descargar el modal como imagen
 async function descargarConfirmacion() {
-    const modalContent = document.querySelector('.modal-content');
-    try {
-        // Crear una copia del contenido para la imagen
-        const contenidoParaImagen = modalContent.cloneNode(true);
+// Selecciona solo el contenido principal del modal
+const modalContent = document.querySelector('.modal-content');
+try {
+// Crear un contenedor blanco para la imagen
+const wrapper = document.createElement('div');
+wrapper.style.background = 'white';
+wrapper.style.padding = '40px';
+wrapper.style.borderRadius = '16px';
+wrapper.style.width = modalContent.offsetWidth + 'px';
+wrapper.style.boxSizing = 'border-box';
+wrapper.style.fontFamily = 'inherit';
+wrapper.style.position = 'fixed';
+wrapper.style.left = '-9999px';
+wrapper.style.top = '0';
+wrapper.style.zIndex = '-1';
+wrapper.style.display = 'block';
 
-        // Remover el botón de cerrar y los botones del footer para la imagen
-        const botonCerrar = contenidoParaImagen.querySelector('.btn-close');
-        const modalFooter = contenidoParaImagen.querySelector('.modal-footer');
-        if (botonCerrar) botonCerrar.remove();
-        if (modalFooter) modalFooter.remove();
+// Clona solo el contenido principal
+const contenidoParaImagen = modalContent.cloneNode(true);
+// Elimina el overlay y botones innecesarios
+const botonCerrar = contenidoParaImagen.querySelector('.btn-close');
+const modalFooter = contenidoParaImagen.querySelector('.modal-footer');
+if (botonCerrar) botonCerrar.remove();
+if (modalFooter) modalFooter.remove();
 
-        // Establecer un fondo blanco
-        contenidoParaImagen.style.backgroundColor = 'white';
-        contenidoParaImagen.style.padding = '20px'; 
-        contenidoParaImagen.style.position = 'fixed';
-        contenidoParaImagen.style.left = '-9999px';
-        contenidoParaImagen.style.top = '0';
-        contenidoParaImagen.style.zIndex = '-1';
-        contenidoParaImagen.style.display = 'block';
+// Limpia cualquier fondo oscuro heredado
+contenidoParaImagen.style.background = 'white';
+contenidoParaImagen.style.color = '#222';
+contenidoParaImagen.style.borderRadius = '12px';
+contenidoParaImagen.style.boxShadow = 'none';
 
-        // Insertar temporalmente en el DOM
-        document.body.appendChild(contenidoParaImagen);
+wrapper.appendChild(contenidoParaImagen);
+document.body.appendChild(wrapper);
 
-        // Convertir a imagen
-        const dataUrl = await htmlToImage.toPng(contenidoParaImagen);
+// Espera un frame para asegurar renderizado
+await new Promise(r => setTimeout(r, 30));
 
-        // Eliminar el nodo temporal
-        document.body.removeChild(contenidoParaImagen);
+// Convierte a imagen
+const dataUrl = await htmlToImage.toPng(wrapper);
+document.body.removeChild(wrapper);
 
-        // Crear link de descarga
-        const link = document.createElement('a');
-        link.download = 'confirmacion-reserva.png';
-        link.href = dataUrl;
-        link.click();
-    } catch (error) {
-        console.error('Error al descargar la imagen:', error);
-        mostrarError('No se pudo descargar la imagen. Por favor, intente nuevamente.');
-    }
+// Descarga la imagen
+const link = document.createElement('a');
+link.download = 'confirmacion-reserva.png';
+link.href = dataUrl;
+link.click();
+} catch (error) {
+console.error('Error al descargar la imagen:', error);
+mostrarError('No se pudo descargar la imagen. Por favor, intente nuevamente.');
+}
 }
 
 // Función para mostrar confirmación mejorada
