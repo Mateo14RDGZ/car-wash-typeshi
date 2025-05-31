@@ -530,6 +530,18 @@ function mostrarConfirmacion(datos) {
     document.body.appendChild(modal);
 }
 
+// Función para mostrar/ocultar los extras de cada servicio
+function mostrarExtras(servicio, btn) {
+    const extrasDiv = document.getElementById(`extras-${servicio}`);
+    if (extrasDiv.style.display === 'none' || extrasDiv.style.display === '') {
+        extrasDiv.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-minus"></i> Ocultar extras';
+    } else {
+        extrasDiv.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-plus"></i> Agregar extras';
+    }
+}
+
 // Función para manejar la selección del método de pago
 function seleccionarMetodoPago(metodo, monto) {
     // Remover selección previa
