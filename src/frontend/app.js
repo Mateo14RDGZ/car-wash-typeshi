@@ -439,10 +439,21 @@ async function descargarConfirmacion() {
 
         // Establecer un fondo blanco
         contenidoParaImagen.style.backgroundColor = 'white';
-        contenidoParaImagen.style.padding = '20px';
+        contenidoParaImagen.style.padding = '20px'; 
+        contenidoParaImagen.style.position = 'fixed';
+        contenidoParaImagen.style.left = '-9999px';
+        contenidoParaImagen.style.top = '0';
+        contenidoParaImagen.style.zIndex = '-1';
+        contenidoParaImagen.style.display = 'block';
+
+        // Insertar temporalmente en el DOM
+        document.body.appendChild(contenidoParaImagen);
 
         // Convertir a imagen
         const dataUrl = await htmlToImage.toPng(contenidoParaImagen);
+
+        // Eliminar el nodo temporal
+        document.body.removeChild(contenidoParaImagen);
 
         // Crear link de descarga
         const link = document.createElement('a');
