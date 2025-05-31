@@ -438,44 +438,68 @@ async function descargarConfirmacion() {
         const patente = modalContent.querySelectorAll('.list-group-item')[4].querySelector('span:last-child').textContent.trim();
         const precio = modalContent.querySelectorAll('.list-group-item')[5].querySelector('span:last-child').textContent.trim();
 
-        // Crear nodo HTML temporal con estilos similares al modal
-        const tempDiv = document.createElement('div');
-        tempDiv.style.background = '#fff';
-        tempDiv.style.borderRadius = '16px';
-        tempDiv.style.boxShadow = '0 4px 24px rgba(0,0,0,0.12)';
-        tempDiv.style.padding = '32px 18px 18px 18px';
-        tempDiv.style.width = '380px';
-        tempDiv.style.fontFamily = 'Arial, Helvetica, sans-serif';
-        tempDiv.innerHTML = `
-            <div style="background:#198754;color:#fff;padding:12px 0 10px 0;border-radius:12px 12px 0 0;font-size:1.5em;font-weight:bold;text-align:center;margin-bottom:18px;">
-                <span style="font-size:1.2em;">&#x2705;</span> Reserva Confirmada
-            </div>
-            <div style="font-size:1.1em;text-align:center;margin-bottom:18px;">¡Gracias <b>${nombre}</b> por tu reserva!</div>
-            <div style="background:#f8f9fa;border-radius:12px;padding:16px 10px 10px 10px;margin-bottom:18px;">
-                <div style="font-size:1.1em;margin-bottom:10px;"><b>Detalles de tu reserva:</b></div>
-                <div style="text-align:left;max-width:320px;margin:0 auto;">
-                    <div style="margin-bottom:7px;"><span style='color:#0d6efd;'>🚗</span> <b>Servicio:</b> <span style="float:right;">${servicio}</span></div>
-                    <div style="margin-bottom:7px;"><span style='color:#0d6efd;'>📅</span> <b>Fecha:</b> <span style="float:right;">${fecha}</span></div>
-                    <div style="margin-bottom:7px;"><span style='color:#0d6efd;'>⏰</span> <b>Hora:</b> <span style="float:right;">${hora}</span></div>
-                    <div style="margin-bottom:7px;"><span style='color:#0d6efd;'>🚙</span> <b>Vehículo:</b> <span style="float:right;">${vehiculo}</span></div>
-                    <div style="margin-bottom:7px;"><span style='color:#0d6efd;'>🔢</span> <b>Patente:</b> <span style="float:right;">${patente}</span></div>
-                    <div style="margin-bottom:7px;"><span style='color:#0d6efd;'>💲</span> <b>Precio:</b> <span style="float:right;">${precio}</span></div>
-                </div>
-            </div>
-            <div style="font-size:0.95em;color:#555;text-align:center;">Presenta esta confirmación el día de tu turno.</div>
-        `;
-        document.body.appendChild(tempDiv);
+        // Crear PDF prolijo y en una sola página
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'px', format: [400, 420] });
-        await doc.html(tempDiv, {
-            x: 10,
-            y: 10,
-            html2canvas: { scale: 2, backgroundColor: '#fff' },
-            callback: function (doc) {
-                doc.save('confirmacion-reserva.pdf');
-                document.body.removeChild(tempDiv);
-            }
-        });
+        const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+        let y = 25;
+        // Header verde
+        doc.setFillColor(25, 135, 84);
+        doc.roundedRect(20, y, 170, 18, 6, 6, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(16);
+        doc.text('✅ Reserva Confirmada', 105, y + 12, { align: 'center' });
+        y += 28;
+        // Subtítulo
+        doc.setFontSize(13);
+        doc.setTextColor(33,37,41);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`¡Gracias ${nombre} por tu reserva!`, 105, y, { align: 'center' });
+        y += 12;
+        // Recuadro detalles
+        doc.setFillColor(248,249,250);
+        doc.roundedRect(30, y, 150, 60, 6, 6, 'F');
+        y += 10;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalles de tu reserva:', 35, y);
+        y += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        doc.setTextColor(13,110,253);
+        doc.text(`🚗 Servicio:`, 35, y);
+        doc.setTextColor(33,37,41);
+        doc.text(servicio, 80, y);
+        y += 7;
+        doc.setTextColor(13,110,253);
+        doc.text(`📅 Fecha:`, 35, y);
+        doc.setTextColor(33,37,41);
+        doc.text(fecha, 80, y);
+        y += 7;
+        doc.setTextColor(13,110,253);
+        doc.text(`⏰ Hora:`, 35, y);
+        doc.setTextColor(33,37,41);
+        doc.text(hora, 80, y);
+        y += 7;
+        doc.setTextColor(13,110,253);
+        doc.text(`🚙 Vehículo:`, 35, y);
+        doc.setTextColor(33,37,41);
+        doc.text(vehiculo, 80, y);
+        y += 7;
+        doc.setTextColor(13,110,253);
+        doc.text(`🔢 Patente:`, 35, y);
+        doc.setTextColor(33,37,41);
+        doc.text(patente, 80, y);
+        y += 7;
+        doc.setTextColor(13,110,253);
+        doc.text(`💲 Precio:`, 35, y);
+        doc.setTextColor(33,37,41);
+        doc.text(precio, 80, y);
+        y += 18;
+        doc.setFontSize(10);
+        doc.setTextColor(80,80,80);
+        doc.text('Presenta esta confirmación el día de tu turno.', 105, y, { align: 'center' });
+        doc.save('confirmacion-reserva.pdf');
     } catch (error) {
         console.error('Error al descargar el PDF:', error);
         mostrarError('No se pudo descargar el PDF. Por favor, intente nuevamente.');
