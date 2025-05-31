@@ -320,6 +320,7 @@ document.getElementById('reservaForm').addEventListener('submit', async (e) => {
 
     const formData = {
         clientName: document.getElementById('nombre').value,
+        email: document.getElementById('email').value,
         date: `${fecha}T${horaInicio}`,
         vehicleType: document.getElementById('vehiculo').value,
         vehiclePlate: document.getElementById('patente').value,
