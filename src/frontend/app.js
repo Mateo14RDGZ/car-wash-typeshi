@@ -428,78 +428,37 @@ function mostrarExito(mensaje) {
 async function descargarConfirmacion() {
     console.log('Descargar confirmación clickeado');
     try {
-        // Extraer los datos de la reserva del modal visible
+        // Clonar el modal y limpiar lo que no se quiere
         const modalContent = document.querySelector('.modal-content');
-        const nombre = modalContent.querySelector('h4.text-center').textContent.replace('¡Gracias ', '').replace(' por tu reserva!', '').trim();
-        const servicio = modalContent.querySelector('.badge.bg-primary').textContent.trim();
-        const fecha = modalContent.querySelectorAll('.list-group-item')[1].querySelector('span:last-child').textContent.trim();
-        const hora = modalContent.querySelectorAll('.list-group-item')[2].querySelector('span:last-child').textContent.trim();
-        const vehiculo = modalContent.querySelectorAll('.list-group-item')[3].querySelector('span:last-child').textContent.trim();
-        const patente = modalContent.querySelectorAll('.list-group-item')[4].querySelector('span:last-child').textContent.trim();
-        const precio = modalContent.querySelectorAll('.list-group-item')[5].querySelector('span:last-child').textContent.trim();
-
-        // Crear PDF prolijo y en una sola página
+        const clone = modalContent.cloneNode(true);
+        // Quitar footer (botones)
+        const footer = clone.querySelector('.modal-footer');
+        if (footer) footer.remove();
+        // Quitar recomendación
+        const recomendacion = clone.querySelector('.alert.alert-info');
+        if (recomendacion) recomendacion.remove();
+        // Ajustar el ancho para PDF
+        clone.style.width = '400px';
+        clone.style.maxWidth = '400px';
+        clone.style.fontSize = '13px';
+        // Crear wrapper temporal oculto
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.left = '-9999px';
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+        // Renderizar a PDF
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-        let y = 25;
-        // Header verde
-        doc.setFillColor(25, 135, 84);
-        doc.roundedRect(20, y, 170, 18, 6, 6, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255,255,255);
-        doc.setFontSize(16);
-        doc.text('✅ Reserva Confirmada', 105, y + 12, { align: 'center' });
-        y += 28;
-        // Subtítulo
-        doc.setFontSize(13);
-        doc.setTextColor(33,37,41);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`¡Gracias ${nombre} por tu reserva!`, 105, y, { align: 'center' });
-        y += 12;
-        // Recuadro detalles
-        doc.setFillColor(248,249,250);
-        doc.roundedRect(30, y, 150, 60, 6, 6, 'F');
-        y += 10;
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detalles de tu reserva:', 35, y);
-        y += 8;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(11);
-        doc.setTextColor(13,110,253);
-        doc.text(`🚗 Servicio:`, 35, y);
-        doc.setTextColor(33,37,41);
-        doc.text(servicio, 80, y);
-        y += 7;
-        doc.setTextColor(13,110,253);
-        doc.text(`📅 Fecha:`, 35, y);
-        doc.setTextColor(33,37,41);
-        doc.text(fecha, 80, y);
-        y += 7;
-        doc.setTextColor(13,110,253);
-        doc.text(`⏰ Hora:`, 35, y);
-        doc.setTextColor(33,37,41);
-        doc.text(hora, 80, y);
-        y += 7;
-        doc.setTextColor(13,110,253);
-        doc.text(`🚙 Vehículo:`, 35, y);
-        doc.setTextColor(33,37,41);
-        doc.text(vehiculo, 80, y);
-        y += 7;
-        doc.setTextColor(13,110,253);
-        doc.text(`🔢 Patente:`, 35, y);
-        doc.setTextColor(33,37,41);
-        doc.text(patente, 80, y);
-        y += 7;
-        doc.setTextColor(13,110,253);
-        doc.text(`💲 Precio:`, 35, y);
-        doc.setTextColor(33,37,41);
-        doc.text(precio, 80, y);
-        y += 18;
-        doc.setFontSize(10);
-        doc.setTextColor(80,80,80);
-        doc.text('Presenta esta confirmación el día de tu turno.', 105, y, { align: 'center' });
-        doc.save('confirmacion-reserva.pdf');
+        const doc = new jsPDF({ unit: 'px', format: [420, 600] });
+        await doc.html(clone, {
+            x: 10,
+            y: 10,
+            html2canvas: { scale: 2, backgroundColor: '#fff' },
+            callback: function (doc) {
+                doc.save('confirmacion-reserva.pdf');
+                document.body.removeChild(wrapper);
+            }
+        });
     } catch (error) {
         console.error('Error al descargar el PDF:', error);
         mostrarError('No se pudo descargar el PDF. Por favor, intente nuevamente.');
