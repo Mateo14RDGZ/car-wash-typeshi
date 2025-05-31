@@ -426,48 +426,52 @@ function mostrarExito(mensaje) {
 
 // Función para descargar el modal como imagen
 async function descargarConfirmacion() {
-// Selecciona solo el contenido principal del modal
-const modalContent = document.querySelector('.modal-content');
 try {
-// Crear un contenedor blanco para la imagen
+// Extraer los datos de la reserva del modal visible
+const modalContent = document.querySelector('.modal-content');
+const nombre = modalContent.querySelector('h4.text-center').textContent.replace('¡Gracias ', '').replace(' por tu reserva!', '').trim();
+const servicio = modalContent.querySelector('.badge.bg-primary').textContent.trim();
+const fecha = modalContent.querySelectorAll('.list-group-item')[1].querySelector('span:last-child').textContent.trim();
+const hora = modalContent.querySelectorAll('.list-group-item')[2].querySelector('span:last-child').textContent.trim();
+const vehiculo = modalContent.querySelectorAll('.list-group-item')[3].querySelector('span:last-child').textContent.trim();
+const patente = modalContent.querySelectorAll('.list-group-item')[4].querySelector('span:last-child').textContent.trim();
+const precio = modalContent.querySelectorAll('.list-group-item')[5].querySelector('span:last-child').textContent.trim();
+
+// Crear nodo HTML simple para la imagen
 const wrapper = document.createElement('div');
 wrapper.style.background = 'white';
-wrapper.style.padding = '40px';
+wrapper.style.padding = '32px';
 wrapper.style.borderRadius = '16px';
-wrapper.style.width = modalContent.offsetWidth + 'px';
+wrapper.style.width = '420px';
 wrapper.style.boxSizing = 'border-box';
-wrapper.style.fontFamily = 'inherit';
+wrapper.style.fontFamily = 'Arial, sans-serif';
+wrapper.style.color = '#222';
+wrapper.style.textAlign = 'center';
 wrapper.style.position = 'fixed';
 wrapper.style.left = '-9999px';
 wrapper.style.top = '0';
 wrapper.style.zIndex = '-1';
 wrapper.style.display = 'block';
-
-// Clona solo el contenido principal
-const contenidoParaImagen = modalContent.cloneNode(true);
-// Elimina el overlay y botones innecesarios
-const botonCerrar = contenidoParaImagen.querySelector('.btn-close');
-const modalFooter = contenidoParaImagen.querySelector('.modal-footer');
-if (botonCerrar) botonCerrar.remove();
-if (modalFooter) modalFooter.remove();
-
-// Limpia cualquier fondo oscuro heredado
-contenidoParaImagen.style.background = 'white';
-contenidoParaImagen.style.color = '#222';
-contenidoParaImagen.style.borderRadius = '12px';
-contenidoParaImagen.style.boxShadow = 'none';
-
-wrapper.appendChild(contenidoParaImagen);
+wrapper.innerHTML = `
+<div style="font-size:2.2em;font-weight:bold;margin-bottom:10px;">✅ Reserva Confirmada</div>
+<div style="font-size:1.2em;margin-bottom:18px;">¡Gracias <b>${nombre}</b> por tu reserva!</div>
+<div style="background:#f8f9fa;border-radius:12px;padding:18px 10px 10px 10px;margin-bottom:18px;">
+<div style="font-size:1.1em;margin-bottom:10px;"><b>Detalles de tu reserva:</b></div>
+<div style="text-align:left;max-width:320px;margin:0 auto;">
+<div style="margin-bottom:7px;">🚗 <b>Servicio:</b> <span style="float:right;">${servicio}</span></div>
+<div style="margin-bottom:7px;">📅 <b>Fecha:</b> <span style="float:right;">${fecha}</span></div>
+<div style="margin-bottom:7px;">⏰ <b>Hora:</b> <span style="float:right;">${hora}</span></div>
+<div style="margin-bottom:7px;">🚙 <b>Vehículo:</b> <span style="float:right;">${vehiculo}</span></div>
+<div style="margin-bottom:7px;">🔢 <b>Patente:</b> <span style="float:right;">${patente}</span></div>
+<div style="margin-bottom:7px;">💲 <b>Precio:</b> <span style="float:right;">${precio}</span></div>
+</div>
+</div>
+<div style="font-size:0.95em;color:#555;">Presenta esta confirmación el día de tu turno.</div>
+`;
 document.body.appendChild(wrapper);
-
-// Espera un frame para asegurar renderizado
 await new Promise(r => setTimeout(r, 30));
-
-// Convierte a imagen
 const dataUrl = await htmlToImage.toPng(wrapper);
 document.body.removeChild(wrapper);
-
-// Descarga la imagen
 const link = document.createElement('a');
 link.download = 'confirmacion-reserva.png';
 link.href = dataUrl;
