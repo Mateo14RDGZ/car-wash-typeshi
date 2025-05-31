@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extreme Wash - Sistema de Reservas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero-section text-center py-5">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="main-title display-2 fw-bold text-uppercase mb-4">
+                    <span class="text-highlight">Extreme</span> 
+                    <span class="text-white">Wash</span>
+                </h1>
+                <p class="lead text-white mb-4 fs-3">Tu auto merece brillar como nuevo</p>
+                <div class="hero-features text-white mb-4">
+                    <div class="row justify-content-center">
+                        <div class="col-md-4">
+                            <div class="feature-item">
+                                <i class="fas fa-clock fa-2x mb-2"></i>
+                                <p>Servicio Rápido</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-item">
+                                <i class="fas fa-star fa-2x mb-2"></i>
+                                <p>Calidad Premium</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-item">
+                                <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                                <p>Garantía Total</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a href="#reservar" class="btn btn-light btn-lg px-5 py-3 rounded-pill">
+                    <i class="fas fa-calendar-plus"></i> Reservar Ahora
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Servicios -->
+    <section id="servicios" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-4"><i class="fas fa-hand-sparkles"></i> Nuestros Servicios</h2>
+            <div class="row">
+                <!-- Servicio Básico -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-car fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Lavado Básico</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Desde $600</h6>
+                            <p class="card-text">
+                                <i class="fas fa-check text-success"></i> Lavado exterior<br>
+                                <i class="fas fa-check text-success"></i> Limpieza interior<br>
+                                <i class="fas fa-check text-success"></i> Secado a mano
+                            </p>
+                            <button class="btn btn-primary w-100" onclick="seleccionarServicio('basico')">
+                                <i class="fas fa-shopping-cart"></i> Seleccionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Servicio Premium -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-car-side fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Lavado Premium</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Desde $900</h6>
+                            <p class="card-text">
+                                <i class="fas fa-check text-success"></i> Todo lo del básico<br>
+                                <i class="fas fa-check text-success"></i> Aromatización<br>
+                                <i class="fas fa-check text-success"></i> Encerado
+                            </p>
+                            <button class="btn btn-primary w-100" onclick="seleccionarServicio('premium')">
+                                <i class="fas fa-shopping-cart"></i> Seleccionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Servicio Detailing -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-tools fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Detailing Completo</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Desde $2500</h6>
+                            <p class="card-text">
+                                <i class="fas fa-check text-success"></i> Todo lo del premium<br>
+                                <i class="fas fa-check text-success"></i> Limpieza de tapizados<br>
+                                <i class="fas fa-check text-success"></i> Pulido de ópticas
+                            </p>
+                            <button class="btn btn-primary w-100" onclick="seleccionarServicio('detailing')">
+                                <i class="fas fa-shopping-cart"></i> Seleccionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulario de Reserva -->
+    <section id="reservar" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-4"><i class="fas fa-calendar-check"></i> Reservar Turno</h2>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <form id="reservaForm" class="card p-4 shadow">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label"><i class="fas fa-user"></i> Nombre completo</label>
+                            <input type="text" class="form-control" id="nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="telefono" class="form-label"><i class="fas fa-phone"></i> Teléfono</label>
+                            <input type="tel" class="form-control" id="telefono" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fecha" class="form-label"><i class="fas fa-calendar"></i> Fecha</label>
+                            <input type="date" class="form-control" id="fecha" required>
+                        </div>
+                        <div id="horariosContainer" class="mb-3" style="display: none;">
+                            <label class="form-label"><i class="fas fa-clock"></i> Horarios Disponibles</label>
+                            <div class="horarios-grid">
+                                <!-- Los horarios se cargarán dinámicamente aquí -->
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="vehiculo" class="form-label"><i class="fas fa-car"></i> Tipo de vehículo</label>
+                            <select class="form-select" id="vehiculo" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="auto">Auto</option>
+                                <option value="camioneta_caja">Camioneta con caja</option>
+                                <option value="camioneta_sin_caja">Camioneta sin caja</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="patente" class="form-label"><i class="fas fa-id-card"></i> Patente</label>
+                            <input type="text" class="form-control" id="patente" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-check-circle"></i> Confirmar Reserva
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5><i class="fas fa-address-card"></i> Contacto</h5>
+                    <p>
+                        <a href="https://wa.me/598098385709" class="text-white text-decoration-none" target="_blank">
+                            <i class="fab fa-whatsapp text-success"></i> 098 385 709
+                        </a><br>
+                        <a href="https://www.google.com/maps/place/RV+Autom%C3%B3viles/@-33.5338118,-56.8898191,17z/data=!3m1!4b1!4m6!3m5!1s0x95a6a1003eb37273:0x9bdd3ed1eace09d2!8m2!3d-33.5338118!4d-56.8898191!16s%2Fg%2F11xfzdhwwc" class="text-white text-decoration-none" target="_blank">
+                            <i class="fas fa-map-marker-alt"></i> Dr Cipriano Goñi 59
+                        </a>
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h5><i class="fas fa-clock"></i> Horarios de Atención</h5>
+                    <p>
+                        <i class="fas fa-calendar-week"></i> Lunes a viernes: 8:30 - 18:00<br>
+                        <i class="fas fa-calendar-day"></i> Sábados: 8:30 - 12:30<br>
+                        <i class="fas fa-calendar-xmark"></i> Domingos: Cerrado
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h5><i class="fas fa-hashtag"></i> Síguenos</h5>
+                    <div class="social-links">
+                        <a href="https://www.instagram.com/rv__automoviles/" class="text-white me-3" target="_blank"><i class="fab fa-instagram fa-2x"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 

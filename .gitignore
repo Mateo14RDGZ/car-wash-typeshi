@@ -1,0 +1,36 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs y editores
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Dependencias
+node_modules/
+vendor/
+
+# Archivos compilados
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Logs y bases de datos
+*.log
+*.sql
+*.sqlite
+
+# Archivos de entorno
+.env
+.env.local
+.env.*.local
+
+# Directorios de build
+dist/
+build/
+out/ 
