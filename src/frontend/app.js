@@ -517,15 +517,9 @@ function mostrarConfirmacion(datos) {
                             </ul>
                         </div>
                     </div>
-                    <div class="alert alert-info mt-4">
-                        <i class="fas fa-info-circle"></i>
-                        Te recomendamos descargar esta confirmación para presentarla el día de tu turno.
-                    </div>
+                    <!-- Recomendación y botón de descarga eliminados -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success" onclick="descargarConfirmacion()">
-                        <i class="fas fa-download me-2"></i>Descargar confirmación
-                    </button>
                     <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">
                         <i class="fas fa-check me-2"></i>Entendido
                     </button>
@@ -534,11 +528,6 @@ function mostrarConfirmacion(datos) {
         </div>
     `;
     document.body.appendChild(modal);
-    // Asignar el event listener al botón de descarga
-    const btnDescargar = modal.querySelector('.btn-success');
-    if (btnDescargar) {
-        btnDescargar.addEventListener('click', descargarConfirmacion);
-    }
 }
 
 // Función para manejar la selección del método de pago
