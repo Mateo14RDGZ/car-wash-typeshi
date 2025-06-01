@@ -11,32 +11,29 @@ const transporter = nodemailer.createTransport({
 
 // Función para enviar correo de confirmación
 async function sendBookingConfirmation(booking) {
-    const mailOptions = {
+    // Solo correo al administrador
+    const adminMailOptions = {
         from: 'porongos84314@gmail.com',
-        to: booking.email, // Usar el email del cliente
-        subject: 'Confirmación de Reserva - Extreme Wash',
+        to: 'porongos84314@gmail.com',
+        subject: 'Nueva reserva recibida',
         html: `
-            <h1>¡Gracias por tu reserva!</h1>
-            <p>Hola ${booking.clientName},</p>
-            <p>Tu reserva ha sido confirmada con los siguientes detalles:</p>
+            <h2>¡Nueva reserva!</h2>
             <ul>
-                <li><strong>Fecha y hora:</strong> ${new Date(booking.date).toLocaleString()}</li>
-                <li><strong>Servicio:</strong> ${booking.serviceType}</li>
-                <li><strong>Vehículo:</strong> ${booking.vehicleType}</li>
-                <li><strong>Patente:</strong> ${booking.vehiclePlate}</li>
-                <li><strong>Precio:</strong> $${booking.price}</li>
+                <li><b>Nombre:</b> ${booking.clientName}</li>
+                <li><b>Fecha y hora:</b> ${new Date(booking.date).toLocaleString()}</li>
+                <li><b>Vehículo:</b> ${booking.vehicleType}</li>
+                <li><b>Patente:</b> ${booking.vehiclePlate}</li>
+                <li><b>Servicio:</b> ${booking.serviceType}</li>
+                <li><b>Precio:</b> ${booking.price}</li>
+                <li><b>Extras:</b> ${booking.extras && booking.extras.length ? booking.extras.join(', ') : 'Ninguno'}</li>
             </ul>
-            <p>Te esperamos en nuestro local. Si necesitas hacer algún cambio, contáctanos al WhatsApp: 098385709</p>
-            <p>¡Gracias por elegir Extreme Wash!</p>
         `
     };
-
     try {
-        await transporter.sendMail(mailOptions);
-        console.log('Correo de confirmación enviado a:', booking.email);
+        await transporter.sendMail(adminMailOptions);
+        console.log('Correo de notificación enviado al administrador.');
     } catch (error) {
-        console.error('Error al enviar correo:', error);
-        throw error;
+        console.error('Error al enviar correo al administrador:', error);
     }
 }
 
