@@ -85,15 +85,61 @@ function seleccionarServicio(tipo) {
     }, 300);
 
     // Actualizar precio en el formulario
-    actualizarPrecio(tipo);
+    actualizarPrecioConExtras();
+    // Agregar listeners a los checkboxes de extras
+    agregarListenersExtras();
 }
 
-// Función para actualizar el precio
-function actualizarPrecio(tipo) {
-    const precio = precios[tipo];
+// Función para actualizar el precio sumando extras
+function actualizarPrecioConExtras() {
+    if (!servicioSeleccionado) return;
+    let total = precios[servicioSeleccionado];
+    // Seleccionar los extras visibles del servicio seleccionado
+    let extrasChecks = [];
+    if (servicioSeleccionado === 'basico') {
+        extrasChecks = [
+            document.getElementById('extra-aroma-basico'),
+            document.getElementById('extra-encerado-basico'),
+            document.getElementById('extra-tapizado-basico'),
+            document.getElementById('extra-opticas-basico')
+        ];
+    } else if (servicioSeleccionado === 'premium') {
+        extrasChecks = [
+            document.getElementById('extra-tapizado-premium'),
+            document.getElementById('extra-opticas-premium')
+        ];
+    }
+    extrasChecks.forEach(chk => {
+        if (chk && chk.checked) {
+            total += parseInt(chk.getAttribute('data-precio'));
+        }
+    });
     const formTitle = document.querySelector('#reservar h2');
-    formTitle.innerHTML = `Reservar Turno - $${precio}`;
+    formTitle.innerHTML = `Reservar Turno - ${total}`;
     formTitle.style.animation = 'fadeInUp 0.5s ease-out';
+}
+
+// Agrega listeners a los checkboxes de extras para actualizar el precio en tiempo real
+function agregarListenersExtras() {
+    let extrasChecks = [];
+    if (servicioSeleccionado === 'basico') {
+        extrasChecks = [
+            document.getElementById('extra-aroma-basico'),
+            document.getElementById('extra-encerado-basico'),
+            document.getElementById('extra-tapizado-basico'),
+            document.getElementById('extra-opticas-basico')
+        ];
+    } else if (servicioSeleccionado === 'premium') {
+        extrasChecks = [
+            document.getElementById('extra-tapizado-premium'),
+            document.getElementById('extra-opticas-premium')
+        ];
+    }
+    extrasChecks.forEach(chk => {
+        if (chk) {
+            chk.onchange = actualizarPrecioConExtras;
+        }
+    });
 }
 
 // Validación de fecha y obtención de horarios disponibles
@@ -315,13 +361,48 @@ document.getElementById('reservaForm').addEventListener('submit', async (e) => {
         return;
     }
 
+    // Capturar extras seleccionados
+    let extrasSeleccionados = [];
+    if (servicioSeleccionado === 'basico') {
+        if (document.getElementById('extra-aroma-basico').checked) extrasSeleccionados.push('Aromatización');
+        if (document.getElementById('extra-encerado-basico').checked) extrasSeleccionados.push('Encerado');
+        if (document.getElementById('extra-tapizado-basico').checked) extrasSeleccionados.push('Limpieza de tapizados');
+        if (document.getElementById('extra-opticas-basico').checked) extrasSeleccionados.push('Pulido de ópticas');
+    } else if (servicioSeleccionado === 'premium') {
+        if (document.getElementById('extra-tapizado-premium').checked) extrasSeleccionados.push('Limpieza de tapizados');
+        if (document.getElementById('extra-opticas-premium').checked) extrasSeleccionados.push('Pulido de ópticas');
+    }
+
+    // Calcular el precio total con extras seleccionados
+    let total = precios[servicioSeleccionado];
+    let extrasChecks = [];
+    if (servicioSeleccionado === 'basico') {
+        extrasChecks = [
+            document.getElementById('extra-aroma-basico'),
+            document.getElementById('extra-encerado-basico'),
+            document.getElementById('extra-tapizado-basico'),
+            document.getElementById('extra-opticas-basico')
+        ];
+    } else if (servicioSeleccionado === 'premium') {
+        extrasChecks = [
+            document.getElementById('extra-tapizado-premium'),
+            document.getElementById('extra-opticas-premium')
+        ];
+    }
+    extrasChecks.forEach(chk => {
+        if (chk && chk.checked) {
+            total += parseInt(chk.getAttribute('data-precio'));
+        }
+    });
+
     const formData = {
         clientName: document.getElementById('nombre').value,
-                date: `${fecha}T${horaInicio}`,
+        date: `${fecha}T${horaInicio}`,
         vehicleType: document.getElementById('vehiculo').value,
         vehiclePlate: document.getElementById('patente').value,
         serviceType: servicioSeleccionado,
-        price: precios[servicioSeleccionado]
+        price: total,
+        extras: extrasSeleccionados
     };
 
     // Validación de campos
@@ -352,7 +433,9 @@ document.getElementById('reservaForm').addEventListener('submit', async (e) => {
             vehiculo: formData.vehicleType,
             patente: formData.vehiclePlate,
             servicio: formData.serviceType,
-            precio: formData.price
+            precio: formData.price,
+            extras: extrasSeleccionados,
+            extrasChecks: extrasChecks
         });
 
         // Limpiar formulario
@@ -471,6 +554,18 @@ function mostrarConfirmacion(datos) {
     modal.className = 'modal fade show';
     modal.style.display = 'block';
     modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    // Obtener precios de los extras seleccionados
+    let extrasPrecios = [];
+    if (datos.extras && datos.extras.length > 0 && datos.extrasChecks) {
+        datos.extras.forEach((extra, idx) => {
+            const chk = datos.extrasChecks.find(c => c && c.value === extra);
+            if (chk) {
+                extrasPrecios.push(parseInt(chk.getAttribute('data-precio')));
+            } else {
+                extrasPrecios.push('--');
+            }
+        });
+    }
     modal.innerHTML = `
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -515,6 +610,19 @@ function mostrarConfirmacion(datos) {
                                     <span class="badge bg-success rounded-pill">${datos.precio}</span>
                                 </li>
                             </ul>
+                            ${datos.extras && datos.extras.length > 0 ? `
+                            <div class="mt-4">
+                                <h6 class="mb-2"><i class="fas fa-plus-circle text-secondary"></i> Extras seleccionados</h6>
+                                <ul class="list-group">
+                                    ${datos.extras.map((extra, idx) => `
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>${extra}</span>
+                                            <span class="badge bg-secondary">${extrasPrecios[idx]}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                     <!-- Recomendación y botón de descarga eliminados -->
