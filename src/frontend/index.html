@@ -13,6 +13,22 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      .precio-servicio {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .precio-servicio .badge {
+        font-size: 1.3rem;
+        padding: 0.7em 1.2em;
+        font-weight: bold;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      }
+      .form-check-label {
+        font-weight: 500;
+      }
+    </style>
   </head>
   <body>
     <!-- Hero Section -->
@@ -71,7 +87,7 @@
               <div class="card-body text-center">
                 <i class="fas fa-car fa-3x text-primary mb-3"></i>
                 <h5 class="card-title">Lavado Básico</h5>
-                <h6 class="card-subtitle mb-2 text-muted">Desde $600</h6>
+                <div class="precio-servicio mb-2"><span class="badge bg-success fs-5">$600</span></div>
                 <p class="card-text">
                   <i class="fas fa-check text-success"></i> Lavado exterior<br />
                   <i class="fas fa-check text-success"></i> Limpieza interior<br />
@@ -113,7 +129,7 @@
               <div class="card-body text-center">
                 <i class="fas fa-car-side fa-3x text-primary mb-3"></i>
                 <h5 class="card-title">Lavado Premium</h5>
-                <h6 class="card-subtitle mb-2 text-muted">Desde $1100</h6>
+                <div class="precio-servicio mb-2"><span class="badge bg-success fs-5">$1100</span></div>
                 <p class="card-text">
                   <i class="fas fa-check text-success"></i> Todo lo del
                   básico<br />
@@ -148,7 +164,7 @@
               <div class="card-body text-center">
                 <i class="fas fa-tools fa-3x text-primary mb-3"></i>
                 <h5 class="card-title">Detailing Completo</h5>
-                <h6 class="card-subtitle mb-2 text-muted">Desde $3850</h6>
+                <div class="precio-servicio mb-2"><span class="badge bg-success fs-5">$3850</span></div>
                 <p class="card-text">
                   <i class="fas fa-check text-success"></i> Todo lo del
                   premium<br />
