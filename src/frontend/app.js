@@ -4,7 +4,7 @@ let horarioSeleccionado = null;
 const precios = {
     basico: 600,
     premium: 900,
-    detailing: 2500
+    detailing: 3500
 };
 
 // Configuración de la API
