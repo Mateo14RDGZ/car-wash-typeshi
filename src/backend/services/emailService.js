@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'porongos84314@gmail.com',
+        user: process.env.GMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
     }
 });
@@ -13,8 +13,8 @@ const transporter = nodemailer.createTransport({
 async function sendBookingConfirmation(booking) {
     // Solo correo al administrador
     const adminMailOptions = {
-        from: 'porongos84314@gmail.com',
-        to: 'porongos84314@gmail.com',
+        from: process.env.GMAIL_USER,
+        to: process.env.GMAIL_USER,
         subject: 'Nueva reserva recibida',
         html: `
             <h2>¡Nueva reserva!</h2>
