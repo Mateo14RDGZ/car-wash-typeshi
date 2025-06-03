@@ -25,13 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Botón de cancelar reserva
     const reservaForm = document.getElementById('reservaForm');
     if (reservaForm) {
-        const cancelButton = document.createElement('button');
-        cancelButton.className = 'btn btn-link mt-2 d-block mx-auto';
-        cancelButton.style.color = 'gray';
-        cancelButton.style.fontSize = '0.8rem';
-        cancelButton.textContent = 'Cancelar Reserva';
-        cancelButton.onclick = cancelarReserva;
-        reservaForm.parentNode.insertBefore(cancelButton, reservaForm.nextSibling);
     }
 });
 
