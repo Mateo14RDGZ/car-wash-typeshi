@@ -5,10 +5,15 @@
     "main": "src/backend/server.js",
     "scripts": {
         "start": "node src/backend/server.js",
+        "start:db": "node src/backend/serverDB.js",
         "build": "cd src/frontend && npm run build",
         "dev": "nodemon src/backend/server.js",
+        "dev:db": "nodemon src/backend/serverDB.js",
         "client": "cd src/frontend && npm start",
-        "dev:full": "concurrently \"npm run dev\" \"npm run client\""
+        "dev:full": "concurrently \"npm run dev\" \"npm run client\"",
+        "setup:db": "node setup-database.js",
+        "db:sync": "node -e \"require('./src/database/init').initDatabase()\"",
+        "db:reset": "node -e \"require('./src/database/init').initDatabase().then(() => require('./src/database/init').sequelize.sync({force: true}))\""
     },
     "dependencies": {
         "express": "^4.18.2",
