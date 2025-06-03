@@ -21,32 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elemento.style.transform = 'translateY(0)';
         }, index * 100);
     });
-
-    // Navbar scroll effect
-    const navbar = document.querySelector('.navbar');
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 100) {
-            navbar.style.padding = '0.5rem 1rem';
-            navbar.style.background = 'rgba(13, 110, 253, 0.98) !important';
-        } else {
-            navbar.style.padding = '1rem';
-            navbar.style.background = 'rgba(13, 110, 253, 0.95) !important';
-        }
-    });
-
-    // Smooth scroll para los enlaces
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
 });
 
 // Función para seleccionar servicio con animación
@@ -283,6 +257,15 @@ document.getElementById('fecha').addEventListener('change', async function () {
         `;
     }
 });
+
+// Botón de cancelar reserva
+const cancelButton = document.createElement('button');
+cancelButton.className = 'btn btn-danger mt-3';
+cancelButton.textContent = 'Cancelar Reserva';
+cancelButton.onclick = cancelarReserva;
+
+const reservaForm = document.getElementById('reservaForm');
+reservaForm.parentNode.insertBefore(cancelButton, reservaForm.nextSibling);
 
 // Función para seleccionar horario
 function seleccionarHorario(hora, elemento) {
@@ -797,6 +780,32 @@ function validarHorario(fecha) {
     return true;
 }
 
+async function cancelarReserva() {
+    const bookingId = prompt('Por favor, introduce el ID de la reserva que deseas cancelar:');
+
+    if (!bookingId) {
+        mostrarError('Por favor, introduce un ID de reserva válido.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/bookings/${bookingId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al cancelar la reserva');
+        }
+
+        mostrarExito(data.message);
+    } catch (error) {
+        console.error('Error al cancelar la reserva:', error);
+        mostrarError(error.message);
+    }
+}
+
 // Agregar estilos para los horarios
 const styles = document.createElement('style');
 styles.textContent = `
@@ -811,80 +820,6 @@ styles.textContent = `
         text-align: center;
         margin-bottom: 25px;
         padding-bottom: 15px;
-        border-bottom: 2px solid #f8f9fa;
-    }
-    .horarios-header h4 {
-        color: #2c3e50;
-        margin-bottom: 10px;
-    }
-    .horarios-info {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 20px;
-    }
-    .horarios-info p {
-        margin: 0;
-        color: #6c757d;
-    }
-    .horarios-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 15px;
-        padding: 10px;
-    }
-    .horario-slot {
-        background: white;
-        border: 2px solid #e9ecef;
-        border-radius: 12px;
-        padding: 15px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: center;
-    }
-    .horario-slot:hover {
-        border-color: #0d6efd;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .horario-slot.selected {
-        background: #0d6efd;
-        border-color: #0d6efd;
-        color: white;
-    }
-    .horario-tiempo {
-        font-size: 1.2em;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: #2c3e50;
-    }
-    .horario-slot.selected .horario-tiempo {
-        color: white;
-    }
-    .tiempo-inicio, .tiempo-fin {
-        display: inline-block;
-        font-weight: 600;
-    }
-    .tiempo-separador {
-        color: #6c757d;
-        margin: 0 3px;
-    }
-    .horario-slot.selected .tiempo-separador {
-        color: rgba(255,255,255,0.8);
-    }
-    .horario-duracion {
-        font-size: 0.9em;
-        color: #6c757d;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-    }
-    .horario-slot.selected .horario-duracion {
-        color: rgba(255,255,255,0.9);
-    }
-    .horario-duracion i {
-        font-size: 0.9em;
     }
 `;
 document.head.appendChild(styles);

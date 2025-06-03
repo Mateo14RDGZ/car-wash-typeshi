@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const bookingService = require('../services/bookings');
+const bookingService = require('../services/bookingsDB');
 
 // Configuración de horarios
 const BUSINESS_HOURS = {
@@ -199,4 +199,4 @@ router.delete('/:id', (req, res) => {
     }
 });
 
-module.exports = router; 
+module.exports = router;

@@ -26,7 +26,7 @@
         font-weight: 600;
         border-radius: 1.2em;
         letter-spacing: 0.5px;
-        box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08);
         margin-bottom: 2px;
       }
       .form-check-label {
@@ -91,7 +91,9 @@
               <div class="card-body text-center">
                 <i class="fas fa-car fa-3x text-primary mb-3"></i>
                 <h5 class="card-title">Lavado Básico</h5>
-                <div class="precio-servicio mb-2"><span class="badge bg-success fs-5">$600</span></div>
+                <div class="precio-servicio mb-2">
+                  <span class="badge bg-success fs-5">$600</span>
+                </div>
                 <p class="card-text">
                   <i class="fas fa-check text-success"></i> Lavado exterior<br />
                   <i class="fas fa-check text-success"></i> Limpieza interior<br />
@@ -103,25 +105,65 @@
                 >
                   <i class="fas fa-shopping-cart"></i> Seleccionar
                 </button>
-                <button class="btn btn-outline-secondary w-100 mb-2" type="button" onclick="mostrarExtras('basico', this)">
+                <button
+                  class="btn btn-outline-secondary w-100 mb-2"
+                  type="button"
+                  onclick="mostrarExtras('basico', this)"
+                >
                   <i class="fas fa-plus"></i> Agregar extras
                 </button>
-                <div class="extras-container" id="extras-basico" style="display:none;">
+                <div
+                  class="extras-container"
+                  id="extras-basico"
+                  style="display: none"
+                >
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="Aromatización" id="extra-aroma-basico" data-precio="150">
-                    <label class="form-check-label" for="extra-aroma-basico">Aromatización ($150)</label>
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Aromatización"
+                      id="extra-aroma-basico"
+                      data-precio="150"
+                    />
+                    <label class="form-check-label" for="extra-aroma-basico"
+                      >Aromatización ($150)</label
+                    >
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="Encerado" id="extra-encerado-basico" data-precio="350">
-                    <label class="form-check-label" for="extra-encerado-basico">Encerado ($350)</label>
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Encerado"
+                      id="extra-encerado-basico"
+                      data-precio="350"
+                    />
+                    <label class="form-check-label" for="extra-encerado-basico"
+                      >Encerado ($350)</label
+                    >
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="Limpieza de tapizados" id="extra-tapizado-basico" data-precio="1500">
-                    <label class="form-check-label" for="extra-tapizado-basico">Limpieza de tapizados ($1500)</label>
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Limpieza de tapizados"
+                      id="extra-tapizado-basico"
+                      data-precio="1500"
+                    />
+                    <label class="form-check-label" for="extra-tapizado-basico"
+                      >Limpieza de tapizados ($1500)</label
+                    >
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="Pulido de ópticas" id="extra-opticas-basico" data-precio="1250">
-                    <label class="form-check-label" for="extra-opticas-basico">Pulido de ópticas ($1250)</label>
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Pulido de ópticas"
+                      id="extra-opticas-basico"
+                      data-precio="1250"
+                    />
+                    <label class="form-check-label" for="extra-opticas-basico"
+                      >Pulido de ópticas ($1250)</label
+                    >
                   </div>
                 </div>
               </div>
@@ -133,7 +175,9 @@
               <div class="card-body text-center">
                 <i class="fas fa-car-side fa-3x text-primary mb-3"></i>
                 <h5 class="card-title">Lavado Premium</h5>
-                <div class="precio-servicio mb-2"><span class="badge bg-success fs-5">$1100</span></div>
+                <div class="precio-servicio mb-2">
+                  <span class="badge bg-success fs-5">$1100</span>
+                </div>
                 <p class="card-text">
                   <i class="fas fa-check text-success"></i> Todo lo del
                   básico<br />
@@ -146,17 +190,41 @@
                 >
                   <i class="fas fa-shopping-cart"></i> Seleccionar
                 </button>
-                <button class="btn btn-outline-secondary w-100 mb-2" type="button" onclick="mostrarExtras('premium', this)">
+                <button
+                  class="btn btn-outline-secondary w-100 mb-2"
+                  type="button"
+                  onclick="mostrarExtras('premium', this)"
+                >
                   <i class="fas fa-plus"></i> Agregar extras
                 </button>
-                <div class="extras-container" id="extras-premium" style="display:none;">
+                <div
+                  class="extras-container"
+                  id="extras-premium"
+                  style="display: none"
+                >
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="Limpieza de tapizados" id="extra-tapizado-premium" data-precio="1500">
-                    <label class="form-check-label" for="extra-tapizado-premium">Limpieza de tapizados ($1500)</label>
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Limpieza de tapizados"
+                      id="extra-tapizado-premium"
+                      data-precio="1500"
+                    />
+                    <label class="form-check-label" for="extra-tapizado-premium"
+                      >Limpieza de tapizados ($1500)</label
+                    >
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="Pulido de ópticas" id="extra-opticas-premium" data-precio="1250">
-                    <label class="form-check-label" for="extra-opticas-premium">Pulido de ópticas ($1250)</label>
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Pulido de ópticas"
+                      id="extra-opticas-premium"
+                      data-precio="1250"
+                    />
+                    <label class="form-check-label" for="extra-opticas-premium"
+                      >Pulido de ópticas ($1250)</label
+                    >
                   </div>
                 </div>
               </div>
@@ -168,7 +236,9 @@
               <div class="card-body text-center">
                 <i class="fas fa-tools fa-3x text-primary mb-3"></i>
                 <h5 class="card-title">Detailing Completo</h5>
-                <div class="precio-servicio mb-2"><span class="badge bg-success fs-5">$3850</span></div>
+                <div class="precio-servicio mb-2">
+                  <span class="badge bg-success fs-5">$3850</span>
+                </div>
                 <p class="card-text">
                   <i class="fas fa-check text-success"></i> Todo lo del
                   premium<br />
@@ -244,6 +314,13 @@
               <button type="submit" class="btn btn-primary btn-lg w-100">
                 <i class="fas fa-check-circle"></i> Confirmar Reserva
               </button>
+              <button
+                type="button"
+                class="btn btn-danger btn-lg w-100 mt-3"
+                onclick="cancelarReserva()"
+              >
+                <i class="fas fa-times-circle"></i> Cancelar Reserva
+              </button>
             </form>
           </div>
         </div>
@@ -251,8 +328,9 @@
     </section>
 
     <div class="container my-3">
-      <div class="text-center text-secondary small" style="font-size:0.98em;">
-        Si tiene algún pedido especial, comunicarse con el número de WhatsApp de abajo
+      <div class="text-center text-secondary small" style="font-size: 0.98em">
+        Si tiene algún pedido especial, comunicarse con el número de WhatsApp de
+        abajo
       </div>
     </div>
     <!-- Footer -->
@@ -307,5 +385,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
-    </body>
-    </html>
+  </body>
+</html>
