@@ -21,6 +21,18 @@ document.addEventListener('DOMContentLoaded', () => {
             elemento.style.transform = 'translateY(0)';
         }, index * 100);
     });
+
+    // Botón de cancelar reserva
+    const reservaForm = document.getElementById('reservaForm');
+    if (reservaForm) {
+        const cancelButton = document.createElement('button');
+        cancelButton.className = 'btn btn-link mt-2 d-block mx-auto';
+        cancelButton.style.color = 'gray';
+        cancelButton.style.fontSize = '0.8rem';
+        cancelButton.textContent = 'Cancelar Reserva';
+        cancelButton.onclick = cancelarReserva;
+        reservaForm.parentNode.insertBefore(cancelButton, reservaForm.nextSibling);
+    }
 });
 
 // Función para seleccionar servicio con animación
@@ -258,14 +270,6 @@ document.getElementById('fecha').addEventListener('change', async function () {
     }
 });
 
-// Botón de cancelar reserva
-const cancelButton = document.createElement('button');
-cancelButton.className = 'btn btn-danger mt-3';
-cancelButton.textContent = 'Cancelar Reserva';
-cancelButton.onclick = cancelarReserva;
-
-const reservaForm = document.getElementById('reservaForm');
-reservaForm.parentNode.insertBefore(cancelButton, reservaForm.nextSibling);
 
 // Función para seleccionar horario
 function seleccionarHorario(hora, elemento) {
