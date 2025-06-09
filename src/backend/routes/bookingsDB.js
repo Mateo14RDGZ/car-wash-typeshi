@@ -184,10 +184,17 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // Cancelar una reserva
-router.delete('/:id', async (req, res) => {
+// Cancelar una reserva
+router.delete('/', async (req, res) => {
     try {
-        const bookingId = parseInt(req.params.id);
-        await bookingService.cancelBooking(bookingId);
+        const { clientName, date } = req.body;
+        if (!clientName || !date) {
+            return res.status(400).json({
+                status: 'ERROR',
+                message: 'Se requiere el nombre del cliente y la fecha de la reserva'
+            });
+        }
+        await bookingService.cancelBooking(clientName, date);
         
         res.json({
             status: 'SUCCESS',
@@ -195,7 +202,14 @@ router.delete('/:id', async (req, res) => {
         });
     } catch (error) {
         console.error('Error al cancelar la reserva:', error);
-        res.status(error.message.includes('no encontrada') ? 404 : 500).json({
+        res.status(error.message.includes('no encontró') ? 404 : 500).json({
+            status: 'ERROR',
+            message: error.message || 'Error al cancelar la reserva'
+        });
+    }
+});
+        console.error('Error al cancelar la reserva:', error);
+        res.status(error.message.includes('no encontró') ? 404 : 500).json({
             status: 'ERROR',
             message: error.message || 'Error al cancelar la reserva'
         });
