@@ -124,7 +124,8 @@ async function createBooking(bookingData) {
             console.error('Error al enviar correo de confirmación:', error);
         }
 
-        return newBooking.toJSON();
+        const booking = newBooking.toJSON();
+        return booking;
 
     } catch (error) {
         console.error('Error al crear reserva:', error);

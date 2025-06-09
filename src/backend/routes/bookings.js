@@ -182,9 +182,9 @@ router.get('/', (req, res) => {
 });
 
 // Cancelar una reserva
-router.delete('/:id', (req, res) => {
+router.delete('/', (req, res) => {
     try {
-        const bookingId = parseInt(req.params.id);
+        const bookingId = req.body.bookingId;
         bookingService.cancelBooking(bookingId);
         res.json({
             status: 'SUCCESS',

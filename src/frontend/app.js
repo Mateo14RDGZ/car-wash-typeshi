@@ -407,6 +407,7 @@ document.getElementById('reservaForm').addEventListener('submit', async (e) => {
 
         // Mostrar modal de confirmación con los detalles
         mostrarConfirmacion({
+            id: data.data.id,
             nombre: formData.clientName,
             fecha: fecha,
             hora: horaInicio,
@@ -608,6 +609,9 @@ function mostrarConfirmacion(datos) {
                     <!-- Recomendación y botón de descarga eliminados -->
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="cancelarReserva(this)" data-booking-id="${datos.id}">
+                        <i class="fas fa-trash me-2"></i>Cancelar Reserva
+                    </button>
                     <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">
                         <i class="fas fa-check me-2"></i>Entendido
                     </button>
@@ -777,21 +781,25 @@ function validarHorario(fecha) {
     return true;
 }
 
-async function cancelarReserva() {
-    const bookingId = prompt('Por favor, introduce el ID de la reserva que deseas cancelar:');
-
-    if (!bookingId) {
-        mostrarError('Por favor, introduce un ID de reserva válido.');
-        return;
-    }
-
+async function cancelarReserva(button) {
     try {
-        const response = await fetch(`${API_URL}/bookings/${bookingId}`, {
-            method: 'DELETE'
+        const bookingId = button.getAttribute('data-booking-id');
+
+        if (!bookingId) {
+            mostrarError('No se pudo obtener el ID de la reserva.');
+            return;
+        }
+
+        const response = await fetch(`${API_URL}/bookings`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                bookingId: bookingId
+            })
         });
-
         const data = await response.json();
-
         if (!response.ok) {
             throw new Error(data.message || 'Error al cancelar la reserva');
         }
