@@ -8,9 +8,17 @@ const precios = {
 };
 
 // Configuración de la API
-const API_HOST = 'localhost';
+// Intentar usar IP local en lugar de localhost para evitar algunos bloqueos
+const API_HOST = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
 const API_PORT = '3003';
 const API_URL = `http://${API_HOST}:${API_PORT}/api`; // URL local
+
+// URLs alternativas que se pueden usar en caso de bloqueo
+const API_URLS_FALLBACK = [
+    `http://localhost:3003/api`,
+    `http://127.0.0.1:3003/api`,
+    `/api` // URL relativa, puede funcionar si se sirve desde el mismo origen
+];
 // const API_URL = 'https://car-wash-typeshi.vercel.app/api'; // URL de producción
 
 // Animación de entrada para elementos
@@ -175,77 +183,13 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
 
         // Formatear la fecha para la API
         const fechaFormateada = fecha.toISOString().split('T')[0];
-        console.log('DEBUG - Fecha formateada para API:', fechaFormateada);        // Realizar la petición al backend
+        console.log('DEBUG - Fecha formateada para API:', fechaFormateada);        // Realizar la petición al backend utilizando el helper
         const endpoint = `/bookings/available-slots?date=${fechaFormateada}`;
-        const url = `${API_URL}${endpoint}`;
-        console.log('DEBUG - Intentando obtener horarios de:', url);
+        console.log('DEBUG - Intentando obtener horarios para fecha:', fechaFormateada);
 
         try {
-            // Configuración especial para evitar bloqueos
-            const fetchOptions = {
-                method: 'GET',
-                mode: 'cors',
-                credentials: 'same-origin',
-                headers: {
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
-                }
-            };
-            
-            // Intento con la URL completa
-            let response;
-            try {
-                response = await fetch(url, fetchOptions);
-            } catch (fetchError) {
-                console.log('DEBUG - Primer intento fallido, probando alternativa:', fetchError);
-                
-                // Intento alternativo con una URL relativa
-                try {
-                    response = await fetch(endpoint, fetchOptions);
-                } catch (relativeError) {
-                    console.log('DEBUG - Intento relativo fallido, probando directamente el host:', relativeError);
-                    
-                    // Tercer intento con XMLHttpRequest
-                    const data = await new Promise((resolve, reject) => {
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('GET', url);
-                        xhr.setRequestHeader('Accept', 'application/json');
-                        xhr.responseType = 'json';
-                        
-                        xhr.onload = function() {
-                            if (this.status >= 200 && this.status < 300) {
-                                resolve(xhr.response);
-                            } else {
-                                reject(new Error(`Error del servidor: ${this.status}`));
-                            }
-                        };
-                        
-                        xhr.onerror = function() {
-                            reject(new Error('Error de red o bloqueo de la solicitud'));
-                        };
-                        
-                        xhr.send();
-                    });
-                    
-                    console.log('DEBUG - Datos recibidos mediante XMLHttpRequest:', data);
-                    return data;
-                }
-            }
-            
-            console.log('DEBUG - Status de la respuesta:', response.status);
-
-            if (!response.ok) {
-                let errorMsg = `Error del servidor (${response.status})`;
-                try {
-                    const errorText = await response.text();
-                    errorMsg += `: ${errorText.substring(0, 100)}`;
-                } catch (e) {
-                    // No hacer nada si no se puede obtener el texto
-                }
-                throw new Error(errorMsg);
-            }
-
-            const data = await response.json();
+            // Usar la función helper para realizar la petición
+            const data = await apiRequest(endpoint);
             console.log('DEBUG - Datos recibidos del servidor:', data);
 
             // Crear contenedor de horarios
@@ -536,22 +480,17 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     // Validación de campos
     if (!validarFormulario(formData)) {
         return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/bookings`, {
+    }    try {
+        // Usar la función helper para realizar la petición POST
+        const data = await apiRequest('/bookings', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(formData)
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Error al crear la reserva');
-        }
+        
+        // El helper ya maneja los errores de respuesta y parsing
 
         // Mostrar confirmación
         mostrarReservaConfirmada(data.data);

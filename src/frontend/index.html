@@ -414,6 +414,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="api-helper.js"></script>
     <script src="app.js"></script>
     <script>
       const fechaInput = document.getElementById("fecha");
@@ -502,20 +503,20 @@
             </div>
             <p class="mt-2">Buscando horarios disponibles...</p>
           </div>
-        `; 
-        
+        `;
+
         // Consultar directamente al backend para obtener los horarios
         // Configuración para evitar bloqueos
         const fetchOptions = {
-          method: 'GET',
-          mode: 'cors',
-          credentials: 'same-origin',
+          method: "GET",
+          mode: "cors",
+          credentials: "same-origin",
           headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
+            Accept: "application/json",
+            "Cache-Control": "no-cache",
+          },
         };
-        
+
         // Intentar hacer la solicitud con diferentes métodos
         fetch(url, fetchOptions)
           .then(async (response) => {
@@ -546,24 +547,26 @@
               console.error("Formato de datos inválido:", data);
               throw new Error("No hay horarios disponibles o formato inválido");
             }
-          })          .catch((error) => {
+          })
+          .catch((error) => {
             console.error("Error al cargar horarios:", error);
-            
+
             // Usar horarios predefinidos como fallback
             const dia = new Date(fechaSeleccionada).getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
-            
+
             // Horarios predefinidos como fallback
             const fallbackHorarios = [
-                { time: '08:30 - 10:00', start: '08:30', end: '10:00' },
-                { time: '10:00 - 11:30', start: '10:00', end: '11:30' },
-                { time: '11:30 - 13:00', start: '11:30', end: '13:00' },
-                { time: '14:00 - 15:30', start: '14:00', end: '15:30' },
-                { time: '15:30 - 17:00', start: '15:30', end: '17:00' }
+              { time: "08:30 - 10:00", start: "08:30", end: "10:00" },
+              { time: "10:00 - 11:30", start: "10:00", end: "11:30" },
+              { time: "11:30 - 13:00", start: "11:30", end: "13:00" },
+              { time: "14:00 - 15:30", start: "14:00", end: "15:30" },
+              { time: "15:30 - 17:00", start: "15:30", end: "17:00" },
             ];
-            
+
             // Si es sábado, mostrar solo primeros 3 horarios
-            const horariosDelDia = dia === 6 ? fallbackHorarios.slice(0, 3) : fallbackHorarios;
-            
+            const horariosDelDia =
+              dia === 6 ? fallbackHorarios.slice(0, 3) : fallbackHorarios;
+
             // Mostrar horarios offline
             horariosContainer.innerHTML = `
               <div class="alert alert-warning mb-3">
@@ -573,7 +576,9 @@
                 <small>Mostrando horarios de ejemplo. Por favor, confirma tu reserva por teléfono al 098 385 709.</small>
               </div>
               <div class="horarios-grid">
-                ${horariosDelDia.map(slot => `
+                ${horariosDelDia
+                  .map(
+                    (slot) => `
                   <button type="button" class="btn btn-outline-primary m-1" 
                     onclick="this.classList.add('btn-primary'); 
                              this.classList.remove('btn-outline-primary');
@@ -585,7 +590,9 @@
                              });">
                     ${slot.time}
                   </button>
-                `).join('')}
+                `
+                  )
+                  .join("")}
               </div>
             `;
           });
