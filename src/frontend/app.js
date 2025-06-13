@@ -407,7 +407,6 @@ document.getElementById('reservaForm').addEventListener('submit', async (e) => {
 
         // Mostrar modal de confirmación con los detalles
         mostrarConfirmacion({
-            id: data.data.id,
             nombre: formData.clientName,
             fecha: fecha,
             hora: horaInicio,
@@ -828,3 +827,15 @@ styles.textContent = `
     }
 `;
 document.head.appendChild(styles);
+
+/* ----------------- NUEVO CÓDIGO ----------------- */
+
+// Mostrar el selector de horario solo si hay una fecha seleccionada
+document.getElementById('fecha').addEventListener('change', function() {
+    const horarioContainer = document.getElementById('horario-container');
+    if (this.value) {
+        horarioContainer.style.display = 'block';
+    } else {
+        horarioContainer.style.display = 'none';
+    }
+});

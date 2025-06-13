@@ -267,6 +267,7 @@
         </h2>
         <div class="row justify-content-center">
           <div class="col-md-8">
+            <!-- Reemplaza tu formulario por este bloque -->
             <form id="reservaForm" class="card p-4 shadow">
               <div class="mb-3">
                 <label for="nombre" class="form-label"
@@ -278,19 +279,48 @@
                 <label for="telefono" class="form-label"
                   ><i class="fas fa-phone"></i> Teléfono</label
                 >
-                <input type="tel" class="form-control" id="telefono" required />
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="telefono"
+                  placeholder="Ej: 555-123-4567"
+                  required
+                />
               </div>
               <div class="mb-3">
                 <label for="fecha" class="form-label"
                   ><i class="fas fa-calendar"></i> Fecha</label
                 >
-                <input type="date" class="form-control" id="fecha" required />
+                <input
+                  type="date"
+                  id="fecha"
+                  name="fecha"
+                  class="form-control"
+                  min="2025-06-13"
+                  style="max-width: 220px; padding: 10px; font-size: 16px"
+                  required
+                />
+                <small class="text-muted d-block mt-1">
+                  <i class="fas fa-info-circle"></i> Selecciona la fecha para
+                  ver los horarios disponibles
+                </small>
               </div>
-              <div id="horariosContainer" class="mb-3" style="display: none">
-                <label class="form-label"
-                  ><i class="fas fa-clock"></i> Horarios Disponibles</label
+              <div id="horariosContainer" class="mb-4" style="display: none">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-clock"></i> Horarios Disponibles
+                </label>
+                <div
+                  class="horarios-grid"
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(
+                      auto-fill,
+                      minmax(120px, 1fr)
+                    );
+                    gap: 10px;
+                    margin-top: 10px;
+                  "
                 >
-                <div class="horarios-grid">
                   <!-- Los horarios se cargarán dinámicamente aquí -->
                 </div>
               </div>
@@ -385,5 +415,122 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
+    <script>
+      const fechaInput = document.getElementById("fecha");
+      const horariosContainer = document.getElementById("horariosContainer");
+
+      // Esta función es para mostrar los horarios desde el backend
+      function mostrarHorarios(horariosData) {
+        // Mostrar el contenedor
+        horariosContainer.style.display = "block";
+
+        // Limpiar el contenedor
+        const horariosGrid = horariosContainer.querySelector(".horarios-grid");
+        horariosGrid.innerHTML = "";
+
+        if (horariosData && horariosData.length > 0) {
+          // Crear botones para cada horario
+          horariosData.forEach((slot) => {
+            const hora = slot.time; // Usar directamente el formato del backend
+
+            const horarioBtn = document.createElement("button");
+            horarioBtn.type = "button";
+            horarioBtn.className = "btn btn-outline-primary m-1";
+            horarioBtn.textContent = hora;
+            horarioBtn.value = hora;
+
+            horarioBtn.onclick = function () {
+              // Desmarcar todos los botones
+              document
+                .querySelectorAll(".horarios-grid button")
+                .forEach((btn) => {
+                  btn.classList.remove("btn-primary");
+                  btn.classList.add("btn-outline-primary");
+                });
+
+              // Marcar este botón
+              this.classList.remove("btn-outline-primary");
+              this.classList.add("btn-primary");
+
+              // Guardar el horario seleccionado (para app.js)
+              if (typeof horarioSeleccionado !== "undefined") {
+                horarioSeleccionado = hora;
+              }
+
+              // También guardar en un campo oculto para el formulario
+              const horarioInput = document.createElement("input");
+              horarioInput.type = "hidden";
+              horarioInput.name = "horario";
+              horarioInput.id = "horarioSeleccionado";
+              horarioInput.value = hora;
+
+              // Eliminar el campo anterior si existe
+              const horarioAnterior = document.getElementById(
+                "horarioSeleccionado"
+              );
+              if (horarioAnterior) horarioAnterior.remove();
+
+              // Agregar el nuevo campo
+              document.getElementById("reservaForm").appendChild(horarioInput);
+            };
+
+            horariosGrid.appendChild(horarioBtn);
+          });
+        } else {
+          horariosGrid.innerHTML =
+            "<p class='alert alert-warning'>No hay horarios disponibles para esta fecha</p>";
+        }
+      }
+
+      // Evento cuando se selecciona una fecha
+      fechaInput.addEventListener("change", function () {
+        if (!this.value) {
+          horariosContainer.style.display = "none";
+          return;
+        }
+
+        const fechaSeleccionada = this.value;
+        const url = `/api/bookings/available-slots?date=${fechaSeleccionada}`;
+
+        // Mostrar indicador de carga
+        horariosContainer.style.display = "block";
+        horariosContainer.innerHTML = `
+          <div class="text-center my-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando horarios...</span>
+            </div>
+            <p class="mt-2">Buscando horarios disponibles...</p>
+          </div>
+        `;
+
+        // Consultar directamente al backend para obtener los horarios
+        fetch(url)
+          .then((response) => {
+            if (!response.ok)
+              throw new Error("No se pudo obtener los horarios");
+            return response.json();
+          })
+          .then((data) => {
+            if (data && data.data) {
+              mostrarHorarios(data.data);
+            } else {
+              throw new Error("No hay horarios disponibles");
+            }
+          })
+          .catch((error) => {
+            console.error("Error al cargar horarios:", error);
+
+            // Mostrar mensaje de error
+            horariosContainer.innerHTML = `
+              <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                Error: No se pudieron cargar los horarios disponibles.
+                <br>
+                <small>Por favor intenta de nuevo más tarde o comunícate con nosotros directamente.</small>
+              </div>
+            `;
+          });
+      });
+    </script>
   </body>
 </html>

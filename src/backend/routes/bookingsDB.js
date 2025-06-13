@@ -208,12 +208,5 @@ router.delete('/', async (req, res) => {
         });
     }
 });
-        console.error('Error al cancelar la reserva:', error);
-        res.status(error.message.includes('no encontró') ? 404 : 500).json({
-            status: 'ERROR',
-            message: error.message || 'Error al cancelar la reserva'
-        });
-    }
-});
 
 module.exports = router;

@@ -14,11 +14,16 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'El usuario ya existe' });
         }
 
+        // Hash la contraseña
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
         // Crear nuevo usuario
         const user = await User.create({
             name,
             email,
-            password,
+            password: hashedPassword,
             phone,
             role: role || 'client'
         });
@@ -86,4 +91,4 @@ router.post('/login', async (req, res) => {
     }
 });
 
-module.exports = router; 
+module.exports = router;
