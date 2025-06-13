@@ -501,36 +501,40 @@
             </div>
             <p class="mt-2">Buscando horarios disponibles...</p>
           </div>
-        `;        // Consultar directamente al backend para obtener los horarios
+        `; // Consultar directamente al backend para obtener los horarios
         fetch(url)
           .then(async (response) => {
             if (!response.ok) {
               const errorText = await response.text();
-              console.error('Error response from server:', errorText);
-              throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+              console.error("Error response from server:", errorText);
+              throw new Error(
+                `Error del servidor: ${response.status} ${response.statusText}`
+              );
             }
-            
+
             // Intentar parsear como JSON
             try {
               return response.json();
             } catch (jsonError) {
-              console.error('Error parsing JSON:', jsonError);
+              console.error("Error parsing JSON:", jsonError);
               // Si la respuesta no es JSON, mostrar el texto de la respuesta
               const errorText = await response.text();
-              throw new Error(`Respuesta no válida: ${errorText.substring(0, 50)}...`);
+              throw new Error(
+                `Respuesta no válida: ${errorText.substring(0, 50)}...`
+              );
             }
           })
           .then((data) => {
             if (data && data.data) {
               mostrarHorarios(data.data);
             } else {
-              console.error('Formato de datos inválido:', data);
+              console.error("Formato de datos inválido:", data);
               throw new Error("No hay horarios disponibles o formato inválido");
             }
           })
           .catch((error) => {
             console.error("Error al cargar horarios:", error);
-            
+
             // Mostrar mensaje de error
             horariosContainer.innerHTML = `
               <div class="alert alert-danger">

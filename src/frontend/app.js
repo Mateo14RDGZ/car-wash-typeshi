@@ -8,7 +8,8 @@ const precios = {
 };
 
 // Configuración de la API
-const API_URL = '/api';
+const API_URL = 'http://localhost:3003/api'; // URL local
+// const API_URL = 'https://car-wash-typeshi.vercel.app/api'; // URL de producción
 
 // Animación de entrada para elementos
 document.addEventListener('DOMContentLoaded', () => {
@@ -122,7 +123,7 @@ function agregarListenersExtras() {
 }
 
 // Validación de fecha y obtención de horarios disponibles
-document.getElementById('fecha').addEventListener('change', async function () {
+document.getElementById('fecha')?.addEventListener('change', async function () {
     // Asegurarse de que la fecha se maneje en la zona horaria local
     const fechaStr = this.value + 'T00:00:00';
     const fecha = new Date(fechaStr);
@@ -178,91 +179,123 @@ document.getElementById('fecha').addEventListener('change', async function () {
         const url = `${API_URL}/bookings/available-slots?date=${fechaFormateada}`;
         console.log('DEBUG - Intentando obtener horarios de:', url);
 
-        const response = await fetch(url);
-        console.log('DEBUG - Status de la respuesta:', response.status);
+        try {
+            const response = await fetch(url);
+            console.log('DEBUG - Status de la respuesta:', response.status);
 
-        const data = await response.json();
-        console.log('DEBUG - Datos recibidos del servidor:', data);
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Error del servidor');
-        }
-
-        // Verificar si hay horarios disponibles
-        if (!Array.isArray(data.data)) {
-            console.error('DEBUG - Los datos recibidos no son un array:', data);
-            throw new Error('Formato de datos inválido');
-        }
-
-        // Crear contenedor de horarios
-        const horariosGrid = document.createElement('div');
-        horariosGrid.className = 'horarios-container';
-
-        if (data.data.length > 0) {
-            console.log('DEBUG - Cantidad de slots disponibles:', data.data.length);
-
-            // Obtener el horario del día
-            const horarioDia = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
-
-            horariosGrid.innerHTML = `
-                <div class="horarios-header">
-                    <h4><i class="fas fa-clock"></i> Horarios Disponibles</h4>
-                    <p class="text-muted">Selecciona el horario que prefieras</p>
-                </div>
-                <div class="horarios-info">
-                    <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
-                                    </div>
-                <div class="horarios-grid">
-                    ${data.data.map(slot => {
-                if (!slot || !slot.start || !slot.end) {
-                    console.error('DEBUG - Slot inválido:', slot);
-                    return '';
+            if (!response.ok) {
+                let errorMsg = `Error del servidor (${response.status})`;
+                try {
+                    const errorText = await response.text();
+                    errorMsg += `: ${errorText.substring(0, 100)}`;
+                } catch (e) {
+                    // No hacer nada si no se puede obtener el texto
                 }
-                return `
-                            <div class="horario-slot" onclick="seleccionarHorario('${slot.time}', this)">
-                                <div class="horario-tiempo">
-                                    <span class="tiempo-inicio">${slot.start}</span>
-                                    <span class="tiempo-separador"> - </span>
-                                    <span class="tiempo-fin">${slot.end}</span>
+                throw new Error(errorMsg);
+            }
+
+            const data = await response.json();
+            console.log('DEBUG - Datos recibidos del servidor:', data);
+
+            // Crear contenedor de horarios
+            const horariosGrid = document.createElement('div');
+            horariosGrid.className = 'horarios-container';
+
+            if (data.data && data.data.length > 0) {
+                console.log('DEBUG - Cantidad de slots disponibles:', data.data.length);
+
+                // Obtener el horario del día
+                const horarioDia = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
+
+                horariosGrid.innerHTML = `
+                    <div class="horarios-header">
+                        <h4><i class="fas fa-clock"></i> Horarios Disponibles</h4>
+                        <p class="text-muted">Selecciona el horario que prefieras</p>
+                    </div>
+                    <div class="horarios-info">
+                        <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
+                    </div>
+                    <div class="horarios-grid">
+                        ${data.data.map(slot => {
+                            if (!slot || !slot.start || !slot.end) {
+                                console.error('DEBUG - Slot inválido:', slot);
+                                return '';
+                            }
+                            return `
+                                <div class="horario-slot" onclick="seleccionarHorario('${slot.time}', this)">
+                                    <div class="horario-tiempo">
+                                        <span class="tiempo-inicio">${slot.start}</span>
+                                        <span class="tiempo-separador"> - </span>
+                                        <span class="tiempo-fin">${slot.end}</span>
+                                    </div>
+                                    <div class="horario-duracion">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
                                 </div>
-                                <div class="horario-duracion">
-                                    <i class="fas fa-clock"></i>
-                                                                    </div>
-                            </div>
-                        `;
-            }).join('')}
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else {
+                console.log('DEBUG - No hay slots disponibles para esta fecha');
+                const horario = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
+
+                horariosGrid.innerHTML = `
+                    <div class="alert alert-info text-center p-4">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <h5>No hay horarios disponibles</h5>
+                        <p class="mb-2">Lo sentimos, no hay horarios disponibles para esta fecha.</p>
+                        <p class="mb-0">Recuerda que nuestro horario de atención este día es de ${horario}.</p>
+                    </div>
+                `;
+            }
+
+            // Limpiar y actualizar contenedor
+            horariosContainer.innerHTML = '';
+            horariosContainer.appendChild(horariosGrid);
+
+        } catch (error) {
+            console.error('DEBUG - Error al cargar horarios:', error);
+            horariosContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Error al cargar los horarios: ${error.message}
                 </div>
             `;
-        } else {
-            console.log('DEBUG - No hay slots disponibles para esta fecha');
-            const horario = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
-
-            horariosGrid.innerHTML = `
-                <div class="alert alert-info text-center p-4">
-                    <i class="fas fa-info-circle fa-2x mb-3"></i>
-                    <h5>No hay horarios disponibles</h5>
-                    <p class="mb-2">Lo sentimos, no hay horarios disponibles para esta fecha.</p>
-                    <p class="mb-0">Recuerda que nuestro horario de atención este día es de ${horario}.</p>
-                                    </div>
-            `;
         }
-
-        // Limpiar y actualizar contenedor
-        horariosContainer.innerHTML = '';
-        horariosContainer.appendChild(horariosGrid);
-
     } catch (error) {
-        console.error('DEBUG - Error al cargar horarios:', error);
-        const horariosContainer = document.getElementById('horariosContainer');
-        horariosContainer.innerHTML = `
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-circle"></i>
-                Error al cargar los horarios: ${error.message}
-            </div>
-        `;
+        console.error('DEBUG - Error general al procesar la fecha:', error);
+        mostrarError('Ocurrió un error al procesar la fecha seleccionada');
     }
 });
 
+// Función para mostrar errores
+function mostrarError(mensaje) {
+    // Crear el elemento de alerta si no existe
+    let alertaElement = document.getElementById('alerta-sistema');
+    if (!alertaElement) {
+        alertaElement = document.createElement('div');
+        alertaElement.id = 'alerta-sistema';
+        alertaElement.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+        alertaElement.style.zIndex = '9999';
+        alertaElement.style.boxShadow = '0 3px 10px rgba(0,0,0,0.2)';
+        alertaElement.style.maxWidth = '90%';
+        document.body.appendChild(alertaElement);
+    }
+
+    // Actualizar mensaje y mostrar
+    alertaElement.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i> ${mensaje}`;
+    alertaElement.style.display = 'block';
+    alertaElement.style.opacity = '1';
+
+    // Ocultar después de 5 segundos
+    setTimeout(() => {
+        alertaElement.style.opacity = '0';
+        setTimeout(() => {
+            alertaElement.style.display = 'none';
+        }, 500);
+    }, 5000);
+}
 
 // Función para seleccionar horario
 function seleccionarHorario(hora, elemento) {
@@ -302,7 +335,7 @@ function seleccionarHorario(hora, elemento) {
 }
 
 // Actualizar el manejo del formulario
-document.getElementById('reservaForm').addEventListener('submit', async (e) => {
+document.getElementById('reservaForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     if (!servicioSeleccionado) {
@@ -344,13 +377,13 @@ document.getElementById('reservaForm').addEventListener('submit', async (e) => {
     // Capturar extras seleccionados
     let extrasSeleccionados = [];
     if (servicioSeleccionado === 'basico') {
-        if (document.getElementById('extra-aroma-basico').checked) extrasSeleccionados.push('Aromatización');
-        if (document.getElementById('extra-encerado-basico').checked) extrasSeleccionados.push('Encerado');
-        if (document.getElementById('extra-tapizado-basico').checked) extrasSeleccionados.push('Limpieza de tapizados');
-        if (document.getElementById('extra-opticas-basico').checked) extrasSeleccionados.push('Pulido de ópticas');
+        if (document.getElementById('extra-aroma-basico')?.checked) extrasSeleccionados.push('Aromatización');
+        if (document.getElementById('extra-encerado-basico')?.checked) extrasSeleccionados.push('Encerado');
+        if (document.getElementById('extra-tapizado-basico')?.checked) extrasSeleccionados.push('Limpieza de tapizados');
+        if (document.getElementById('extra-opticas-basico')?.checked) extrasSeleccionados.push('Pulido de ópticas');
     } else if (servicioSeleccionado === 'premium') {
-        if (document.getElementById('extra-tapizado-premium').checked) extrasSeleccionados.push('Limpieza de tapizados');
-        if (document.getElementById('extra-opticas-premium').checked) extrasSeleccionados.push('Pulido de ópticas');
+        if (document.getElementById('extra-tapizado-premium')?.checked) extrasSeleccionados.push('Limpieza de tapizados');
+        if (document.getElementById('extra-opticas-premium')?.checked) extrasSeleccionados.push('Pulido de ópticas');
     }
 
     // Calcular el precio total con extras seleccionados
@@ -405,437 +438,386 @@ document.getElementById('reservaForm').addEventListener('submit', async (e) => {
             throw new Error(data.message || 'Error al crear la reserva');
         }
 
-        // Mostrar modal de confirmación con los detalles
-        mostrarConfirmacion({
-            nombre: formData.clientName,
-            fecha: fecha,
-            hora: horaInicio,
-            vehiculo: formData.vehicleType,
-            patente: formData.vehiclePlate,
-            servicio: formData.serviceType,
-            precio: formData.price,
-            extras: extrasSeleccionados,
-            extrasChecks: extrasChecks
-        });
+        // Mostrar confirmación
+        mostrarReservaConfirmada(data.data);
 
-        // Limpiar formulario
-        document.getElementById('reservaForm').reset();
-        document.getElementById('horariosContainer').style.display = 'none';
-        servicioSeleccionado = null;
-        horarioSeleccionado = null;
-
-        // Scroll al inicio
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
-        console.error('Error al crear la reserva:', error);
-        mostrarError(error.message);
+        console.error('Error al enviar la reserva:', error);
+        mostrarError('No se pudo procesar la reserva: ' + error.message);
     }
 });
 
-// Función de validación del formulario
-function validarFormulario(data) {
-    if (!data.clientName || data.clientName.length < 3) {
-        mostrarError('El nombre debe tener al menos 3 caracteres');
+// Validar los campos del formulario
+function validarFormulario(formData) {
+    if (!formData.clientName || formData.clientName.trim().length < 3) {
+        mostrarError('Por favor, ingresa un nombre válido');
         return false;
     }
 
-    if (!data.vehicleType) {
-        mostrarError('Selecciona un tipo de vehículo');
+    if (!formData.vehicleType || formData.vehicleType === '') {
+        mostrarError('Por favor, selecciona el tipo de vehículo');
         return false;
     }
 
-    if (!data.vehiclePlate) {
-        mostrarError('Ingresa la patente del vehículo');
+    if (!formData.vehiclePlate || formData.vehiclePlate.trim().length < 6) {
+        mostrarError('Por favor, ingresa una patente válida');
         return false;
     }
 
     return true;
 }
 
-// Función para mostrar errores
-function mostrarError(mensaje) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-    alertDiv.innerHTML = `
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+// Función para mostrar la confirmación de reserva
+function mostrarReservaConfirmada(reserva) {
+    // Crear los elementos para la confirmación
+    const container = document.getElementById('reservar');
+    const originalContent = container.innerHTML;
+    
+    // Guardar el contenido original
+    container.dataset.originalContent = originalContent;
+    
+    const date = new Date(reserva.date);
+    const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    const fechaFormateada = date.toLocaleDateString('es-ES', opciones);
+    
+    // Mapeo de tipos de servicio a nombres legibles
+    const serviciosNombres = {
+        'basico': 'Lavado Básico',
+        'premium': 'Lavado Premium',
+        'detailing': 'Detailing Completo'
+    };
+    
+    // Mapeo de tipos de vehículo a nombres legibles
+    const vehiculosNombres = {
+        'auto': 'Auto',
+        'camioneta_caja': 'Camioneta con caja',
+        'camioneta_sin_caja': 'Camioneta sin caja'
+    };
 
-    const form = document.getElementById('reservaForm');
-    form.insertBefore(alertDiv, form.firstChild);
-
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
-
-// Función para mostrar mensajes de éxito
-function mostrarExito(mensaje) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-success alert-dismissible fade show animate__animated animate__fadeIn';
-    alertDiv.innerHTML = `
-        <i class="fas fa-check-circle"></i>
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-
-    const form = document.getElementById('reservaForm');
-    form.insertBefore(alertDiv, form.firstChild);
-
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
-
-// Función para descargar el modal como imagen
-async function descargarConfirmacion() {
-    console.log('Descargar confirmación clickeado');
-    try {
-        // Clonar el modal y limpiar lo que no se quiere
-        const modalContent = document.querySelector('.modal-content');
-        const clone = modalContent.cloneNode(true);
-        // Quitar footer (botones)
-        const footer = clone.querySelector('.modal-footer');
-        if (footer) footer.remove();
-        // Quitar recomendación
-        const recomendacion = clone.querySelector('.alert.alert-info');
-        if (recomendacion) recomendacion.remove();
-        // Ajustar el ancho para PDF
-        clone.style.width = '400px';
-        clone.style.maxWidth = '400px';
-        clone.style.fontSize = '13px';
-        // Crear wrapper temporal oculto
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'fixed';
-        wrapper.style.left = '-9999px';
-        wrapper.appendChild(clone);
-        document.body.appendChild(wrapper);
-        // Renderizar a PDF
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'px', format: [420, 600] });
-        await doc.html(clone, {
-            x: 10,
-            y: 10,
-            html2canvas: { scale: 2, backgroundColor: '#fff' },
-            callback: function (doc) {
-                doc.save('confirmacion-reserva.pdf');
-                document.body.removeChild(wrapper);
-            }
-        });
-    } catch (error) {
-        console.error('Error al descargar el PDF:', error);
-        mostrarError('No se pudo descargar el PDF. Por favor, intente nuevamente.');
-    }
-}
-
-// Función para mostrar confirmación mejorada
-function mostrarConfirmacion(datos) {
-    const modal = document.createElement('div');
-    modal.className = 'modal fade show';
-    modal.style.display = 'block';
-    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    // Obtener precios de los extras seleccionados
-    let extrasPrecios = [];
-    if (datos.extras && datos.extras.length > 0 && datos.extrasChecks) {
-        datos.extras.forEach((extra, idx) => {
-            const chk = datos.extrasChecks.find(c => c && c.value === extra);
-            if (chk) {
-                extrasPrecios.push(parseInt(chk.getAttribute('data-precio')));
-            } else {
-                extrasPrecios.push('--');
-            }
-        });
-    }
-    modal.innerHTML = `
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">
-                        <i class="fas fa-check-circle me-2"></i>
-                        ¡Reserva Confirmada!
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" onclick="this.closest('.modal').remove()"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-4">
-                        <i class="fas fa-calendar-check text-success" style="font-size: 48px;"></i>
-                    </div>
-                    <h4 class="text-center mb-4">¡Gracias ${datos.nombre} por tu reserva!</h4>
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">Detalles de tu reserva:</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-car"></i> Servicio</span>
-                                    <span class="badge bg-primary rounded-pill text-capitalize">${datos.servicio}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-calendar"></i> Fecha</span>
-                                    <span>${new Date(datos.fecha).toLocaleDateString('es-UY')}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-clock"></i> Hora</span>
-                                    <span>${datos.hora}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-car-side"></i> Vehículo</span>
-                                    <span class="text-capitalize">${datos.vehiculo}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-hashtag"></i> Patente</span>
-                                    <span class="text-uppercase">${datos.patente}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-tag"></i> Precio</span>
-                                    <span class="badge bg-success rounded-pill">${datos.precio}</span>
-                                </li>
-                            </ul>
-                            ${datos.extras && datos.extras.length > 0 ? `
-                            <div class="mt-4">
-                                <h6 class="mb-2"><i class="fas fa-plus-circle text-secondary"></i> Extras seleccionados</h6>
-                                <ul class="list-group">
-                                    ${datos.extras.map((extra, idx) => `
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>${extra}</span>
-                                            <span class="badge bg-secondary">${extrasPrecios[idx]}</span>
-                                        </li>
-                                    `).join('')}
-                                </ul>
+    container.innerHTML = `
+        <div class="container py-5 animate__animated animate__fadeIn">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-header bg-success text-white text-center py-4">
+                            <i class="fas fa-check-circle fa-3x mb-3"></i>
+                            <h3 class="mb-0">¡Reserva Confirmada!</h3>
+                        </div>
+                        <div class="card-body p-5">
+                            <div class="confirmation-details">
+                                <h5 class="mb-4">Detalles de tu reserva</h5>
+                                
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">A nombre de</small>
+                                        <strong>${reserva.clientName}</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Fecha y hora</small>
+                                        <strong>${fechaFormateada}</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-shower"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Servicio</small>
+                                        <strong>${serviciosNombres[reserva.serviceType] || reserva.serviceType}</strong>
+                                        ${reserva.extras && reserva.extras.length > 0 ? 
+                                        `<div class="mt-2">
+                                            <small class="text-muted">Extras:</small>
+                                            <ul class="mb-0 ps-3">
+                                                ${reserva.extras.map(extra => `<li>${extra}</li>`).join('')}
+                                            </ul>
+                                        </div>` : ''}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-car"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Vehículo</small>
+                                        <strong>${vehiculosNombres[reserva.vehicleType] || reserva.vehicleType}</strong>
+                                        <div class="mt-1">
+                                            <span class="badge bg-secondary">Patente: ${reserva.vehiclePlate}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-tag"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Precio total</small>
+                                        <strong class="text-success">$${reserva.price}</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-hashtag"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Código de reserva</small>
+                                        <strong>${reserva.id}</strong>
+                                    </div>
+                                </div>
                             </div>
-                            ` : ''}
+                            
+                            <div class="border-top pt-4 mt-4">
+                                <p class="text-center mb-4">
+                                    <i class="fas fa-info-circle me-2 text-info"></i>
+                                    Se ha enviado un correo con los detalles de tu reserva.
+                                </p>
+                            </div>
+                            <hr>
+                            <div class="text-center pt-2">
+                                <button class="btn btn-primary" id="nuevaReservaBtn">
+                                    <i class="fas fa-calendar-plus me-2"></i>Hacer otra reserva
+                                </button>
+                                
+                                <button class="btn btn-outline-secondary ms-2" id="imprimirReservaBtn">
+                                    <i class="fas fa-print me-2"></i>Imprimir
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <!-- Recomendación y botón de descarga eliminados -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" onclick="cancelarReserva(this)" data-booking-id="${datos.id}">
-                        <i class="fas fa-trash me-2"></i>Cancelar Reserva
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">
-                        <i class="fas fa-check me-2"></i>Entendido
-                    </button>
                 </div>
             </div>
         </div>
     `;
-    document.body.appendChild(modal);
-}
-
-// Función para mostrar/ocultar los extras de cada servicio
-function mostrarExtras(servicio, btn) {
-    const extrasDiv = document.getElementById(`extras-${servicio}`);
-    if (extrasDiv.style.display === 'none' || extrasDiv.style.display === '') {
-        extrasDiv.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-minus"></i> Ocultar extras';
-    } else {
-        extrasDiv.style.display = 'none';
-        btn.innerHTML = '<i class="fas fa-plus"></i> Agregar extras';
-    }
-}
-
-// Función para manejar la selección del método de pago
-function seleccionarMetodoPago(metodo, monto) {
-    // Remover selección previa
-    document.querySelectorAll('.payment-option').forEach(option => {
-        option.classList.remove('selected');
+    
+    // Añadir listeners a los botones
+    document.getElementById('nuevaReservaBtn').addEventListener('click', () => {
+        // Recuperar el contenido original
+        container.innerHTML = container.dataset.originalContent;
+        // Resetear variables globales
+        servicioSeleccionado = null;
+        horarioSeleccionado = null;
+        // Limpiar campos
+        const form = document.getElementById('reservaForm');
+        if (form) form.reset();
     });
+    
+    document.getElementById('imprimirReservaBtn').addEventListener('click', () => {
+        imprimirReserva(reserva);
+    });
+}
 
-    // Seleccionar la opción actual
-    const opcionSeleccionada = document.querySelector(`.payment-option[onclick*="${metodo}"]`);
-    if (opcionSeleccionada) {
-        opcionSeleccionada.classList.add('selected');
-    }
+// Función para imprimir la reserva
+function imprimirReserva(reserva) {
+    // Implementar la generación de impresión
+    const date = new Date(reserva.date);
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    };
+    const fechaFormateada = date.toLocaleDateString('es-ES', opciones);
+    
+    // Mapeo de tipos de servicio a nombres legibles
+    const serviciosNombres = {
+        'basico': 'Lavado Básico',
+        'premium': 'Lavado Premium',
+        'detailing': 'Detailing Completo'
+    };
+    
+    // Mapeo de tipos de vehículo a nombres legibles
+    const vehiculosNombres = {
+        'auto': 'Auto',
+        'camioneta_caja': 'Camioneta con caja',
+        'camioneta_sin_caja': 'Camioneta sin caja'
+    };
+    
+    // Crear un elemento para la impresión
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Reserva #${reserva.id} - Extreme Wash</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 20px;
+                }
+                .logo {
+                    font-size: 28px;
+                    font-weight: bold;
+                }
+                .highlight {
+                    color: #0d6efd;
+                }
+                h1 {
+                    font-size: 24px;
+                    margin: 15px 0;
+                }
+                .detail-row {
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid #eee;
+                }
+                .detail-label {
+                    font-weight: bold;
+                    display: inline-block;
+                    width: 150px;
+                }
+                .footer {
+                    margin-top: 40px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #666;
+                }
+                .footer p {
+                    margin: 5px 0;
+                }
+                .qr {
+                    text-align: center;
+                    margin: 30px 0;
+                }
+                .qr-code {
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    display: inline-block;
+                }
+                .terms {
+                    font-size: 11px;
+                    margin-top: 40px;
+                }
+                .extras {
+                    margin-left: 155px;
+                    margin-top: 5px;
+                }
+                .extras ul {
+                    margin-top: 5px;
+                    margin-bottom: 0;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">
+                    <span class="highlight">EXTREME</span> WASH
+                </div>
+                <p>Dr. Cipriano Goñi 59, Durazno</p>
+            </div>
+            
+            <h1>Comprobante de Reserva #${reserva.id}</h1>
+            
+            <div class="detail-row">
+                <span class="detail-label">Cliente:</span> ${reserva.clientName}
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Fecha y hora:</span> ${fechaFormateada}
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Servicio:</span> ${serviciosNombres[reserva.serviceType] || reserva.serviceType}
+                ${reserva.extras && reserva.extras.length > 0 ? 
+                `<div class="extras">
+                    <small>Extras:</small>
+                    <ul>
+                        ${reserva.extras.map(extra => `<li>${extra}</li>`).join('')}
+                    </ul>
+                </div>` : ''}
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Vehículo:</span> ${vehiculosNombres[reserva.vehicleType] || reserva.vehicleType} (Patente: ${reserva.vehiclePlate})
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Precio total:</span> $${reserva.price}
+            </div>
+            
+            <div class="qr">
+                <div class="qr-code">
+                    [Código QR: ${reserva.id}]
+                </div>
+                <p>Presenta este código en tu visita</p>
+            </div>
+            
+            <div class="terms">
+                <p><strong>Términos y condiciones:</strong></p>
+                <p>Si necesitas cancelar o reprogramar tu reserva, por favor hazlo con al menos 2 horas de anticipación llamando al 098 385 709.</p>
+                <p>Se aplica un tiempo de gracia de 15 minutos. Después de este tiempo, podríamos no ser capaces de garantizar el servicio.</p>
+            </div>
+            
+            <div class="footer">
+                <p>Extreme Wash - Tu auto merece brillar como nuevo</p>
+                <p>Tel: 098 385 709 - Dr Cipriano Goñi 59</p>
+                <p>Reserva generada el ${new Date().toLocaleString()}</p>
+            </div>
+            
+            <script>
+                window.onload = function() {
+                    window.print();
+                }
+            </script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
 
-    // Manejar cada método de pago
-    switch (metodo) {
-        case 'credito':
-            procesarPagoTarjeta('credito', monto);
-            break;
-        case 'debito':
-            procesarPagoTarjeta('debito', monto);
-            break;
-        case 'efectivo':
-            procesarPagoEfectivo(monto);
-            break;
+// Función para mostrar los extras
+function mostrarExtras(tipo, btn) {
+    const containerId = `extras-${tipo}`;
+    const container = document.getElementById(containerId);
+    
+    if (container.style.display === 'none' || !container.style.display) {
+        container.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-minus"></i> Ocultar extras';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-outline-info');
+    } else {
+        container.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-plus"></i> Agregar extras';
+        btn.classList.remove('btn-outline-info');
+        btn.classList.add('btn-outline-secondary');
     }
 }
 
-// Función para procesar pagos con tarjeta
-function procesarPagoTarjeta(tipo, monto) {
-    const tipoTarjeta = tipo === 'credito' ? 'crédito' : 'débito';
-
-    // Aquí se integraría con un gateway de pago real
-    // Por ahora, mostraremos un mensaje informativo
-    const mensaje = `
-        <div class="alert alert-info mt-3">
-            <h6><i class="fas fa-info-circle"></i> Pago con tarjeta de ${tipoTarjeta}</h6>
-            <p class="mb-0">Monto a pagar: $${monto}</p>
-            <small>En este momento serías redirigido al gateway de pago seguro para completar la transacción.</small>
-        </div>
-    `;
-
-    mostrarMensajePago(mensaje);
+// Función para cancelar la reserva
+function cancelarReserva() {
+    // Simplemente recarga la página si no hay más lógica
+    location.reload();
 }
-
-// Función para procesar pagos en efectivo
-function procesarPagoEfectivo(monto) {
-    const mensaje = `
-        <div class="alert alert-success mt-3">
-            <h6><i class="fas fa-check-circle"></i> Pago en efectivo</h6>
-            <p class="mb-0">Monto a pagar en el local: $${monto}</p>
-            <small>Por favor, presenta este comprobante al momento de realizar el pago.</small>
-        </div>
-    `;
-
-    mostrarMensajePago(mensaje);
-}
-
-// Función para mostrar mensajes de pago
-function mostrarMensajePago(mensaje) {
-    // Remover mensaje anterior si existe
-    const mensajeAnterior = document.querySelector('.payment-message');
-    if (mensajeAnterior) {
-        mensajeAnterior.remove();
-    }
-
-    // Agregar nuevo mensaje
-    const mensajeElement = document.createElement('div');
-    mensajeElement.className = 'payment-message';
-    mensajeElement.innerHTML = mensaje;
-
-    const paymentSection = document.querySelector('.payment-section');
-    paymentSection.appendChild(mensajeElement);
-}
-
-// Función para validar horarios de atención
-function validarHorario(fecha) {
-    const date = new Date(fecha);
-    const dia = date.getDay(); // 0 es domingo, 1 es lunes, etc.
-
-    console.log('DEBUG - validarHorario - Fecha:', date.toLocaleString());
-    console.log('DEBUG - validarHorario - Día:', dia);
-
-    // Domingo (0) - Cerrado
-    if (dia === 0) {
-        mostrarError('Lo sentimos, no atendemos los domingos');
-        return false;
-    }
-
-    // Validar horario según el día
-    if (dia >= 1 && dia <= 5) { // Lunes a Viernes
-        if (!horarioSeleccionado) {
-            mostrarError('Por favor, selecciona un horario');
-            return false;
-        }
-
-        const [horaInicio] = horarioSeleccionado.split(' - ');
-        const [hora, minutos] = horaInicio.split(':').map(Number);
-        const tiempoEnMinutos = hora * 60 + minutos;
-
-        const apertura = 8 * 60 + 30; // 8:30
-        const cierre = 17 * 60;  // 17:00
-        const almuerzoInicio = 13 * 60; // 13:00
-        const almuerzoFin = 14 * 60; // 14:00
-
-        console.log('DEBUG - validarHorario - Hora inicio:', horaInicio);
-        console.log('DEBUG - validarHorario - Tiempo en minutos:', tiempoEnMinutos);
-        console.log('DEBUG - validarHorario - Apertura:', apertura);
-        console.log('DEBUG - validarHorario - Cierre:', cierre);
-
-        if (tiempoEnMinutos < apertura || tiempoEnMinutos > cierre) {
-            mostrarError('De lunes a viernes atendemos de 8:30 a 17:00');
-            return false;
-        }
-
-        if (tiempoEnMinutos >= almuerzoInicio && tiempoEnMinutos < almuerzoFin) {
-            mostrarError('Horario de almuerzo: 13:00 a 14:00');
-            return false;
-        }
-
-        return true;
-    }
-
-    // Sábados
-    if (dia === 6) {
-        if (!horarioSeleccionado) {
-            mostrarError('Por favor, selecciona un horario');
-            return false;
-        }
-
-        const [horaInicio] = horarioSeleccionado.split(' - ');
-        const [hora, minutos] = horaInicio.split(':').map(Number);
-        const tiempoEnMinutos = hora * 60 + minutos;
-
-        const apertura = 8 * 60 + 30; // 8:30
-        const cierre = 12 * 60 + 30;  // 12:30
-
-        if (tiempoEnMinutos < apertura || tiempoEnMinutos > cierre) {
-            mostrarError('Los sábados atendemos de 8:30 a 12:30');
-            return false;
-        }
-
-        return true;
-    }
-
-    return true;
-}
-
-async function cancelarReserva(button) {
-    try {
-        const bookingId = button.getAttribute('data-booking-id');
-
-        if (!bookingId) {
-            mostrarError('No se pudo obtener el ID de la reserva.');
-            return;
-        }
-
-        const response = await fetch(`${API_URL}/bookings`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                bookingId: bookingId
-            })
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.message || 'Error al cancelar la reserva');
-        }
-
-        mostrarExito(data.message);
-    } catch (error) {
-        console.error('Error al cancelar la reserva:', error);
-        mostrarError(error.message);
-    }
-}
-
-// Agregar estilos para los horarios
-const styles = document.createElement('style');
-styles.textContent = `
-    .horarios-container {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-top: 20px;
-    }
-    .horarios-header {
-        text-align: center;
-        margin-bottom: 25px;
-        padding-bottom: 15px;
-    }
-`;
-document.head.appendChild(styles);
-
-/* ----------------- NUEVO CÓDIGO ----------------- */
 
 // Mostrar el selector de horario solo si hay una fecha seleccionada
-document.getElementById('fecha').addEventListener('change', function() {
-    const horarioContainer = document.getElementById('horario-container');
-    if (this.value) {
+document.getElementById('fecha') && document.getElementById('fecha').addEventListener('change', function() {
+    const horarioContainer = document.getElementById('horariosContainer'); // Cambio: 'horario-container' -> 'horariosContainer'
+    if (horarioContainer && this.value) {
         horarioContainer.style.display = 'block';
-    } else {
+    } else if (horarioContainer) {
         horarioContainer.style.display = 'none';
     }
 });
