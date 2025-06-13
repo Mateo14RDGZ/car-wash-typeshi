@@ -7,19 +7,29 @@ const precios = {
     detailing: 3850
 };
 
-// Configuración de la API
-// Intentar usar IP local en lugar de localhost para evitar algunos bloqueos
-const API_HOST = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
-const API_PORT = '3003';
-const API_URL = `http://${API_HOST}:${API_PORT}/api`; // URL local
+// Configuración de la API basada en el entorno
+const isProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+const isSecureContext = window.location.protocol === 'https:';
 
-// URLs alternativas que se pueden usar en caso de bloqueo
-const API_URLS_FALLBACK = [
-    `http://localhost:3003/api`,
-    `http://127.0.0.1:3003/api`,
-    `/api` // URL relativa, puede funcionar si se sirve desde el mismo origen
-];
-// const API_URL = 'https://car-wash-typeshi.vercel.app/api'; // URL de producción
+// Configuración inteligente basada en el entorno
+window.API_URL = isProduction 
+    ? '/api'  // En producción, usar ruta relativa
+    : 'http://localhost:3003/api'; // En desarrollo local
+
+// URLs alternativas en caso de bloqueo
+window.API_URLS_FALLBACK = isProduction 
+    ? [
+        'https://car-wash-typeshi.vercel.app/api', // URL completa segura
+        '/api' // URL relativa como alternativa
+      ]
+    : [
+        'http://127.0.0.1:3003/api',
+        '/api'
+      ];
+
+console.log('DEBUG - Entorno:', isProduction ? 'Producción' : 'Desarrollo', 
+           '| Protocolo:', isSecureContext ? 'HTTPS' : 'HTTP',
+           '| API principal:', window.API_URL);
 
 // Animación de entrada para elementos
 document.addEventListener('DOMContentLoaded', () => {

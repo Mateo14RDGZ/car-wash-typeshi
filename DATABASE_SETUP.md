@@ -1,5 +1,14 @@
 # 🗄️ Configuración de Base de Datos - Extreme Wash
 
+Este documento proporciona instrucciones detalladas para configurar la base de datos MySQL necesaria para el sistema de reservas de Extreme Wash.
+
+## 🌐 Entornos Soportados
+
+El sistema de reservas puede funcionar en dos entornos:
+
+1. **Entorno Local de Desarrollo**: Usando MySQL instalado en tu máquina
+2. **Entorno de Producción**: Usando un servicio MySQL remoto (como db4free.net para la versión de Vercel)
+
 ## Requisitos Previos
 
 1. **MySQL** instalado (versión 5.7 o superior)
@@ -7,7 +16,7 @@
    - Mac: `brew install mysql`
    - Linux: `sudo apt-get install mysql-server`
 
-2. **Node.js** (ya lo tienes)
+2. **Node.js** (versión 14 o superior)
 
 ## Pasos de Configuración
 

@@ -2,22 +2,37 @@
     "version": 2,
     "builds": [
         {
-            "src": "src/backend/server.js",
+            "src": "src/backend/serverDB.js",
             "use": "@vercel/node"
         },
         {
             "src": "src/frontend/*",
             "use": "@vercel/static"
+        },
+        {
+            "src": "src/frontend/api-proxy.php",
+            "use": "@vercel/php"
         }
     ],
     "routes": [
         {
             "src": "/api/(.*)",
-            "dest": "src/backend/server.js"
+            "dest": "src/backend/serverDB.js"
+        },
+        {
+            "src": "/api-proxy.php",
+            "dest": "src/frontend/api-proxy.php"
         },
         {
             "src": "/(.*)",
             "dest": "src/frontend/$1"
         }
-    ]
+    ],
+    "env": {
+        "DB_HOST": "db4free.net",
+        "DB_USER": "car_wash_db_user",
+        "DB_PASS": "db4free_password",
+        "DB_NAME": "car_wash_db",
+        "PORT": "3000"
+    }
 }

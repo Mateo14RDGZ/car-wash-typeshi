@@ -6,18 +6,31 @@
  * @returns {Promise<any>} - Respuesta de la API
  */
 async function apiRequest(endpoint, options = {}) {
-    // Obtener URLS del script principal o definirlos aquí si no están disponibles
-    const API_URL = window.API_URL || 'http://localhost:3003/api';
-    const API_URLS_FALLBACK = window.API_URLS_FALLBACK || [
-        'http://127.0.0.1:3003/api',
-        '/api'
-    ];
+    // Detectar si estamos en entorno de producción (Vercel) o desarrollo
+    const isProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+    const isSecureContext = window.location.protocol === 'https:';
     
-    // Lista de URLs para intentar, en orden de preferencia
+    let apiBaseUrls = [];
+    
+    if (isProduction) {
+        // En producción (Vercel), usar la API URL relativa y la URL de Vercel
+        apiBaseUrls = [
+            '/api', // API relativa en el mismo servidor
+            'https://car-wash-typeshi.vercel.app/api' // URL segura y completa
+        ];
+    } else {
+        // En desarrollo local
+        apiBaseUrls = [
+            'http://localhost:3003/api',
+            'http://127.0.0.1:3003/api',
+            '/api' // También intentar la ruta relativa
+        ];
+    }
+    
+    // Lista de URLs para intentar, en orden de preferencia (asegurando que las HTTPS vayan primero en entornos seguros)
     const urlsToTry = [
-        `${API_URL}${endpoint}`,
-        ...API_URLS_FALLBACK.map(url => `${url}${endpoint}`),
-        `proxy.php?endpoint=${encodeURIComponent(endpoint)}` // Proxy PHP como último recurso
+        ...apiBaseUrls.map(url => `${url}${endpoint}`),
+        `api-proxy.php?endpoint=${encodeURIComponent(endpoint)}` // Nuevo nombre para el proxy PHP
     ];
     
     console.log(`DEBUG - Realizando petición a endpoint: ${endpoint}`, options);

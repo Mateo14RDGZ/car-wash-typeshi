@@ -1,15 +1,24 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
+/**
+ * Script mejorado para configurar la base de datos
+ * Compatible con entornos locales y remotos (db4free.net para Vercel)
+ */
 async function setupDatabase() {
     console.log('🔧 Configurando base de datos...\n');
+    
+    // Detectar entorno
+    const isProduction = process.env.NODE_ENV === 'production';
+    console.log(`🌐 Entorno detectado: ${isProduction ? 'Producción' : 'Desarrollo'}`);
 
     try {
         // Conectar a MySQL sin especificar base de datos
         const connection = await mysql.createConnection({
-            host: process.env.DB_HOST || 'localhost',
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASS || ''
+            host: process.env.DB_HOST || (isProduction ? 'db4free.net' : 'localhost'),
+            user: process.env.DB_USER || (isProduction ? 'car_wash_db_user' : 'root'),
+            password: process.env.DB_PASS || (isProduction ? 'db4free_password' : ''),
+            connectTimeout: 60000 // Tiempo de espera más largo para conexiones remotas
         });
 
         const dbName = process.env.DB_NAME || 'car_wash_db';
