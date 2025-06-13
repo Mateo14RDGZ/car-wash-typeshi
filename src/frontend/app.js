@@ -8,7 +8,9 @@ const precios = {
 };
 
 // Configuración de la API
-const API_URL = 'http://localhost:3003/api'; // URL local
+const API_HOST = 'localhost';
+const API_PORT = '3003';
+const API_URL = `http://${API_HOST}:${API_PORT}/api`; // URL local
 // const API_URL = 'https://car-wash-typeshi.vercel.app/api'; // URL de producción
 
 // Animación de entrada para elementos
@@ -173,14 +175,63 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
 
         // Formatear la fecha para la API
         const fechaFormateada = fecha.toISOString().split('T')[0];
-        console.log('DEBUG - Fecha formateada para API:', fechaFormateada);
-
-        // Realizar la petición al backend
-        const url = `${API_URL}/bookings/available-slots?date=${fechaFormateada}`;
+        console.log('DEBUG - Fecha formateada para API:', fechaFormateada);        // Realizar la petición al backend
+        const endpoint = `/bookings/available-slots?date=${fechaFormateada}`;
+        const url = `${API_URL}${endpoint}`;
         console.log('DEBUG - Intentando obtener horarios de:', url);
 
         try {
-            const response = await fetch(url);
+            // Configuración especial para evitar bloqueos
+            const fetchOptions = {
+                method: 'GET',
+                mode: 'cors',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                }
+            };
+            
+            // Intento con la URL completa
+            let response;
+            try {
+                response = await fetch(url, fetchOptions);
+            } catch (fetchError) {
+                console.log('DEBUG - Primer intento fallido, probando alternativa:', fetchError);
+                
+                // Intento alternativo con una URL relativa
+                try {
+                    response = await fetch(endpoint, fetchOptions);
+                } catch (relativeError) {
+                    console.log('DEBUG - Intento relativo fallido, probando directamente el host:', relativeError);
+                    
+                    // Tercer intento con XMLHttpRequest
+                    const data = await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', url);
+                        xhr.setRequestHeader('Accept', 'application/json');
+                        xhr.responseType = 'json';
+                        
+                        xhr.onload = function() {
+                            if (this.status >= 200 && this.status < 300) {
+                                resolve(xhr.response);
+                            } else {
+                                reject(new Error(`Error del servidor: ${this.status}`));
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            reject(new Error('Error de red o bloqueo de la solicitud'));
+                        };
+                        
+                        xhr.send();
+                    });
+                    
+                    console.log('DEBUG - Datos recibidos mediante XMLHttpRequest:', data);
+                    return data;
+                }
+            }
+            
             console.log('DEBUG - Status de la respuesta:', response.status);
 
             if (!response.ok) {
@@ -252,16 +303,80 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
 
             // Limpiar y actualizar contenedor
             horariosContainer.innerHTML = '';
-            horariosContainer.appendChild(horariosGrid);
-
-        } catch (error) {
+            horariosContainer.appendChild(horariosGrid);        } catch (error) {
             console.error('DEBUG - Error al cargar horarios:', error);
-            horariosContainer.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle"></i>
-                    Error al cargar los horarios: ${error.message}
-                </div>
-            `;
+            
+            // Intentar obtener horarios predefinidos como respaldo
+            try {
+                // Horarios predefinidos como fallback
+                const fallbackHorarios = {
+                    data: [
+                        { time: '08:30 - 10:00', start: '08:30', end: '10:00', isBooked: false, duration: 90 },
+                        { time: '10:00 - 11:30', start: '10:00', end: '11:30', isBooked: false, duration: 90 },
+                        { time: '11:30 - 13:00', start: '11:30', end: '13:00', isBooked: false, duration: 90 },
+                        { time: '14:00 - 15:30', start: '14:00', end: '15:30', isBooked: false, duration: 90 },
+                        { time: '15:30 - 17:00', start: '15:30', end: '17:00', isBooked: false, duration: 90 }
+                    ]
+                };
+                
+                if (dia === 6) { // Si es sábado, mostrar horarios de sábado
+                    fallbackHorarios.data = fallbackHorarios.data.slice(0, 3); // Solo los 3 primeros horarios
+                }
+                
+                console.log('DEBUG - Usando horarios predefinidos como fallback');
+                
+                // Crear contenedor de horarios con datos fallback
+                const horariosGrid = document.createElement('div');
+                horariosGrid.className = 'horarios-container';
+                
+                // Obtener el horario del día
+                const horarioDia = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
+
+                horariosGrid.innerHTML = `
+                    <div class="horarios-header">
+                        <h4><i class="fas fa-clock"></i> Horarios Disponibles (Modo Sin Conexión)</h4>
+                        <p class="text-muted">No pudimos conectar con el servidor. Selecciona un horario tentativo:</p>
+                    </div>
+                    <div class="horarios-info">
+                        <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
+                        <div class="alert alert-warning">
+                            <small>Nota: Estos horarios son orientativos. Por favor, confirma tu reserva por teléfono.</small>
+                        </div>
+                    </div>
+                    <div class="horarios-grid">
+                        ${fallbackHorarios.data.map(slot => {
+                            return `
+                                <div class="horario-slot" onclick="seleccionarHorario('${slot.time}', this)">
+                                    <div class="horario-tiempo">
+                                        <span class="tiempo-inicio">${slot.start}</span>
+                                        <span class="tiempo-separador"> - </span>
+                                        <span class="tiempo-fin">${slot.end}</span>
+                                    </div>
+                                    <div class="horario-duracion">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                
+                // Limpiar y actualizar contenedor
+                horariosContainer.innerHTML = '';
+                horariosContainer.appendChild(horariosGrid);
+                
+            } catch (fallbackError) {
+                // Si todo falla, mostrar mensaje de error
+                console.error('DEBUG - Error al usar horarios fallback:', fallbackError);
+                horariosContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error al cargar los horarios: ${error.message}
+                        <hr>
+                        <p class="mb-0">Sugerencia: Si estás usando un bloqueador de anuncios, desactívalo para este sitio o llama al 098 385 709 para reservar por teléfono.</p>
+                    </div>
+                `;
+            }
         }
     } catch (error) {
         console.error('DEBUG - Error general al procesar la fecha:', error);

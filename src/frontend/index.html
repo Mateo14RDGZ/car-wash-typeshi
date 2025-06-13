@@ -490,7 +490,8 @@
         }
 
         const fechaSeleccionada = this.value;
-        const url = `http://localhost:3003/api/bookings/available-slots?date=${fechaSeleccionada}`;
+        const endpoint = `/bookings/available-slots?date=${fechaSeleccionada}`;
+        const url = `http://localhost:3003/api${endpoint}`;
 
         // Mostrar indicador de carga
         horariosContainer.style.display = "block";
@@ -501,8 +502,22 @@
             </div>
             <p class="mt-2">Buscando horarios disponibles...</p>
           </div>
-        `; // Consultar directamente al backend para obtener los horarios
-        fetch(url)
+        `; 
+        
+        // Consultar directamente al backend para obtener los horarios
+        // Configuración para evitar bloqueos
+        const fetchOptions = {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'same-origin',
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        };
+        
+        // Intentar hacer la solicitud con diferentes métodos
+        fetch(url, fetchOptions)
           .then(async (response) => {
             if (!response.ok) {
               const errorText = await response.text();
@@ -531,19 +546,46 @@
               console.error("Formato de datos inválido:", data);
               throw new Error("No hay horarios disponibles o formato inválido");
             }
-          })
-          .catch((error) => {
+          })          .catch((error) => {
             console.error("Error al cargar horarios:", error);
-
-            // Mostrar mensaje de error
+            
+            // Usar horarios predefinidos como fallback
+            const dia = new Date(fechaSeleccionada).getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+            
+            // Horarios predefinidos como fallback
+            const fallbackHorarios = [
+                { time: '08:30 - 10:00', start: '08:30', end: '10:00' },
+                { time: '10:00 - 11:30', start: '10:00', end: '11:30' },
+                { time: '11:30 - 13:00', start: '11:30', end: '13:00' },
+                { time: '14:00 - 15:30', start: '14:00', end: '15:30' },
+                { time: '15:30 - 17:00', start: '15:30', end: '17:00' }
+            ];
+            
+            // Si es sábado, mostrar solo primeros 3 horarios
+            const horariosDelDia = dia === 6 ? fallbackHorarios.slice(0, 3) : fallbackHorarios;
+            
+            // Mostrar horarios offline
             horariosContainer.innerHTML = `
-              <div class="alert alert-danger">
+              <div class="alert alert-warning mb-3">
                 <i class="fas fa-exclamation-triangle"></i>
-                Error: No se pudieron cargar los horarios disponibles.
+                Error de conexión: ${error.message}
                 <br>
-                <small>${error.message}</small>
-                <br>
-                <small>Asegúrate de que el servidor backend esté corriendo en puerto 3003.</small>
+                <small>Mostrando horarios de ejemplo. Por favor, confirma tu reserva por teléfono al 098 385 709.</small>
+              </div>
+              <div class="horarios-grid">
+                ${horariosDelDia.map(slot => `
+                  <button type="button" class="btn btn-outline-primary m-1" 
+                    onclick="this.classList.add('btn-primary'); 
+                             this.classList.remove('btn-outline-primary');
+                             document.querySelectorAll('.horarios-grid button').forEach(b => {
+                               if(b !== this) { 
+                                 b.classList.remove('btn-primary');
+                                 b.classList.add('btn-outline-primary');
+                               }
+                             });">
+                    ${slot.time}
+                  </button>
+                `).join('')}
               </div>
             `;
           });
