@@ -25,12 +25,10 @@ async function apiRequest(endpoint, options = {}) {
             'http://127.0.0.1:3003/api',
             '/api' // También intentar la ruta relativa
         ];
-    }
-    
-    // Lista de URLs para intentar, en orden de preferencia (asegurando que las HTTPS vayan primero en entornos seguros)
+    }    // Lista de URLs para intentar, en orden de preferencia (asegurando que las HTTPS vayan primero en entornos seguros)
     const urlsToTry = [
         ...apiBaseUrls.map(url => `${url}${endpoint}`),
-        `api-proxy.php?endpoint=${encodeURIComponent(endpoint)}` // Nuevo nombre para el proxy PHP
+        `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&method=${options.method || 'GET'}` // Usar el nuevo api-bridge en Node.js
     ];
     
     console.log(`DEBUG - Realizando petición a endpoint: ${endpoint}`, options);
