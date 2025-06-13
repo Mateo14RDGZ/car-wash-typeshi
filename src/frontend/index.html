@@ -490,7 +490,7 @@
         }
 
         const fechaSeleccionada = this.value;
-        const url = `/api/bookings/available-slots?date=${fechaSeleccionada}`;
+        const url = `http://localhost:3003/api/bookings/available-slots?date=${fechaSeleccionada}`;
 
         // Mostrar indicador de carga
         horariosContainer.style.display = "block";
@@ -501,32 +501,45 @@
             </div>
             <p class="mt-2">Buscando horarios disponibles...</p>
           </div>
-        `;
-
-        // Consultar directamente al backend para obtener los horarios
+        `;        // Consultar directamente al backend para obtener los horarios
         fetch(url)
-          .then((response) => {
-            if (!response.ok)
-              throw new Error("No se pudo obtener los horarios");
-            return response.json();
+          .then(async (response) => {
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('Error response from server:', errorText);
+              throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            }
+            
+            // Intentar parsear como JSON
+            try {
+              return response.json();
+            } catch (jsonError) {
+              console.error('Error parsing JSON:', jsonError);
+              // Si la respuesta no es JSON, mostrar el texto de la respuesta
+              const errorText = await response.text();
+              throw new Error(`Respuesta no válida: ${errorText.substring(0, 50)}...`);
+            }
           })
           .then((data) => {
             if (data && data.data) {
               mostrarHorarios(data.data);
             } else {
-              throw new Error("No hay horarios disponibles");
+              console.error('Formato de datos inválido:', data);
+              throw new Error("No hay horarios disponibles o formato inválido");
             }
           })
           .catch((error) => {
             console.error("Error al cargar horarios:", error);
-
+            
             // Mostrar mensaje de error
             horariosContainer.innerHTML = `
               <div class="alert alert-danger">
                 <i class="fas fa-exclamation-triangle"></i>
                 Error: No se pudieron cargar los horarios disponibles.
                 <br>
-                <small>Por favor intenta de nuevo más tarde o comunícate con nosotros directamente.</small>
+                <small>${error.message}</small>
+                <br>
+                <small>Asegúrate de que el servidor backend esté corriendo en puerto 3003.</small>
               </div>
             `;
           });
