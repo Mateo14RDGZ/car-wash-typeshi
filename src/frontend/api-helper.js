@@ -6,6 +6,13 @@
  * @returns {Promise<any>} - Respuesta de la API
  */
 async function apiRequest(endpoint, options = {}) {
+    // Obtener URLS del script principal o definirlos aquí si no están disponibles
+    const API_URL = window.API_URL || 'http://localhost:3003/api';
+    const API_URLS_FALLBACK = window.API_URLS_FALLBACK || [
+        'http://127.0.0.1:3003/api',
+        '/api'
+    ];
+    
     // Lista de URLs para intentar, en orden de preferencia
     const urlsToTry = [
         `${API_URL}${endpoint}`,

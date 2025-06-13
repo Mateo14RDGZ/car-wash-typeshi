@@ -1,7 +1,9 @@
 const { Sequelize } = require('sequelize');
 const dotenv = require('dotenv');
+const path = require('path');
 
-dotenv.config();
+// Indicar la ruta absoluta al archivo .env
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const sequelize = new Sequelize(
     process.env.DB_NAME || 'car_wash_db',
