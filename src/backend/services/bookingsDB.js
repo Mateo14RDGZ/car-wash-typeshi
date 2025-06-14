@@ -7,32 +7,62 @@ const { Op } = require('sequelize');
 async function getAvailableTimeSlots(date) {
     console.log('DEBUG - getAvailableTimeSlots - Fecha recibida:', date);
 
-    const requestedDate = new Date(date + 'T00:00:00');
-    const startOfDay = new Date(requestedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(requestedDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    console.log('DEBUG - getAvailableTimeSlots - Buscando reservas entre:', startOfDay, 'y', endOfDay);
-
     try {
-        // Obtener todas las reservas del día desde la base de datos
-        const bookings = await Booking.findAll({
-            where: {
-                date: {
-                    [Op.between]: [startOfDay, endOfDay]
-                },
-                status: {
-                    [Op.ne]: 'cancelled' // No incluir reservas canceladas
-                }
-            }
-        });
+        // Validar formato de fecha
+        if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            console.error('DEBUG - Formato de fecha inválido:', date);
+            throw new Error('Formato de fecha inválido. Debe ser YYYY-MM-DD');
+        }
 
-        console.log('DEBUG - getAvailableTimeSlots - Reservas encontradas:', bookings.length);
+        const requestedDate = new Date(date + 'T00:00:00');
+        
+        // Verificar que la fecha sea válida
+        if (isNaN(requestedDate.getTime())) {
+            console.error('DEBUG - Fecha inválida:', date);
+            throw new Error('La fecha proporcionada no es válida');
+        }
+        
+        const startOfDay = new Date(requestedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(requestedDate);
+        endOfDay.setHours(23, 59, 59, 999);
 
-        // Generar todos los slots posibles
+        console.log('DEBUG - getAvailableTimeSlots - Buscando reservas entre:', startOfDay, 'y', endOfDay);
+
+        // Verificar que exista el modelo Booking
+        if (!Booking) {
+            console.error('DEBUG - El modelo Booking no está definido');
+            throw new Error('Error interno: Modelo no disponible');
+        }
+        
+        // Generar todos los slots posibles primero
         const allSlots = generateTimeSlots(date);
         console.log('DEBUG - getAvailableTimeSlots - Total de slots generados:', allSlots.length);
+        
+        if (!allSlots || allSlots.length === 0) {
+            return [];
+        }
+        
+        let bookings = [];
+        
+        // Obtener todas las reservas del día desde la base de datos
+        try {
+            bookings = await Booking.findAll({
+                where: {
+                    date: {
+                        [Op.between]: [startOfDay, endOfDay]
+                    },
+                    status: {
+                        [Op.ne]: 'cancelled' // No incluir reservas canceladas
+                    }
+                }
+            });
+
+            console.log('DEBUG - getAvailableTimeSlots - Reservas encontradas:', bookings.length);
+        } catch (dbQueryError) {
+            console.error('DEBUG - Error al consultar reservas en la base de datos:', dbQueryError);
+            throw new Error(`Error de base de datos: ${dbQueryError.message}`);
+        }
 
         // Crear un mapa de horarios ocupados
         const bookedTimes = bookings.map(booking => {

@@ -11,21 +11,41 @@ router.get('/available-slots', async (req, res) => {
         if (!date) {
             return res.status(400).json({
                 status: 'ERROR',
-                message: 'Se requiere una fecha'
+                message: 'Se requiere una fecha',
+                error: {
+                    code: '400',
+                    message: 'Se requiere una fecha para obtener los horarios disponibles'
+                }
             });
         }
 
-        const availableSlots = await bookingService.getAvailableTimeSlots(date);
-        
-        res.json({
-            status: 'SUCCESS',
-            data: availableSlots
-        });
+        try {
+            const availableSlots = await bookingService.getAvailableTimeSlots(date);
+            
+            res.json({
+                status: 'SUCCESS',
+                data: availableSlots || []
+            });
+        } catch (serviceError) {
+            console.error('Error en el servicio de horarios:', serviceError);
+            res.status(500).json({
+                status: 'ERROR',
+                message: 'Error al procesar los horarios disponibles',
+                error: {
+                    code: '500',
+                    message: serviceError.message || 'Error interno del servidor'
+                }
+            });
+        }
     } catch (error) {
-        console.error('Error al obtener horarios disponibles:', error);
+        console.error('Error general al obtener horarios disponibles:', error);
         res.status(500).json({
             status: 'ERROR',
-            message: 'Error al obtener horarios disponibles: ' + error.message
+            message: 'Error al obtener horarios disponibles',
+            error: {
+                code: '500',
+                message: 'A server error has occurred'
+            }
         });
     }
 });

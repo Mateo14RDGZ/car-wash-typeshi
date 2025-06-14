@@ -12,6 +12,7 @@ El sistema de reservas puede funcionar en dos entornos:
 ## Requisitos Previos
 
 1. **MySQL** instalado (versión 5.7 o superior)
+
    - Windows: Descargar desde [MySQL Official](https://dev.mysql.com/downloads/installer/)
    - Mac: `brew install mysql`
    - Linux: `sudo apt-get install mysql-server`
@@ -48,6 +49,7 @@ npm run setup:db
 ```
 
 Este comando:
+
 - Creará la base de datos `car_wash_db` si no existe
 - Creará todas las tablas necesarias
 - Configurará las relaciones entre tablas
@@ -79,6 +81,7 @@ npm run db:reset
 Visita: `http://localhost:3001/api/health`
 
 Deberías ver:
+
 ```json
 {
   "status": "OK",
@@ -91,32 +94,35 @@ Deberías ver:
 
 ### Tabla: `bookings`
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | INT | ID único (auto-incremental) |
-| clientName | VARCHAR(255) | Nombre del cliente |
-| clientPhone | VARCHAR(255) | Teléfono (opcional) |
-| date | DATETIME | Fecha y hora de la reserva |
-| vehicleType | ENUM | Tipo de vehículo |
-| vehiclePlate | VARCHAR(255) | Patente del vehículo |
-| serviceType | ENUM | Tipo de servicio |
-| extras | JSON | Extras seleccionados |
-| price | DECIMAL(10,2) | Precio total |
-| status | ENUM | Estado de la reserva |
-| notes | TEXT | Notas adicionales |
-| createdAt | DATETIME | Fecha de creación |
-| updatedAt | DATETIME | Última actualización |
+| Campo        | Tipo          | Descripción                 |
+| ------------ | ------------- | --------------------------- |
+| id           | INT           | ID único (auto-incremental) |
+| clientName   | VARCHAR(255)  | Nombre del cliente          |
+| clientPhone  | VARCHAR(255)  | Teléfono (opcional)         |
+| date         | DATETIME      | Fecha y hora de la reserva  |
+| vehicleType  | ENUM          | Tipo de vehículo            |
+| vehiclePlate | VARCHAR(255)  | Patente del vehículo        |
+| serviceType  | ENUM          | Tipo de servicio            |
+| extras       | JSON          | Extras seleccionados        |
+| price        | DECIMAL(10,2) | Precio total                |
+| status       | ENUM          | Estado de la reserva        |
+| notes        | TEXT          | Notas adicionales           |
+| createdAt    | DATETIME      | Fecha de creación           |
+| updatedAt    | DATETIME      | Última actualización        |
 
 ## Solución de Problemas
 
 ### Error: "Access denied for user 'root'@'localhost'"
+
 - Verifica que la contraseña en `.env` sea correcta
 - Asegúrate de que MySQL esté ejecutándose
 
 ### Error: "Unknown database 'car_wash_db'"
+
 - Ejecuta `npm run setup:db` para crear la base de datos
 
 ### Error: "Cannot connect to MySQL"
+
 - Verifica que MySQL esté instalado y ejecutándose
 - Windows: Busca "MySQL" en servicios
 - Mac/Linux: `sudo service mysql status`
