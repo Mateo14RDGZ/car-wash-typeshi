@@ -230,54 +230,69 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             // Crear contenedor de horarios
             const horariosGrid = document.createElement('div');
             horariosGrid.className = 'horarios-container';
-            
-            // Verificar que los datos tengan el formato esperado
-            if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+              // Verificar que los datos tengan el formato esperado
+            if (data && data.data && Array.isArray(data.data)) {
                 debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
 
                 // Obtener el horario del día
-                const horarioDia = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
+                const horarioDia = dia === 6 ? '8:30 a 13:00' : '8:30 a 17:00';
+
+                if (data.data.length > 0) {
+                    horariosGrid.innerHTML = `
+                        <div class="horarios-header">
+                            <h4><i class="fas fa-clock"></i> Horarios Disponibles</h4>
+                            <p class="text-muted">Selecciona el horario que prefieras</p>
+                        </div>
+                        <div class="horarios-info">
+                            <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
+                        </div>
+                        <div class="horarios-grid">
+                            ${data.data.map(slot => {
+                                // Validar el formato de cada slot
+                                if (!slot || !slot.start || !slot.end) {
+                                    debugError('DEBUG - Slot inválido:', slot);
+                                    return '';
+                                }
+                                
+                                // Si el slot no tiene la propiedad time, construirla
+                                const slotTime = slot.time || `${slot.start} - ${slot.end}`;
+                                
+                                return `
+                                    <div class="horario-slot" onclick="seleccionarHorario('${slotTime}', this)">
+                                        <div class="horario-tiempo">
+                                            <span class="tiempo-inicio">${slot.start}</span>
+                                            <span class="tiempo-separador"> - </span>
+                                            <span class="tiempo-fin">${slot.end}</span>
+                                        </div>
+                                        <div class="horario-duracion">
+                                            <i class="fas fa-clock"></i>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                } else {
+                    debugLog('DEBUG - No hay slots disponibles para esta fecha');
+                    horariosGrid.innerHTML = `
+                        <div class="alert alert-info text-center p-4">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <h5>No hay horarios disponibles</h5>
+                            <p class="mb-2">Lo sentimos, no hay horarios disponibles para esta fecha.</p>
+                            <p class="mb-0">Recuerda que nuestro horario de atención este día es de ${horarioDia}.</p>
+                        </div>
+                    `;
+                }            } else {
+                // Este caso se maneja dentro del bloque if(data && data.data && Array.isArray(data.data))
+                debugLog('DEBUG - Respuesta no contiene datos en formato esperado');
+                const horario = dia === 6 ? '8:30 a 13:00' : '8:30 a 17:00';
 
                 horariosGrid.innerHTML = `
-                    <div class="horarios-header">
-                        <h4><i class="fas fa-clock"></i> Horarios Disponibles</h4>
-                        <p class="text-muted">Selecciona el horario que prefieras</p>
-                    </div>
-                    <div class="horarios-info">
-                        <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
-                    </div>
-                    <div class="horarios-grid">
-                        ${data.data.map(slot => {
-                            // Validar el formato de cada slot
-                            if (!slot || !slot.start || !slot.end || !slot.time) {
-                                debugError('DEBUG - Slot inválido:', slot);
-                                return '';
-                            }
-                            return `
-                                <div class="horario-slot" onclick="seleccionarHorario('${slot.time}', this)">
-                                    <div class="horario-tiempo">
-                                        <span class="tiempo-inicio">${slot.start}</span>
-                                        <span class="tiempo-separador"> - </span>
-                                        <span class="tiempo-fin">${slot.end}</span>
-                                    </div>
-                                    <div class="horario-duracion">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `;
-            } else {
-                debugLog('DEBUG - No hay slots disponibles para esta fecha');
-                const horario = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
-
-                horariosGrid.innerHTML = `
-                    <div class="alert alert-info text-center p-4">
-                        <i class="fas fa-info-circle fa-2x mb-3"></i>
-                        <h5>No hay horarios disponibles</h5>
-                        <p class="mb-2">Lo sentimos, no hay horarios disponibles para esta fecha.</p>
-                        <p class="mb-0">Recuerda que nuestro horario de atención este día es de ${horario}.</p>
+                    <div class="alert alert-warning text-center p-4">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                        <h5>Error en formato de datos</h5>
+                        <p class="mb-2">No se pudieron procesar los horarios disponibles.</p>
+                        <p class="mb-0">Por favor, inténtalo nuevamente.</p>
                     </div>
                 `;
             }

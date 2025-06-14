@@ -28,7 +28,7 @@ const WEEKDAY_SLOTS = [
 const SATURDAY_SLOTS = [
     { start: '08:30', end: '10:00' },
     { start: '10:00', end: '11:30' },
-    { start: '11:30', end: '12:30' }
+    { start: '11:30', end: '13:00' }
 ];
 
 function generateTimeSlots(date) {
@@ -55,10 +55,11 @@ function generateTimeSlots(date) {
         return [];
     }
 
+    let slots = [];
+
     // Si es día de semana (Lunes a Viernes)
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
         console.log('DEBUG - Generando slots para día entre semana (Lunes a Viernes)');
-        const slots = [];
 
         // Usar los slots predefinidos para días de semana
         for (const slot of WEEKDAY_SLOTS) {
@@ -72,15 +73,10 @@ function generateTimeSlots(date) {
 
             console.log('DEBUG - Slot generado:', slot.start, '-', slot.end);
         }
-
-        console.log('DEBUG - Total de slots generados:', slots.length);
-        return slots;
     }
-
     // Para sábados
-    if (dayOfWeek === 6) {
+    else if (dayOfWeek === 6) {
         console.log('DEBUG - Generando slots para sábado');
-        const slots = [];
 
         // Usar los slots predefinidos para sábados
         for (const slot of SATURDAY_SLOTS) {
@@ -94,13 +90,14 @@ function generateTimeSlots(date) {
 
             console.log('DEBUG - Slot generado para sábado:', slot.start, '-', slot.end);
         }
-
-        console.log('DEBUG - Total de slots generados para sábado:', slots.length);
-        return slots;
+    }    // Verificar si se generaron slots
+    console.log('DEBUG - Total de slots generados:', slots.length);
+    
+    if (slots.length === 0) {
+        console.log('DEBUG - No se generaron slots para este día');
     }
-
-    console.log('DEBUG - No se generaron slots para este día');
-    return [];
+    
+    return slots;
 }
 
 // Función para formatear la hora para mostrar

@@ -37,9 +37,11 @@ async function getAvailableTimeSlots(date) {
         
         // Generar todos los slots posibles primero
         const allSlots = generateTimeSlots(date);
-        console.log('DEBUG - getAvailableTimeSlots - Total de slots generados:', allSlots.length);
+        console.log('DEBUG - getAvailableTimeSlots - Total de slots generados:', allSlots ? allSlots.length : 0);
         
         if (!allSlots || allSlots.length === 0) {
+            console.log('DEBUG - No se encontraron slots disponibles para esta fecha');
+            // Devolvemos un array vacío, no undefined
             return [];
         }
         
@@ -61,34 +63,62 @@ async function getAvailableTimeSlots(date) {
             console.log('DEBUG - getAvailableTimeSlots - Reservas encontradas:', bookings.length);
         } catch (dbQueryError) {
             console.error('DEBUG - Error al consultar reservas en la base de datos:', dbQueryError);
-            throw new Error(`Error de base de datos: ${dbQueryError.message}`);
+            // Aún si hay un error consultando reservas, podemos devolver todos los slots
+            // ya que no sabemos cuáles están reservados
+            console.log('DEBUG - Devolviendo todos los slots debido a error en BD');
+            return allSlots;
         }
 
         // Crear un mapa de horarios ocupados
         const bookedTimes = bookings.map(booking => {
-            const bookingTime = new Date(booking.date);
-            const duration = SLOT_DURATION;
-            const endTime = new Date(bookingTime.getTime() + duration * 60000);
-            return {
-                start: bookingTime.getTime(),
-                end: endTime.getTime()
-            };
-        });
+            try {
+                const bookingTime = new Date(booking.date);
+                const duration = SLOT_DURATION;
+                const endTime = new Date(bookingTime.getTime() + duration * 60000);
+                return {
+                    start: bookingTime.getTime(),
+                    end: endTime.getTime()
+                };
+            } catch (error) {
+                console.error('DEBUG - Error procesando reserva:', error, booking);
+                // Si hay un error con esta reserva, la ignoramos
+                return null;
+            }
+        }).filter(time => time !== null); // Eliminar valores null en caso de error
+
+        console.log('DEBUG - Mapa de horarios ocupados creado:', bookedTimes.length);
 
         // Filtrar slots disponibles
         const availableSlots = allSlots.filter(slot => {
-            const [startHour, startMinute] = slot.start.split(':').map(Number);
-            const slotStart = new Date(requestedDate);
-            slotStart.setHours(startHour, startMinute, 0, 0);
-            const slotEnd = new Date(slotStart.getTime() + SLOT_DURATION * 60000);
+            try {
+                // Verificar que el slot tenga los datos requeridos
+                if (!slot || !slot.start) {
+                    console.error('DEBUG - Slot inválido:', slot);
+                    return false;
+                }
 
-            // Verificar que el slot no se solapa con ninguna reserva existente
-            const isAvailable = !bookedTimes.some(bookedTime =>
-                (slotStart.getTime() >= bookedTime.start && slotStart.getTime() < bookedTime.end) ||
-                (slotEnd.getTime() > bookedTime.start && slotEnd.getTime() <= bookedTime.end)
-            );
+                const [startHour, startMinute] = slot.start.split(':').map(Number);
+                
+                if (isNaN(startHour) || isNaN(startMinute)) {
+                    console.error('DEBUG - Hora de inicio inválida:', slot.start);
+                    return false;
+                }
+                
+                const slotStart = new Date(requestedDate);
+                slotStart.setHours(startHour, startMinute, 0, 0);
+                const slotEnd = new Date(slotStart.getTime() + SLOT_DURATION * 60000);
 
-            return isAvailable;
+                // Verificar que el slot no se solapa con ninguna reserva existente
+                const isAvailable = !bookedTimes.some(bookedTime =>
+                    (slotStart.getTime() >= bookedTime.start && slotStart.getTime() < bookedTime.end) ||
+                    (slotEnd.getTime() > bookedTime.start && slotEnd.getTime() <= bookedTime.end)
+                );
+
+                return isAvailable;
+            } catch (error) {
+                console.error('DEBUG - Error procesando slot:', error, slot);
+                return false;
+            }
         });
 
         console.log('DEBUG - getAvailableTimeSlots - Slots disponibles:', availableSlots.length);
