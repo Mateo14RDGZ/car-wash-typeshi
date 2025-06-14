@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Función para seleccionar servicio con animación
-function seleccionarServicio(tipo) {
+// La declaramos como variable global para que sea accesible desde el HTML
+window.seleccionarServicio = function(tipo) {
     servicioSeleccionado = tipo;
     const botones = document.querySelectorAll('.card button');
     const cards = document.querySelectorAll('.card');
@@ -258,11 +259,10 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                         <p class="mb-0">Recuerda que nuestro horario de atención este día es de ${horario}.</p>
                     </div>
                 `;
-            }
-
-            // Limpiar y actualizar contenedor
+            }            // Limpiar y actualizar contenedor
             horariosContainer.innerHTML = '';
-            horariosContainer.appendChild(horariosGrid);        } catch (error) {
+            horariosContainer.appendChild(horariosGrid);
+        } catch (error) {
             console.error('DEBUG - Error al cargar horarios:', error);
             
             // Mostrar mensaje de error y solicitar al usuario que verifique su conexión
@@ -275,42 +275,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                     '<p class="mb-0">Por favor, verifica tu conexión e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.</p>' +
                     '<button class="btn btn-primary mt-3" onclick="window.location.reload()">Reintentar</button>' +
                     '</div>';
-            }
-                    <div class="horarios-grid">
-                        ${fallbackHorarios.data.map(slot => {
-                            return `
-                                <div class="horario-slot" onclick="seleccionarHorario('${slot.time}', this)">
-                                    <div class="horario-tiempo">
-                                        <span class="tiempo-inicio">${slot.start}</span>
-                                        <span class="tiempo-separador"> - </span>
-                                        <span class="tiempo-fin">${slot.end}</span>
-                                    </div>
-                                    <div class="horario-duracion">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `;
-                
-                // Limpiar y actualizar contenedor
-                horariosContainer.innerHTML = '';
-                horariosContainer.appendChild(horariosGrid);
-                
-            } catch (fallbackError) {
-                // Si todo falla, mostrar mensaje de error
-                console.error('DEBUG - Error al usar horarios fallback:', fallbackError);
-                horariosContainer.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Error al cargar los horarios: ${error.message}
-                        <hr>
-                        <p class="mb-0">Sugerencia: Si estás usando un bloqueador de anuncios, desactívalo para este sitio o llama al 098 385 709 para reservar por teléfono.</p>
-                    </div>
-                `;
-            }
-        }
+            }            }
     } catch (error) {
         console.error('DEBUG - Error general al procesar la fecha:', error);
         mostrarError('Ocurrió un error al procesar la fecha seleccionada');
@@ -346,7 +311,8 @@ function mostrarError(mensaje) {
 }
 
 // Función para seleccionar horario
-function seleccionarHorario(hora, elemento) {
+// La declaramos como variable global para que sea accesible desde el HTML
+window.seleccionarHorario = function(hora, elemento) {
     // Remover selección previa
     document.querySelectorAll('.horario-slot').forEach(slot => {
         slot.classList.remove('selected');
