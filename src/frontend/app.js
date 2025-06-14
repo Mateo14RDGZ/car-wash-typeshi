@@ -1,3 +1,20 @@
+// Función para manejar errores de depuración
+function debugError(...args) {
+    if (!isProduction) {
+        console.error(...args);
+    } else {
+        // En producción, registrar errores pero sin incluir detalles sensibles
+        console.error('Se ha producido un error. Consulta con el administrador si el problema persiste.');
+    }
+}
+
+// Función para manejar logs de depuración
+function debugLog(...args) {
+    if (!isProduction) {
+        console.log(...args);
+    }
+}
+
 // Variables globales
 let servicioSeleccionado = null;
 let horarioSeleccionado = null;
@@ -27,9 +44,10 @@ window.API_URLS_FALLBACK = isProduction
         '/api'
       ];
 
-console.log('DEBUG - Entorno:', isProduction ? 'Producción' : 'Desarrollo', 
-           '| Protocolo:', isSecureContext ? 'HTTPS' : 'HTTP',
-           '| API principal:', window.API_URL);
+// Solo mostrar logs de depuración en entorno de desarrollo
+debugLog('DEBUG - Entorno: Desarrollo', 
+               '| Protocolo:', isSecureContext ? 'HTTPS' : 'HTTP',
+               '| API principal:', window.API_URL);
 
 // Animación de entrada para elementos
 document.addEventListener('DOMContentLoaded', () => {
@@ -154,14 +172,14 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
     const fecha = new Date(fechaStr);
     const ahora = new Date();
 
-    console.log('DEBUG - Fecha seleccionada:', fecha.toLocaleDateString());
-    console.log('DEBUG - Valor del input:', this.value);
-    console.log('DEBUG - Día de la semana:', fecha.getDay());
-    console.log('DEBUG - Hora actual:', ahora.toLocaleTimeString());
+    debugLog('DEBUG - Fecha seleccionada:', fecha.toLocaleDateString());
+    debugLog('DEBUG - Valor del input:', this.value);
+    debugLog('DEBUG - Día de la semana:', fecha.getDay());
+    debugLog('DEBUG - Hora actual:', ahora.toLocaleTimeString());
 
     // Validar que la fecha sea futura
     if (fecha < ahora) {
-        console.log('DEBUG - Fecha rechazada: es pasada');
+        debugLog('DEBUG - Fecha rechazada: es pasada');
         mostrarError('Por favor, selecciona una fecha futura');
         this.value = '';
         return;
@@ -172,7 +190,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
 
     // Validar que no sea domingo
     if (dia === 0) {
-        console.log('DEBUG - Fecha rechazada: es domingo');
+        debugLog('DEBUG - Fecha rechazada: es domingo');
         mostrarError('Lo sentimos, no atendemos los domingos');
         this.value = '';
         return;
@@ -182,7 +200,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
         // Mostrar indicador de carga
         const horariosContainer = document.getElementById('horariosContainer');
         if (!horariosContainer) {
-            console.error('DEBUG - No se encontró el contenedor de horarios');
+            debugError('DEBUG - No se encontró el contenedor de horarios');
             return;
         }
 
@@ -194,25 +212,21 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                 <p class="mt-2">Buscando horarios disponibles...</p>
             </div>
         `;
-        horariosContainer.style.display = 'block';
-
-        // Formatear la fecha para la API
+        horariosContainer.style.display = 'block';        // Formatear la fecha para la API
         const fechaFormateada = fecha.toISOString().split('T')[0];
-        console.log('DEBUG - Fecha formateada para API:', fechaFormateada);        // Realizar la petición al backend utilizando el helper
-        const endpoint = `/bookings/available-slots?date=${fechaFormateada}`;
-        console.log('DEBUG - Intentando obtener horarios para fecha:', fechaFormateada);
+        debugLog('DEBUG - Fecha formateada para API:', fechaFormateada);        
+        // Realizar la petición al backend utilizando el helper
+        const endpoint = '/bookings/available-slots?date=' + fechaFormateada;
+        debugLog('DEBUG - Intentando obtener horarios para fecha:', fechaFormateada);
 
-        try {
-            // Usar la función helper para realizar la petición
+        try {            // Usar la función helper para realizar la petición
             const data = await apiRequest(endpoint);
-            console.log('DEBUG - Datos recibidos del servidor:', data);
+            debugLog('DEBUG - Datos recibidos del servidor:', data);
 
             // Crear contenedor de horarios
             const horariosGrid = document.createElement('div');
-            horariosGrid.className = 'horarios-container';
-
-            if (data.data && data.data.length > 0) {
-                console.log('DEBUG - Cantidad de slots disponibles:', data.data.length);
+            horariosGrid.className = 'horarios-container';            if (data.data && data.data.length > 0) {
+                debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
 
                 // Obtener el horario del día
                 const horarioDia = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
@@ -228,7 +242,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                     <div class="horarios-grid">
                         ${data.data.map(slot => {
                             if (!slot || !slot.start || !slot.end) {
-                                console.error('DEBUG - Slot inválido:', slot);
+                                debugError('DEBUG - Slot inválido:', slot);
                                 return '';
                             }
                             return `
@@ -245,9 +259,8 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                             `;
                         }).join('')}
                     </div>
-                `;
-            } else {
-                console.log('DEBUG - No hay slots disponibles para esta fecha');
+                `;            } else {
+                debugLog('DEBUG - No hay slots disponibles para esta fecha');
                 const horario = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
 
                 horariosGrid.innerHTML = `
@@ -262,7 +275,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             horariosContainer.innerHTML = '';
             horariosContainer.appendChild(horariosGrid);
         } catch (error) {
-            console.error('DEBUG - Error al cargar horarios:', error);
+            debugError('DEBUG - Error al cargar horarios:', error);
             
             // Mostrar mensaje de error y solicitar al usuario que verifique su conexión
             const horariosContainer = document.getElementById('horariosContainer');
@@ -276,7 +289,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                     '</div>';
             }            }
     } catch (error) {
-        console.error('DEBUG - Error general al procesar la fecha:', error);
+        debugError('DEBUG - Error general al procesar la fecha:', error);
         mostrarError('Ocurrió un error al procesar la fecha seleccionada');
     }
 });
@@ -361,14 +374,13 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         return;
     }
 
-    const fecha = document.getElementById('fecha').value;
-    console.log('DEBUG - Submit - Fecha seleccionada:', fecha);
-    console.log('DEBUG - Submit - Horario seleccionado:', horarioSeleccionado);    // Crear objeto Date para validación
-    const [horaInicio] = horarioSeleccionado.split(' - ');
-    const fechaHora = new Date(fecha + 'T' + horaInicio);
-    console.log('DEBUG - Submit - Fecha y hora combinadas:', fechaHora.toISOString());
-    console.log('DEBUG - Submit - Fecha y hora local:', fechaHora.toLocaleString());
-    console.log('DEBUG - Submit - Día de la semana:', fechaHora.getDay());
+    const fecha = document.getElementById('fecha').value;    debugLog('DEBUG - Submit - Fecha seleccionada:', fecha);
+    debugLog('DEBUG - Submit - Horario seleccionado:', horarioSeleccionado);    
+    // Crear objeto Date para validación
+    const [horaInicio] = horarioSeleccionado.split(' - ');    const fechaHora = new Date(fecha + 'T' + horaInicio);
+    debugLog('DEBUG - Submit - Fecha y hora combinadas:', fechaHora.toISOString());
+    debugLog('DEBUG - Submit - Fecha y hora local:', fechaHora.toLocaleString());
+    debugLog('DEBUG - Submit - Día de la semana:', fechaHora.getDay());
 
     // Obtener el día de la semana (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
     const dia = fechaHora.getDay();
@@ -444,7 +456,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         mostrarReservaConfirmada(data.data);
         
     } catch (error) {
-        console.error('Error al enviar la reserva:', error);
+        debugError('Error al enviar la reserva:', error);
         mostrarError('No se pudo procesar la reserva. Por favor, verifica tu conexión a internet e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.');
     }
 });
