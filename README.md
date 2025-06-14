@@ -9,7 +9,7 @@ Aplicación web para la gestión y reserva de turnos de lavado de autos.
 - Selección de fecha y horario
 - Gestión de datos del cliente y vehículo
 - Persistencia en base de datos MySQL
-- Versión offline como respaldo en caso de problemas de conexión
+- Interfaz de usuario intuitiva y responsive
 
 ## 🚀 Configuración y Ejecución
 
@@ -22,18 +22,22 @@ Aplicación web para la gestión y reserva de turnos de lavado de autos.
 ### Instalación
 
 1. Clonar el repositorio
+
    ```bash
    git clone https://github.com/Mateo14RDGZ/car-wash-typeshi.git
    cd car-wash-typeshi
    ```
 
 2. Instalar dependencias
+
    ```bash
    npm install
    ```
 
 3. Configurar variables de entorno
+
    - Crea un archivo `.env` en la raíz del proyecto con la siguiente estructura:
+
    ```
    # Base de datos
    DB_HOST=localhost
@@ -57,6 +61,7 @@ Aplicación web para la gestión y reserva de turnos de lavado de autos.
 ### Ejecución
 
 1. Iniciar el servidor con persistencia en base de datos
+
    ```bash
    npm run start:db
    ```
@@ -135,4 +140,4 @@ Si deseas contribuir a este workspace, por favor:
 2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
 3. Haz commit de tus cambios (`git commit -m 'Add some AmazingFeature'`)
 4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request 
+5. Abre un Pull Request

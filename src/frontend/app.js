@@ -33,10 +33,10 @@ console.log('DEBUG - Entorno:', isProduction ? 'Producción' : 'Desarrollo',
 
 // Animación de entrada para elementos
 document.addEventListener('DOMContentLoaded', () => {
-    // Intentar sincronizar reservas pendientes
-    sincronizarReservasPendientes().catch(err => {
-        console.log('Error al intentar sincronizar reservas pendientes:', err);
-    });
+    // Verificar la conexión a internet
+    if (!navigator.onLine) {
+        alert('Esta aplicación requiere conexión a internet para funcionar correctamente. Por favor, verifica tu conexión e intenta nuevamente.');
+    }
     
     // Animar elementos al cargar la página
     const elementos = document.querySelectorAll('.card, .form-control, .hero-section h1, .hero-section p');
@@ -265,30 +265,17 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             horariosContainer.appendChild(horariosGrid);        } catch (error) {
             console.error('DEBUG - Error al cargar horarios:', error);
             
-            // Usar la función de generación de horarios del cliente
-            try {
-                // Generamos los horarios con la misma lógica del backend
-                console.log('DEBUG - Usando generador de horarios del cliente');
-                const fallbackHorarios = generateTimeSlotsClient(fechaFormateada);
-                
-                console.log('DEBUG - Horarios generados localmente:', fallbackHorarios);
-                
-                // Crear contenedor de horarios con los datos generados
-                const horariosGrid = document.createElement('div');
-                horariosGrid.className = 'horarios-container';
-                
-                // Obtener el horario del día desde la función helper
-                const horarioDia = getBusinessHoursForDay(dia);                horariosGrid.innerHTML = `
-                    <div class="horarios-header">
-                        <h4><i class="fas fa-clock"></i> Horarios Disponibles</h4>
-                        <p class="text-muted">Usando horarios estándar para esta fecha.</p>
-                    </div>
-                    <div class="horarios-info">
-                        <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
-                        <div class="alert alert-info">
-                            <small>Estos son los horarios estándar disponibles para este día.</small>
-                        </div>
-                    </div>
+            // Mostrar mensaje de error y solicitar al usuario que verifique su conexión
+            const horariosContainer = document.getElementById('horariosContainer');
+            if (horariosContainer) {
+                horariosContainer.innerHTML = '<div class="alert alert-danger my-3">' +
+                    '<h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Error de conexión</h4>' +
+                    '<p>No se pudieron cargar los horarios disponibles. Esta aplicación requiere conexión a internet para funcionar correctamente.</p>' +
+                    '<hr>' +
+                    '<p class="mb-0">Por favor, verifica tu conexión e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.</p>' +
+                    '<button class="btn btn-primary mt-3" onclick="window.location.reload()">Reintentar</button>' +
+                    '</div>';
+            }
                     <div class="horarios-grid">
                         ${fallbackHorarios.data.map(slot => {
                             return `
@@ -483,89 +470,26 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     if (!validarFormulario(formData)) {
         return;
     }    try {
-        // Intenta enviar la reserva al servidor
-        try {
-            const data = await apiRequest('/bookings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-            
-            // Si tiene éxito, mostrar confirmación
-            mostrarReservaConfirmada(data.data);
-            
-        } catch (serverError) {
-            console.log('Error al conectar con el servidor:', serverError);
-            
-            // Si falla, generar un ID único y fecha de creación para simular una respuesta
-            const simulatedData = {
-                ...formData,
-                id: 'local-' + Math.floor(Math.random() * 1000000),
-                status: 'confirmed',
-                createdAt: new Date().toISOString()
-            };
-            
-            // Guardar localmente hasta que se pueda sincronizar
-            let pendingBookings = JSON.parse(localStorage.getItem('pendingBookings') || '[]');
-            pendingBookings.push(simulatedData);
-            localStorage.setItem('pendingBookings', JSON.stringify(pendingBookings));
-            
-            // Mostrar un mensaje de confirmación personalizado
-            mostrarReservaConfirmada(simulatedData);
-            
-            // Mostrar una alerta adicional sobre el modo local
-            setTimeout(() => {
-                alert('La reserva se ha guardado localmente debido a problemas de conexión. ' + 
-                      'Cuando la conexión se restablezca, intentaremos sincronizar con el servidor.');
-            }, 1000);
-        }
+        // Enviar la reserva al servidor
+        const data = await apiRequest('/bookings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        // Si tiene éxito, mostrar confirmación
+        mostrarReservaConfirmada(data.data);
+        
     } catch (error) {
-        console.error('Error general al procesar la reserva:', error);
-        mostrarError('No se pudo procesar la reserva: ' + error.message);
+        console.error('Error al enviar la reserva:', error);
+        mostrarError('No se pudo procesar la reserva. Por favor, verifica tu conexión a internet e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.');
     }
 });
 
-// Función para sincronizar reservas pendientes
-async function sincronizarReservasPendientes() {
-    const pendingBookings = JSON.parse(localStorage.getItem('pendingBookings') || '[]');
-    if (pendingBookings.length === 0) return;
-    
-    console.log(`DEBUG - Intentando sincronizar ${pendingBookings.length} reservas pendientes`);
-    
-    // Crear una copia de las reservas pendientes
-    const bookingsCopy = [...pendingBookings];
-    let sincronizadas = 0;
-    
-    // Intentar sincronizar cada reserva
-    for (let i = 0; i < bookingsCopy.length; i++) {
-        try {
-            await apiRequest('/bookings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(bookingsCopy[i])
-            });
-            
-            // Si tiene éxito, eliminar de pendientes
-            pendingBookings.splice(pendingBookings.findIndex(b => b.id === bookingsCopy[i].id), 1);
-            sincronizadas++;
-        } catch (error) {
-            console.log(`DEBUG - No se pudo sincronizar reserva ${bookingsCopy[i].id}:`, error);
-            // Mantener en pendientes
-        }
-    }
-    
-    // Actualizar localStorage
-    localStorage.setItem('pendingBookings', JSON.stringify(pendingBookings));
-    
-    if (sincronizadas > 0) {
-        console.log(`DEBUG - Sincronizadas ${sincronizadas} reservas pendientes`);
-        alert(`¡Se han sincronizado ${sincronizadas} reservas pendientes con el servidor!`);
-    }
-}
+// Esta función se ha eliminado debido a que la aplicación ahora requiere conexión a internet
+// para funcionar correctamente y guardar las reservas directamente en la base de datos MySQL
 
 // Validar los campos del formulario
 function validarFormulario(formData) {

@@ -552,39 +552,17 @@
           .catch((error) => {
             console.error("Error al cargar horarios:", error);
 
-            // Usar la función de generación de horarios del cliente
-            const generatedHorarios = generateTimeSlotsClient(fechaSeleccionada);
-            
-            // Usar los horarios generados
-            const horariosDelDia = generatedHorarios.data;
-
-            // Mostrar horarios generados localmente
+            // Mostrar mensaje de error y solicitar al usuario que verifique su conexión
             horariosContainer.innerHTML = `
-              <div class="alert alert-info mb-3">
-                <i class="fas fa-info-circle"></i>
-                Usando horarios estándar para esta fecha
+              <div class="alert alert-danger mb-3">
+                <i class="fas fa-exclamation-triangle"></i>
+                Error de conexión
                 <br>
-                <small>Estos son los horarios regulares disponibles para este día.</small>
+                <p>No se pudieron cargar los horarios disponibles. Esta aplicación requiere conexión a internet para funcionar correctamente.</p>
+                <p>Por favor, verifica tu conexión e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.</p>
+                <button class="btn btn-primary mt-2" onclick="window.location.reload()">Reintentar</button>
               </div>
-              <div class="horarios-grid">
-                ${horariosDelDia
-                  .map(
-                    (slot) => `
-                  <button type="button" class="btn btn-outline-primary m-1" 
-                    onclick="this.classList.add('btn-primary'); 
-                             this.classList.remove('btn-outline-primary');
-                             document.querySelectorAll('.horarios-grid button').forEach(b => {
-                               if(b !== this) { 
-                                 b.classList.remove('btn-primary');
-                                 b.classList.add('btn-outline-primary');
-                               }
-                             });">
-                    ${slot.time}
-                  </button>
-                `
-                  )
-                  .join("")}
-              </div>
+              <!-- Eliminamos la selección de horarios en modo offline -->
             `;
           });
       });
