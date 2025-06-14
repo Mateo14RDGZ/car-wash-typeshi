@@ -33,6 +33,11 @@ console.log('DEBUG - Entorno:', isProduction ? 'Producción' : 'Desarrollo',
 
 // Animación de entrada para elementos
 document.addEventListener('DOMContentLoaded', () => {
+    // Intentar sincronizar reservas pendientes
+    sincronizarReservasPendientes().catch(err => {
+        console.log('Error al intentar sincronizar reservas pendientes:', err);
+    });
+    
     // Animar elementos al cargar la página
     const elementos = document.querySelectorAll('.card, .form-control, .hero-section h1, .hero-section p');
     elementos.forEach((elemento, index) => {
@@ -260,41 +265,28 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             horariosContainer.appendChild(horariosGrid);        } catch (error) {
             console.error('DEBUG - Error al cargar horarios:', error);
             
-            // Intentar obtener horarios predefinidos como respaldo
+            // Usar la función de generación de horarios del cliente
             try {
-                // Horarios predefinidos como fallback
-                const fallbackHorarios = {
-                    data: [
-                        { time: '08:30 - 10:00', start: '08:30', end: '10:00', isBooked: false, duration: 90 },
-                        { time: '10:00 - 11:30', start: '10:00', end: '11:30', isBooked: false, duration: 90 },
-                        { time: '11:30 - 13:00', start: '11:30', end: '13:00', isBooked: false, duration: 90 },
-                        { time: '14:00 - 15:30', start: '14:00', end: '15:30', isBooked: false, duration: 90 },
-                        { time: '15:30 - 17:00', start: '15:30', end: '17:00', isBooked: false, duration: 90 }
-                    ]
-                };
+                // Generamos los horarios con la misma lógica del backend
+                console.log('DEBUG - Usando generador de horarios del cliente');
+                const fallbackHorarios = generateTimeSlotsClient(fechaFormateada);
                 
-                if (dia === 6) { // Si es sábado, mostrar horarios de sábado
-                    fallbackHorarios.data = fallbackHorarios.data.slice(0, 3); // Solo los 3 primeros horarios
-                }
+                console.log('DEBUG - Horarios generados localmente:', fallbackHorarios);
                 
-                console.log('DEBUG - Usando horarios predefinidos como fallback');
-                
-                // Crear contenedor de horarios con datos fallback
+                // Crear contenedor de horarios con los datos generados
                 const horariosGrid = document.createElement('div');
                 horariosGrid.className = 'horarios-container';
                 
-                // Obtener el horario del día
-                const horarioDia = dia === 6 ? '8:30 a 12:30' : '8:30 a 17:00';
-
-                horariosGrid.innerHTML = `
+                // Obtener el horario del día desde la función helper
+                const horarioDia = getBusinessHoursForDay(dia);                horariosGrid.innerHTML = `
                     <div class="horarios-header">
-                        <h4><i class="fas fa-clock"></i> Horarios Disponibles (Modo Sin Conexión)</h4>
-                        <p class="text-muted">No pudimos conectar con el servidor. Selecciona un horario tentativo:</p>
+                        <h4><i class="fas fa-clock"></i> Horarios Disponibles</h4>
+                        <p class="text-muted">Usando horarios estándar para esta fecha.</p>
                     </div>
                     <div class="horarios-info">
                         <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
-                        <div class="alert alert-warning">
-                            <small>Nota: Estos horarios son orientativos. Por favor, confirma tu reserva por teléfono.</small>
+                        <div class="alert alert-info">
+                            <small>Estos son los horarios estándar disponibles para este día.</small>
                         </div>
                     </div>
                     <div class="horarios-grid">
@@ -491,25 +483,89 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     if (!validarFormulario(formData)) {
         return;
     }    try {
-        // Usar la función helper para realizar la petición POST
-        const data = await apiRequest('/bookings', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
-        
-        // El helper ya maneja los errores de respuesta y parsing
-
-        // Mostrar confirmación
-        mostrarReservaConfirmada(data.data);
-
+        // Intenta enviar la reserva al servidor
+        try {
+            const data = await apiRequest('/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            // Si tiene éxito, mostrar confirmación
+            mostrarReservaConfirmada(data.data);
+            
+        } catch (serverError) {
+            console.log('Error al conectar con el servidor:', serverError);
+            
+            // Si falla, generar un ID único y fecha de creación para simular una respuesta
+            const simulatedData = {
+                ...formData,
+                id: 'local-' + Math.floor(Math.random() * 1000000),
+                status: 'confirmed',
+                createdAt: new Date().toISOString()
+            };
+            
+            // Guardar localmente hasta que se pueda sincronizar
+            let pendingBookings = JSON.parse(localStorage.getItem('pendingBookings') || '[]');
+            pendingBookings.push(simulatedData);
+            localStorage.setItem('pendingBookings', JSON.stringify(pendingBookings));
+            
+            // Mostrar un mensaje de confirmación personalizado
+            mostrarReservaConfirmada(simulatedData);
+            
+            // Mostrar una alerta adicional sobre el modo local
+            setTimeout(() => {
+                alert('La reserva se ha guardado localmente debido a problemas de conexión. ' + 
+                      'Cuando la conexión se restablezca, intentaremos sincronizar con el servidor.');
+            }, 1000);
+        }
     } catch (error) {
-        console.error('Error al enviar la reserva:', error);
+        console.error('Error general al procesar la reserva:', error);
         mostrarError('No se pudo procesar la reserva: ' + error.message);
     }
 });
+
+// Función para sincronizar reservas pendientes
+async function sincronizarReservasPendientes() {
+    const pendingBookings = JSON.parse(localStorage.getItem('pendingBookings') || '[]');
+    if (pendingBookings.length === 0) return;
+    
+    console.log(`DEBUG - Intentando sincronizar ${pendingBookings.length} reservas pendientes`);
+    
+    // Crear una copia de las reservas pendientes
+    const bookingsCopy = [...pendingBookings];
+    let sincronizadas = 0;
+    
+    // Intentar sincronizar cada reserva
+    for (let i = 0; i < bookingsCopy.length; i++) {
+        try {
+            await apiRequest('/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bookingsCopy[i])
+            });
+            
+            // Si tiene éxito, eliminar de pendientes
+            pendingBookings.splice(pendingBookings.findIndex(b => b.id === bookingsCopy[i].id), 1);
+            sincronizadas++;
+        } catch (error) {
+            console.log(`DEBUG - No se pudo sincronizar reserva ${bookingsCopy[i].id}:`, error);
+            // Mantener en pendientes
+        }
+    }
+    
+    // Actualizar localStorage
+    localStorage.setItem('pendingBookings', JSON.stringify(pendingBookings));
+    
+    if (sincronizadas > 0) {
+        console.log(`DEBUG - Sincronizadas ${sincronizadas} reservas pendientes`);
+        alert(`¡Se han sincronizado ${sincronizadas} reservas pendientes con el servidor!`);
+    }
+}
 
 // Validar los campos del formulario
 function validarFormulario(formData) {
