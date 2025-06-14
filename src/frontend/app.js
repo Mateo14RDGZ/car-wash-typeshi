@@ -70,10 +70,9 @@ window.seleccionarServicio = function(tipo) {
     botones.forEach(btn => {
         btn.classList.remove('btn-success');
         btn.classList.add('btn-primary');
-    });
-
-    // Animar el card seleccionado
-    const cardSeleccionada = document.querySelector(`button[onclick="seleccionarServicio('${tipo}')"]`).closest('.card');
+    });    // Animar el card seleccionado
+    // En lugar de usar template strings, usamos concatenación de strings
+    const cardSeleccionada = document.querySelector('button[onclick="seleccionarServicio(\'' + tipo + '\')"]').closest('.card');
     const botonSeleccionado = cardSeleccionada.querySelector('button');
 
     cardSeleccionada.style.transform = 'translateY(-15px)';
@@ -364,11 +363,9 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
 
     const fecha = document.getElementById('fecha').value;
     console.log('DEBUG - Submit - Fecha seleccionada:', fecha);
-    console.log('DEBUG - Submit - Horario seleccionado:', horarioSeleccionado);
-
-    // Crear objeto Date para validación
+    console.log('DEBUG - Submit - Horario seleccionado:', horarioSeleccionado);    // Crear objeto Date para validación
     const [horaInicio] = horarioSeleccionado.split(' - ');
-    const fechaHora = new Date(`${fecha}T${horaInicio}`);
+    const fechaHora = new Date(fecha + 'T' + horaInicio);
     console.log('DEBUG - Submit - Fecha y hora combinadas:', fechaHora.toISOString());
     console.log('DEBUG - Submit - Fecha y hora local:', fechaHora.toLocaleString());
     console.log('DEBUG - Submit - Día de la semana:', fechaHora.getDay());
@@ -420,11 +417,9 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         if (chk && chk.checked) {
             total += parseInt(chk.getAttribute('data-precio'));
         }
-    });
-
-    const formData = {
+    });    const formData = {
         clientName: document.getElementById('nombre').value,
-        date: `${fecha}T${horaInicio}`,
+        date: fecha + 'T' + horaInicio,
         vehicleType: document.getElementById('vehiculo').value,
         vehiclePlate: document.getElementById('patente').value,
         serviceType: servicioSeleccionado,
