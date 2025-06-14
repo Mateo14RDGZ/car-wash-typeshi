@@ -3,47 +3,55 @@ const { generateTimeSlots, SLOT_DURATION } = require('./timeSlots');
 const emailService = require('./emailService');
 const { Op } = require('sequelize');
 
+// Cache para resultados de horarios disponibles (expira en 5 minutos)
+const availableSlotsCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos en milisegundos
+
 // Función para obtener horarios disponibles para una fecha
 async function getAvailableTimeSlots(date) {
-    console.log('DEBUG - getAvailableTimeSlots - Fecha recibida:', date);
-
     try {
         // Validar formato de fecha
-        if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        if (!date || !date.match(/^\d{4}-\d{2}-\d{2}$/)) {
             console.error('DEBUG - Formato de fecha inválido:', date);
             throw new Error('Formato de fecha inválido. Debe ser YYYY-MM-DD');
+        }
+
+        // Verificar si tenemos el resultado en caché
+        const cacheKey = `slots_${date}`;
+        const cachedResult = availableSlotsCache.get(cacheKey);
+        if (cachedResult) {
+            const { data, timestamp } = cachedResult;
+            const now = Date.now();
+            
+            // Si el cache es válido (menos de 5 minutos), devolverlo
+            if (now - timestamp < CACHE_TTL) {
+                console.log('DEBUG - Devolviendo resultado en caché para fecha:', date);
+                return data;
+            } else {
+                // Cache expirado, eliminarlo
+                availableSlotsCache.delete(cacheKey);
+            }
         }
 
         const requestedDate = new Date(date + 'T00:00:00');
         
         // Verificar que la fecha sea válida
         if (isNaN(requestedDate.getTime())) {
-            console.error('DEBUG - Fecha inválida:', date);
             throw new Error('La fecha proporcionada no es válida');
         }
         
+        // Generar todos los slots posibles primero - Optimizado con caché
+        const allSlots = generateTimeSlots(date);
+        
+        if (!allSlots || allSlots.length === 0) {
+            return [];
+        }
+
+        // Configurar rango de fechas para la consulta
         const startOfDay = new Date(requestedDate);
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(requestedDate);
         endOfDay.setHours(23, 59, 59, 999);
-
-        console.log('DEBUG - getAvailableTimeSlots - Buscando reservas entre:', startOfDay, 'y', endOfDay);
-
-        // Verificar que exista el modelo Booking
-        if (!Booking) {
-            console.error('DEBUG - El modelo Booking no está definido');
-            throw new Error('Error interno: Modelo no disponible');
-        }
-        
-        // Generar todos los slots posibles primero
-        const allSlots = generateTimeSlots(date);
-        console.log('DEBUG - getAvailableTimeSlots - Total de slots generados:', allSlots ? allSlots.length : 0);
-        
-        if (!allSlots || allSlots.length === 0) {
-            console.log('DEBUG - No se encontraron slots disponibles para esta fecha');
-            // Devolvemos un array vacío, no undefined
-            return [];
-        }
         
         let bookings = [];
         
@@ -59,74 +67,86 @@ async function getAvailableTimeSlots(date) {
                     }
                 }
             });
-
-            console.log('DEBUG - getAvailableTimeSlots - Reservas encontradas:', bookings.length);
         } catch (dbQueryError) {
             console.error('DEBUG - Error al consultar reservas en la base de datos:', dbQueryError);
-            // Aún si hay un error consultando reservas, podemos devolver todos los slots
-            // ya que no sabemos cuáles están reservados
-            console.log('DEBUG - Devolviendo todos los slots debido a error en BD');
+            // Si hay un error en la BD, devolvemos todos los slots disponibles
             return allSlots;
         }
 
-        // Crear un mapa de horarios ocupados
-        const bookedTimes = bookings.map(booking => {
+        // Si no hay reservas, todos los slots están disponibles
+        if (!bookings.length) {
+            // Guardar en caché
+            availableSlotsCache.set(`slots_${date}`, {
+                data: allSlots,
+                timestamp: Date.now()
+            });
+            
+            return allSlots;
+        }
+        
+        // Crear un Set con los horarios ocupados para búsqueda más rápida
+        const bookedTimesSet = new Set();
+        
+        // Procesar las reservas
+        bookings.forEach(booking => {
             try {
                 const bookingTime = new Date(booking.date);
-                const duration = SLOT_DURATION;
-                const endTime = new Date(bookingTime.getTime() + duration * 60000);
-                return {
-                    start: bookingTime.getTime(),
-                    end: endTime.getTime()
-                };
-            } catch (error) {
-                console.error('DEBUG - Error procesando reserva:', error, booking);
-                // Si hay un error con esta reserva, la ignoramos
-                return null;
-            }
-        }).filter(time => time !== null); // Eliminar valores null en caso de error
-
-        console.log('DEBUG - Mapa de horarios ocupados creado:', bookedTimes.length);
-
-        // Filtrar slots disponibles
-        const availableSlots = allSlots.filter(slot => {
-            try {
-                // Verificar que el slot tenga los datos requeridos
-                if (!slot || !slot.start) {
-                    console.error('DEBUG - Slot inválido:', slot);
-                    return false;
-                }
-
-                const [startHour, startMinute] = slot.start.split(':').map(Number);
+                const bookingHour = bookingTime.getHours().toString().padStart(2, '0');
+                const bookingMinute = bookingTime.getMinutes().toString().padStart(2, '0');
+                const bookingTimeStr = `${bookingHour}:${bookingMinute}`;
                 
-                if (isNaN(startHour) || isNaN(startMinute)) {
-                    console.error('DEBUG - Hora de inicio inválida:', slot.start);
-                    return false;
-                }
-                
-                const slotStart = new Date(requestedDate);
-                slotStart.setHours(startHour, startMinute, 0, 0);
-                const slotEnd = new Date(slotStart.getTime() + SLOT_DURATION * 60000);
-
-                // Verificar que el slot no se solapa con ninguna reserva existente
-                const isAvailable = !bookedTimes.some(bookedTime =>
-                    (slotStart.getTime() >= bookedTime.start && slotStart.getTime() < bookedTime.end) ||
-                    (slotEnd.getTime() > bookedTime.start && slotEnd.getTime() <= bookedTime.end)
-                );
-
-                return isAvailable;
+                // Añadir al Set
+                bookedTimesSet.add(bookingTimeStr);
             } catch (error) {
-                console.error('DEBUG - Error procesando slot:', error, slot);
-                return false;
+                // Si hay error, ignoramos esta reserva
             }
         });
 
-        console.log('DEBUG - getAvailableTimeSlots - Slots disponibles:', availableSlots.length);
+        // Filtrar slots disponibles - versión optimizada
+        const availableSlots = allSlots.filter(slot => {
+            // Verificar directamente si la hora de inicio está en el set de horas reservadas
+            return !bookedTimesSet.has(slot.start);
+        });
+
+        // Guardar resultado en caché
+        availableSlotsCache.set(`slots_${date}`, {
+            data: availableSlots,
+            timestamp: Date.now()
+        });
+        
         return availableSlots;
 
     } catch (error) {
         console.error('Error al obtener slots disponibles:', error);
-        throw error;
+        
+        // En caso de error, intentar devolver una respuesta válida si es posible
+        const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+        
+        // Generar horarios estándar basados en el día de la semana
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            // Días de semana
+            return WEEKDAY_SLOTS.map(slot => ({
+                time: `${slot.start} - ${slot.end}`,
+                start: slot.start,
+                end: slot.end,
+                isBooked: false,
+                duration: SLOT_DURATION
+            }));
+        } 
+        else if (dayOfWeek === 6) {
+            // Sábados
+            return SATURDAY_SLOTS.map(slot => ({
+                time: `${slot.start} - ${slot.end}`,
+                start: slot.start,
+                end: slot.end,
+                isBooked: false,
+                duration: SLOT_DURATION
+            }));
+        } 
+        else {
+            // Para domingos u otros casos de error
+            return [];
+        }
     }
 }
 

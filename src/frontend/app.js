@@ -167,157 +167,185 @@ function agregarListenersExtras() {
 
 // Validación de fecha y obtención de horarios disponibles
 document.getElementById('fecha')?.addEventListener('change', async function () {
-    // Asegurarse de que la fecha se maneje en la zona horaria local
-    const fechaStr = this.value + 'T00:00:00';
-    const fecha = new Date(fechaStr);
-    const ahora = new Date();
-
-    debugLog('DEBUG - Fecha seleccionada:', fecha.toLocaleDateString());
-    debugLog('DEBUG - Valor del input:', this.value);
-    debugLog('DEBUG - Día de la semana:', fecha.getDay());
-    debugLog('DEBUG - Hora actual:', ahora.toLocaleTimeString());
-
-    // Validar que la fecha sea futura
-    if (fecha < ahora) {
-        debugLog('DEBUG - Fecha rechazada: es pasada');
-        mostrarError('Por favor, selecciona una fecha futura');
-        this.value = '';
-        return;
-    }
-
-    // Obtener el día de la semana (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
-    const dia = fecha.getDay();
-
-    // Validar que no sea domingo
-    if (dia === 0) {
-        debugLog('DEBUG - Fecha rechazada: es domingo');
-        mostrarError('Lo sentimos, no atendemos los domingos');
-        this.value = '';
-        return;
-    }
-
     try {
-        // Mostrar indicador de carga
+        // Asegurarse de que la fecha se maneje en la zona horaria local
+        const fechaStr = this.value + 'T00:00:00';
+        const fecha = new Date(fechaStr);
+        const ahora = new Date();
+
+        debugLog('DEBUG - Fecha seleccionada:', fecha.toLocaleDateString());
+        debugLog('DEBUG - Valor del input:', this.value);
+        debugLog('DEBUG - Día de la semana:', fecha.getDay());
+
+        // Validar que la fecha sea futura
+        if (fecha < ahora) {
+            debugLog('DEBUG - Fecha rechazada: es pasada');
+            mostrarError('Por favor, selecciona una fecha futura');
+            this.value = '';
+            return;
+        }
+
+        // Obtener el día de la semana (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
+        const dia = fecha.getDay();
+
+        // Validar que no sea domingo
+        if (dia === 0) {
+            debugLog('DEBUG - Fecha rechazada: es domingo');
+            mostrarError('Lo sentimos, no atendemos los domingos');
+            this.value = '';
+            return;
+        }
+
         const horariosContainer = document.getElementById('horariosContainer');
         if (!horariosContainer) {
             debugError('DEBUG - No se encontró el contenedor de horarios');
             return;
         }
 
+        // Formatear la fecha para la API
+        const fechaFormateada = fecha.toISOString().split('T')[0];
+        
+        // Crear un array de horarios predefinidos para mostrar mientras carga
+        const horariosRespaldo = dia === 6 ? [
+            { start: '08:30', end: '10:00', time: '08:30 - 10:00' },
+            { start: '10:00', end: '11:30', time: '10:00 - 11:30' },
+            { start: '11:30', end: '13:00', time: '11:30 - 13:00' }
+        ] : [
+            { start: '08:30', end: '10:00', time: '08:30 - 10:00' },
+            { start: '10:00', end: '11:30', time: '10:00 - 11:30' },
+            { start: '11:30', end: '13:00', time: '11:30 - 13:00' },
+            { start: '14:00', end: '15:30', time: '14:00 - 15:30' },
+            { start: '15:30', end: '17:00', time: '15:30 - 17:00' }
+        ];
+        
+        const horarioDia = dia === 6 ? '8:30 a 13:00' : '8:30 a 17:00';
+        
+        // Primero mostrar los horarios de respaldo (casi instantáneamente)
         horariosContainer.innerHTML = `
-            <div class="text-center mb-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+            <div class="horarios-container">
+                <div class="horarios-header">
+                    <h4><i class="fas fa-clock"></i> Horarios Disponibles</h4>
+                    <p class="text-muted">Selecciona el horario que prefieras</p>
                 </div>
-                <p class="mt-2">Buscando horarios disponibles...</p>
+                <div class="horarios-info">
+                    <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
+                    <p class="text-muted" id="carga-info"><small>Verificando disponibilidad...</small></p>
+                </div>
+                <div class="horarios-grid">
+                    ${horariosRespaldo.map(slot => `
+                        <div class="horario-slot horario-loading" data-time="${slot.time}">
+                            <div class="horario-tiempo">
+                                <span class="tiempo-inicio">${slot.start}</span>
+                                <span class="tiempo-separador"> - </span>
+                                <span class="tiempo-fin">${slot.end}</span>
+                            </div>
+                            <div class="horario-duracion">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         `;
         horariosContainer.style.display = 'block';
-
-        // Formatear la fecha para la API
-        const fechaFormateada = fecha.toISOString().split('T')[0];
-        debugLog('DEBUG - Fecha formateada para API:', fechaFormateada);
         
         // Realizar la petición al backend utilizando el helper
         const endpoint = '/bookings/available-slots?date=' + fechaFormateada;
-        debugLog('DEBUG - Intentando obtener horarios para fecha:', fechaFormateada);
-
+        
         try {
             // Usar la función helper para realizar la petición
             const data = await apiRequest(endpoint);
             debugLog('DEBUG - Datos recibidos del servidor:', data);
-
-            // Crear contenedor de horarios
-            const horariosGrid = document.createElement('div');
-            horariosGrid.className = 'horarios-container';
-              // Verificar que los datos tengan el formato esperado
+            
+            // Cuando lleguen los datos reales, actualizar los horarios
             if (data && data.data && Array.isArray(data.data)) {
                 debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
-
-                // Obtener el horario del día
-                const horarioDia = dia === 6 ? '8:30 a 13:00' : '8:30 a 17:00';
-
+                
+                // Crear un mapa de los slots disponibles para búsqueda rápida
+                const availableSlotsMap = {};
                 if (data.data.length > 0) {
-                    horariosGrid.innerHTML = `
-                        <div class="horarios-header">
-                            <h4><i class="fas fa-clock"></i> Horarios Disponibles</h4>
-                            <p class="text-muted">Selecciona el horario que prefieras</p>
-                        </div>
-                        <div class="horarios-info">
-                            <p><i class="fas fa-info-circle"></i> Horario de atención para este día: ${horarioDia}</p>
-                        </div>
-                        <div class="horarios-grid">
-                            ${data.data.map(slot => {
-                                // Validar el formato de cada slot
-                                if (!slot || !slot.start || !slot.end) {
-                                    debugError('DEBUG - Slot inválido:', slot);
-                                    return '';
-                                }
-                                
-                                // Si el slot no tiene la propiedad time, construirla
-                                const slotTime = slot.time || `${slot.start} - ${slot.end}`;
-                                
-                                return `
-                                    <div class="horario-slot" onclick="seleccionarHorario('${slotTime}', this)">
-                                        <div class="horario-tiempo">
-                                            <span class="tiempo-inicio">${slot.start}</span>
-                                            <span class="tiempo-separador"> - </span>
-                                            <span class="tiempo-fin">${slot.end}</span>
-                                        </div>
-                                        <div class="horario-duracion">
-                                            <i class="fas fa-clock"></i>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `;
-                } else {
-                    debugLog('DEBUG - No hay slots disponibles para esta fecha');
-                    horariosGrid.innerHTML = `
-                        <div class="alert alert-info text-center p-4">
-                            <i class="fas fa-info-circle fa-2x mb-3"></i>
-                            <h5>No hay horarios disponibles</h5>
-                            <p class="mb-2">Lo sentimos, no hay horarios disponibles para esta fecha.</p>
-                            <p class="mb-0">Recuerda que nuestro horario de atención este día es de ${horarioDia}.</p>
-                        </div>
-                    `;
-                }            } else {
-                // Este caso se maneja dentro del bloque if(data && data.data && Array.isArray(data.data))
-                debugLog('DEBUG - Respuesta no contiene datos en formato esperado');
-                const horario = dia === 6 ? '8:30 a 13:00' : '8:30 a 17:00';
-
-                horariosGrid.innerHTML = `
-                    <div class="alert alert-warning text-center p-4">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                        <h5>Error en formato de datos</h5>
-                        <p class="mb-2">No se pudieron procesar los horarios disponibles.</p>
-                        <p class="mb-0">Por favor, inténtalo nuevamente.</p>
-                    </div>
-                `;
+                    data.data.forEach(slot => {
+                        if (slot && slot.start && slot.end) {
+                            const time = slot.time || `${slot.start} - ${slot.end}`;
+                            availableSlotsMap[time] = slot;
+                        }
+                    });
+                }
+                
+                // Actualizar el estado de los slots en el DOM (disponible/no disponible)
+                const slotElements = document.querySelectorAll('.horario-slot');
+                slotElements.forEach(element => {
+                    const time = element.getAttribute('data-time');
+                    
+                    // Quitar clase de carga
+                    element.classList.remove('horario-loading');
+                    
+                    // Si está en el mapa, está disponible
+                    if (availableSlotsMap[time]) {
+                        // Configurar para selección
+                        element.onclick = function() {
+                            seleccionarHorario(time, this);
+                        };
+                        
+                        // Actualizar contenido
+                        const durationDiv = element.querySelector('.horario-duracion');
+                        durationDiv.innerHTML = '<i class="fas fa-clock"></i>';
+                    } else {
+                        // Marcar como no disponible
+                        element.classList.add('horario-no-disponible');
+                        const durationDiv = element.querySelector('.horario-duracion');
+                        durationDiv.innerHTML = '<i class="fas fa-times"></i>';
+                    }
+                });
+                
+                // Actualizar mensaje de carga
+                const infoText = document.getElementById('carga-info');
+                if (infoText) infoText.remove();
+            } else {
+                // Si no hay datos o el formato es incorrecto, usar los horarios por defecto
+                debugLog('DEBUG - Los datos recibidos no tienen el formato esperado. Usando horarios predeterminados');
+                document.querySelectorAll('.horario-slot').forEach(element => {
+                    // Quitar clase de carga
+                    element.classList.remove('horario-loading');
+                    // Configurar para selección
+                    const time = element.getAttribute('data-time');
+                    element.onclick = function() {
+                        seleccionarHorario(time, this);
+                    };
+                    // Actualizar contenido
+                    const durationDiv = element.querySelector('.horario-duracion');
+                    durationDiv.innerHTML = '<i class="fas fa-clock"></i>';
+                });
+                
+                // Actualizar mensaje de carga
+                const infoText = document.getElementById('carga-info');
+                if (infoText) {
+                    infoText.innerHTML = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle me-1"></i> Mostrando horarios predeterminados</span>';
+                }
             }
-            
-            // Limpiar y actualizar contenedor
-            horariosContainer.innerHTML = '';
-            horariosContainer.appendChild(horariosGrid);
         } catch (error) {
-            debugError('DEBUG - Error al cargar horarios:', error);
+            debugError('DEBUG - Error al obtener horarios disponibles:', error);
             
-            // Mostrar mensaje de error con más detalles para ayudar a solucionar
-            const horariosContainer = document.getElementById('horariosContainer');
-            if (horariosContainer) {
-                horariosContainer.innerHTML = '<div class="alert alert-danger my-3">' +
-                    '<h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Error de conexión</h4>' +
-                    '<p>No se pudieron cargar los horarios disponibles. Esto puede deberse a:</p>' +
-                    '<ul class="mb-3">' +
-                    '<li>Problemas de conexión a internet</li>' +
-                    '<li>El servidor puede estar temporalmente fuera de servicio</li>' +
-                    '<li>La base de datos puede no estar disponible en este momento</li>' +
-                    '</ul>' +
-                    '<hr>' +
-                    '<p class="mb-0">Por favor, verifica tu conexión e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.</p>' +
-                    '<button class="btn btn-primary mt-3" onclick="document.getElementById(\'fecha\').dispatchEvent(new Event(\'change\'))">Reintentar</button>' +
-                    '</div>';
+            // En caso de error, habilitar todos los horarios predefinidos
+            document.querySelectorAll('.horario-slot').forEach(element => {
+                // Quitar clase de carga
+                element.classList.remove('horario-loading');
+                // Configurar para selección
+                const time = element.getAttribute('data-time');
+                element.onclick = function() {
+                    seleccionarHorario(time, this);
+                };
+                // Actualizar contenido
+                const durationDiv = element.querySelector('.horario-duracion');
+                durationDiv.innerHTML = '<i class="fas fa-clock"></i>';
+            });
+            
+            // Actualizar mensaje de carga
+            const infoText = document.getElementById('carga-info');
+            if (infoText) {
+                infoText.innerHTML = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle me-1"></i> Error de conexión - Se muestran todos los horarios</span>';
             }
         }
     } catch (error) {

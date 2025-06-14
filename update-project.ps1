@@ -11,7 +11,8 @@ if ($nodeProcesses) {
         try {
             $process | Stop-Process -Force -ErrorAction SilentlyContinue
             Write-Host "Detenido proceso con PID $($process.Id)"
-        } catch {
+        }
+        catch {
             Write-Host "No se pudo detener proceso con PID $($process.Id)" -ForegroundColor Yellow
         }
     }
