@@ -40,6 +40,11 @@ const slotsCache = {
 };
 
 function generateTimeSlots(date) {
+    // Validar que la fecha sea un string no vacío
+    if (!date || typeof date !== 'string') {
+        console.error('DEBUG - Fecha no proporcionada o no es string:', date);
+        return [];
+    }
     // Asegurarse de que date sea un objeto Date válido
     const inputDate = new Date(date + 'T00:00:00');
     
@@ -53,7 +58,7 @@ function generateTimeSlots(date) {
     const dayOfWeek = inputDate.getDay();
     
     // Validar que haya horarios para ese día
-    if (!BUSINESS_HOURS[dayOfWeek]) {
+    if (!BUSINESS_HOURS.hasOwnProperty(dayOfWeek) || !BUSINESS_HOURS[dayOfWeek]) {
         console.log('DEBUG - No hay horarios de atención para el día:', dayOfWeek);
         return [];
     }
@@ -97,9 +102,20 @@ function generateTimeSlots(date) {
         
         // Guardar en cache
         slotsCache.saturday = [...slots];
-    }// Verificar si se generaron slots
+    }
+    // Si no es un día válido, devolver array vacío
+    else {
+        console.log('DEBUG - Día fuera de rango válido:', dayOfWeek);
+        return [];
+    }
+
+    // Verificar si se generaron slots
     console.log('DEBUG - Total de slots generados:', slots.length);
     
+    if (!Array.isArray(slots)) {
+        console.error('DEBUG - La variable slots no es un array:', slots);
+        return [];
+    }
     if (slots.length === 0) {
         console.log('DEBUG - No se generaron slots para este día');
     }
@@ -119,4 +135,4 @@ module.exports = {
     formatTimeSlot,
     BUSINESS_HOURS,
     SLOT_DURATION
-}; 
+};

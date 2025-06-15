@@ -25,7 +25,9 @@ async function apiRequest(endpoint, options = {}) {
             'http://127.0.0.1:3003/api',
             '/api' // También intentar la ruta relativa
         ];
-    }    // Lista de URLs para intentar, en orden de preferencia (asegurando que las HTTPS vayan primero en entornos seguros)
+    }
+    
+    // Lista de URLs para intentar, en orden de preferencia (asegurando que las HTTPS vayan primero en entornos seguros)
     const urlsToTry = [
         ...apiBaseUrls.map(url => `${url}${endpoint}`),
         `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&method=${options.method || 'GET'}` // Usar el nuevo api-bridge en Node.js
@@ -40,79 +42,99 @@ async function apiRequest(endpoint, options = {}) {
         credentials: 'same-origin',
         headers: {
             'Accept': 'application/json',
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-store',
+            'Pragma': 'no-cache',
             ...(options.headers || {})
         },
         ...options
     };
-
+    
     try {
         // Intentar cada URL de la lista hasta que una funcione
         let lastError = null;
+        let responseData = null;
+        let allUrlsBlocked = true;
         
         // Bucle para intentar cada URL
         for (const url of urlsToTry) {
             console.log(`DEBUG - Intentando petición a: ${url}`);
             
             try {
-                const response = await fetch(url, fetchOptions);
-                console.log('DEBUG - Status de la respuesta:', response.status);
+                // Usar AbortController para manejar timeouts
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos timeout
                 
-                if (!response.ok) {
-                    let errorMsg = `Error del servidor (${response.status})`;
+                const response = await fetch(url, {
+                    ...fetchOptions,
+                    signal: controller.signal
+                }).catch(err => {
+                    if (err.name === 'AbortError') {
+                        throw new Error('La petición tomó demasiado tiempo');
+                    }
+                    // Si es un error de red o bloqueo (típico de ERR_BLOCKED_BY_CLIENT)
+                    if (err.message && (
+                        err.message.includes('network') || 
+                        err.name === 'TypeError' || 
+                        err.message.includes('Failed to fetch'))
+                    ) {
+                        allUrlsBlocked = false; // Al menos sabemos que no fue un bloqueo
+                        throw new Error(`La solicitud fue bloqueada o falló la conexión (${url})`);
+                    }
+                    throw err;
+                });
+                
+                clearTimeout(timeoutId);
+                
+                console.log(`DEBUG - Status de la respuesta: ${response.status}`);
+                
+                // Verificar si la respuesta es exitosa
+                if (response.status >= 200 && response.status < 300) {
+                    // Intentar parsear como JSON primero
                     try {
-                        const errorText = await response.text();
-                        errorMsg += `: ${errorText.substring(0, 100)}`;
-                    } catch (e) {}
-                    throw new Error(errorMsg);
+                        responseData = await response.json();
+                        return responseData; // Retornar datos y salir del bucle
+                    } catch (e) {
+                        // Si no es JSON, intentar obtener como texto
+                        const text = await response.text();
+                        try {
+                            // Intentar parsear el texto como JSON una vez más (por si el Content-Type es incorrecto)
+                            responseData = JSON.parse(text);
+                        } catch (jsonError) {
+                            // Si todo falla, devolver el texto plano
+                            responseData = { data: text };
+                        }
+                        return responseData;
+                    }
+                } else if (response.status === 404) {
+                    // Recurso no encontrado, probar siguiente URL
+                    lastError = new Error(`Recurso no encontrado (404): ${url}`);
+                    continue;
+                } else {
+                    // Error del servidor, intentar parsear el cuerpo de la respuesta
+                    try {
+                        const errorData = await response.json();
+                        throw new Error(`Error del servidor (${response.status}): ${JSON.stringify(errorData)}`);
+                    } catch (e) {
+                        // Si no se puede parsear, usar mensaje genérico
+                        throw new Error(`Error del servidor (${response.status})`);
+                    }
                 }
-                
-                // Si llegamos aquí, la petición fue exitosa
-                return await response.json();
-            } catch (fetchError) {
-                console.log(`DEBUG - Error en intento con URL ${url}:`, fetchError);
-                lastError = fetchError;
-                // Continuar con la siguiente URL
+            } catch (error) {
+                console.log(`DEBUG - Error en intento con URL ${url}: ${error.message}`);
+                lastError = error;
+                // Continuar con la siguiente URL si esta falla
+                continue;
             }
         }
         
-        // Si llegamos aquí, todos los intentos fallaron
-        console.log('DEBUG - Todos los intentos con fetch fallaron, probando XMLHttpRequest:', lastError);
-        
-        // Último intento: XMLHttpRequest con la primera URL
-        return await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            const firstUrl = urlsToTry[0];
-            xhr.open(fetchOptions.method, firstUrl, true);
-            
-            // Aplicar headers
-            Object.keys(fetchOptions.headers).forEach(headerName => {
-                xhr.setRequestHeader(headerName, fetchOptions.headers[headerName]);
-            });
-            
-            xhr.responseType = 'json';
-            
-            xhr.onload = function() {
-                if (this.status >= 200 && this.status < 300) {
-                    resolve(xhr.response);
-                } else {
-                    reject(new Error(`Error del servidor: ${this.status}`));
-                }
-            };
-            
-            xhr.onerror = function() {
-                reject(new Error('Error de red o bloqueo de la solicitud'));
-            };
-            
-            // Enviar con o sin body
-            if (fetchOptions.body) {
-                xhr.send(fetchOptions.body);
-            } else {
-                xhr.send();
-            }
-        });
+        // Si llegamos aquí, todas las URLs fallaron
+        if (allUrlsBlocked) {
+            throw new Error('Todas las peticiones fueron bloqueadas. Intente desactivar bloqueadores de anuncios o usar una conexión diferente.');
+        } else {
+            throw lastError || new Error('No se pudo conectar con el servidor.');
+        }
     } catch (error) {
-        console.error('DEBUG - Error final en apiRequest:', error);
+        console.log(`DEBUG - Error en intento con URL ${endpoint}: ${error}`, error);
         throw error;
     }
 }

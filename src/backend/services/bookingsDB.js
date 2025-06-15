@@ -16,6 +16,8 @@ async function getAvailableTimeSlots(date) {
             throw new Error('Formato de fecha inválido. Debe ser YYYY-MM-DD');
         }
 
+        console.log('DEBUG - Procesando solicitud para fecha:', date);
+
         // Verificar si tenemos el resultado en caché
         const cacheKey = `slots_${date}`;
         const cachedResult = availableSlotsCache.get(cacheKey);
@@ -37,6 +39,7 @@ async function getAvailableTimeSlots(date) {
         
         // Verificar que la fecha sea válida
         if (isNaN(requestedDate.getTime())) {
+            console.error('DEBUG - La fecha no es válida después de convertir a objeto Date:', date);
             throw new Error('La fecha proporcionada no es válida');
         }
         
@@ -44,6 +47,7 @@ async function getAvailableTimeSlots(date) {
         const allSlots = generateTimeSlots(date);
         
         if (!allSlots || allSlots.length === 0) {
+            console.log('DEBUG - No hay slots disponibles para el día seleccionado');
             return [];
         }
 
@@ -67,16 +71,28 @@ async function getAvailableTimeSlots(date) {
                     }
                 }
             });
+            console.log('DEBUG - Reservas encontradas para la fecha:', bookings.length);
         } catch (dbQueryError) {
             console.error('DEBUG - Error al consultar reservas en la base de datos:', dbQueryError);
-            // Si hay un error en la BD, devolvemos todos los slots disponibles
-            return allSlots;
+            // En caso de error de BD, usamos los slots predefinidos
+            const dayOfWeek = requestedDate.getDay();
+            
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                // Para días entre semana
+                return allSlots;
+            } else if (dayOfWeek === 6) {
+                // Para sábados
+                return allSlots;
+            } else {
+                // Domingos no hay servicio
+                return [];
+            }
         }
 
         // Si no hay reservas, todos los slots están disponibles
         if (!bookings.length) {
             // Guardar en caché
-            availableSlotsCache.set(`slots_${date}`, {
+            availableSlotsCache.set(cacheKey, {
                 data: allSlots,
                 timestamp: Date.now()
             });
@@ -98,6 +114,7 @@ async function getAvailableTimeSlots(date) {
                 // Añadir al Set
                 bookedTimesSet.add(bookingTimeStr);
             } catch (error) {
+                console.error('DEBUG - Error al procesar reserva:', error);
                 // Si hay error, ignoramos esta reserva
             }
         });
@@ -109,7 +126,7 @@ async function getAvailableTimeSlots(date) {
         });
 
         // Guardar resultado en caché
-        availableSlotsCache.set(`slots_${date}`, {
+        availableSlotsCache.set(cacheKey, {
             data: availableSlots,
             timestamp: Date.now()
         });
@@ -119,34 +136,38 @@ async function getAvailableTimeSlots(date) {
     } catch (error) {
         console.error('Error al obtener slots disponibles:', error);
         
-        // En caso de error, intentar devolver una respuesta válida si es posible
-        const dayOfWeek = new Date(date + 'T00:00:00').getDay();
-        
-        // Generar horarios estándar basados en el día de la semana
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-            // Días de semana
-            return WEEKDAY_SLOTS.map(slot => ({
-                time: `${slot.start} - ${slot.end}`,
-                start: slot.start,
-                end: slot.end,
-                isBooked: false,
-                duration: SLOT_DURATION
-            }));
-        } 
-        else if (dayOfWeek === 6) {
-            // Sábados
-            return SATURDAY_SLOTS.map(slot => ({
-                time: `${slot.start} - ${slot.end}`,
-                start: slot.start,
-                end: slot.end,
-                isBooked: false,
-                duration: SLOT_DURATION
-            }));
-        } 
-        else {
-            // Para domingos u otros casos de error
+        try {
+            // En caso de error, intentar devolver una respuesta válida si es posible
+            const requestDate = new Date(date + 'T00:00:00');
+            const dayOfWeek = requestDate.getDay();
+            
+            // Generar horarios estándar basados en el día de la semana
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                // Días de semana
+                const slots = generateTimeSlots(date);
+                if (slots && slots.length > 0) {
+                    return slots;
+                }
+            } 
+            else if (dayOfWeek === 6) {
+                // Sábados
+                const slots = generateTimeSlots(date);
+                if (slots && slots.length > 0) {
+                    return slots;
+                }
+            } 
+            else {
+                // Para domingos u otros casos de error
+                return [];
+            }
+        } catch (fallbackError) {
+            console.error('Error en el fallback de horarios:', fallbackError);
+            // Si todo falla, devolver array vacío para evitar errores en el cliente
             return [];
         }
+        
+        // Si llegamos aquí, devolver array vacío
+        return [];
     }
 }
 

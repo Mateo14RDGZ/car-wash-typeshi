@@ -19,23 +19,62 @@ router.get('/available-slots', async (req, res) => {
             });
         }
 
+        // Validar formato de fecha YYYY-MM-DD
+        if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return res.status(400).json({
+                status: 'ERROR',
+                message: 'Formato de fecha inválido',
+                error: {
+                    code: '400',
+                    message: 'El formato de fecha debe ser YYYY-MM-DD'
+                }
+            });
+        }
+
         try {
             const availableSlots = await bookingService.getAvailableTimeSlots(date);
             
+            // Asegurarnos de que siempre devolvemos un array, incluso si es vacío
+            const slotsToReturn = Array.isArray(availableSlots) ? availableSlots : [];
+            
             res.json({
                 status: 'SUCCESS',
-                data: availableSlots || []
+                data: slotsToReturn
             });
         } catch (serviceError) {
             console.error('Error en el servicio de horarios:', serviceError);
-            res.status(500).json({
-                status: 'ERROR',
-                message: 'Error al procesar los horarios disponibles',
-                error: {
-                    code: '500',
-                    message: serviceError.message || 'Error interno del servidor'
+            
+            // Intentar recuperar slots predeterminados en caso de error
+            try {
+                const requestDate = new Date(date + 'T00:00:00');
+                const dayOfWeek = requestDate.getDay();
+                
+                // Si es un día válido, devolver una respuesta con slots vacíos en lugar de error
+                if (dayOfWeek >= 1 && dayOfWeek <= 6) {
+                    return res.json({
+                        status: 'SUCCESS',
+                        data: [],
+                        message: 'No hay horarios disponibles para esta fecha'
+                    });
+                } else {
+                    // Si es domingo, indicar que no hay servicio
+                    return res.json({
+                        status: 'SUCCESS',
+                        data: [],
+                        message: 'No hay servicio disponible para este día'
+                    });
                 }
-            });
+            } catch (fallbackError) {
+                // Si todo falla, devolver un error estándar
+                return res.status(500).json({
+                    status: 'ERROR',
+                    message: 'Error al procesar los horarios disponibles',
+                    error: {
+                        code: '500',
+                        message: serviceError.message || 'Error interno del servidor'
+                    }
+                });
+            }
         }
     } catch (error) {
         console.error('Error general al obtener horarios disponibles:', error);

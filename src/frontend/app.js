@@ -302,51 +302,60 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                 
                 // Actualizar mensaje de carga
                 const infoText = document.getElementById('carga-info');
-                if (infoText) infoText.remove();
+                if (infoText) {
+                    if (Object.keys(availableSlotsMap).length === 0) {
+                        infoText.innerHTML = '<span class="badge bg-info text-dark"><i class="fas fa-info-circle me-1"></i> No hay horarios disponibles para esta fecha</span>';
+                    } else {
+                        infoText.remove();
+                    }
+                }
             } else {
-                // Si no hay datos o el formato es incorrecto, usar los horarios por defecto
-                debugLog('DEBUG - Los datos recibidos no tienen el formato esperado. Usando horarios predeterminados');
+                // Si no hay datos o el formato es incorrecto
+                debugLog('DEBUG - Los datos recibidos no tienen el formato esperado o están vacíos');
                 document.querySelectorAll('.horario-slot').forEach(element => {
                     // Quitar clase de carga
                     element.classList.remove('horario-loading');
-                    // Configurar para selección
-                    const time = element.getAttribute('data-time');
-                    element.onclick = function() {
-                        seleccionarHorario(time, this);
-                    };
+                    // Marcar todos como no disponibles
+                    element.classList.add('horario-no-disponible');
+                    element.onclick = null; // Eliminar evento click
                     // Actualizar contenido
                     const durationDiv = element.querySelector('.horario-duracion');
-                    durationDiv.innerHTML = '<i class="fas fa-clock"></i>';
+                    durationDiv.innerHTML = '<i class="fas fa-times"></i>';
                 });
                 
                 // Actualizar mensaje de carga
                 const infoText = document.getElementById('carga-info');
                 if (infoText) {
-                    infoText.innerHTML = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle me-1"></i> Mostrando horarios predeterminados</span>';
+                    // Verificar si hay un mensaje personalizado del servidor
+                    if (data && data.message) {
+                        infoText.innerHTML = `<span class="badge bg-info text-dark"><i class="fas fa-info-circle me-1"></i> ${data.message}</span>`;
+                    } else {
+                        infoText.innerHTML = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle me-1"></i> No hay horarios disponibles para esta fecha</span>';
+                    }
                 }
             }
         } catch (error) {
-            debugError('DEBUG - Error al obtener horarios disponibles:', error);
+            debugError('ERROR al obtener horarios disponibles:', error);
             
-            // En caso de error, habilitar todos los horarios predefinidos
+            // En caso de error, marcar todos como no disponibles pero con mensaje de error de conexión
             document.querySelectorAll('.horario-slot').forEach(element => {
                 // Quitar clase de carga
                 element.classList.remove('horario-loading');
-                // Configurar para selección
-                const time = element.getAttribute('data-time');
-                element.onclick = function() {
-                    seleccionarHorario(time, this);
-                };
+                element.classList.add('horario-no-disponible');
+                element.onclick = null; // Eliminar evento click
                 // Actualizar contenido
                 const durationDiv = element.querySelector('.horario-duracion');
-                durationDiv.innerHTML = '<i class="fas fa-clock"></i>';
+                durationDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
             });
             
             // Actualizar mensaje de carga
             const infoText = document.getElementById('carga-info');
             if (infoText) {
-                infoText.innerHTML = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle me-1"></i> Error de conexión - Se muestran todos los horarios</span>';
+                infoText.innerHTML = '<span class="badge bg-danger text-white"><i class="fas fa-exclamation-triangle me-1"></i> Error de conexión - No se pudieron cargar los horarios</span>';
             }
+            
+            // Mostrar notificación de error
+            mostrarError('Error al cargar horarios: ' + error);
         }
     } catch (error) {
         debugError('DEBUG - Error general al procesar la fecha:', error);
