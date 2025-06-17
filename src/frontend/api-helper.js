@@ -11,27 +11,27 @@ async function apiRequest(endpoint, options = {}) {
     const isSecureContext = window.location.protocol === 'https:';
     
     let apiBaseUrls = [];
-    
-    if (isProduction) {
+      if (isProduction) {
         // En producción (Vercel), usar la API URL relativa y la URL de Vercel
         apiBaseUrls = [
             '/api', // API relativa en el mismo servidor
             'https://car-wash-typeshi.vercel.app/api' // URL segura y completa
         ];
     } else {
-        // En desarrollo local
+        // En desarrollo local - solo usar el servidor local
         apiBaseUrls = [
-            'http://localhost:3003/api',
-            'http://127.0.0.1:3003/api',
-            '/api' // También intentar la ruta relativa
+            'http://localhost:3003/api'
         ];
     }
-    
-    // Lista de URLs para intentar, en orden de preferencia (asegurando que las HTTPS vayan primero en entornos seguros)
-    const urlsToTry = [
-        ...apiBaseUrls.map(url => `${url}${endpoint}`),
-        `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&method=${options.method || 'GET'}` // Usar el nuevo api-bridge en Node.js
-    ];
+      // Lista de URLs para intentar, en orden de preferencia
+    const urlsToTry = isProduction ? 
+        [
+            ...apiBaseUrls.map(url => `${url}${endpoint}`),
+            `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&method=${options.method || 'GET'}` // Usar el nuevo api-bridge en Node.js
+        ] : 
+        [
+            ...apiBaseUrls.map(url => `${url}${endpoint}`)
+        ];
     
     console.log(`DEBUG - Realizando petición a endpoint: ${endpoint}`, options);
 
