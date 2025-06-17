@@ -31,7 +31,7 @@ const servicios = [
     }
 ];
 
-export default async function handler(req, res) {
+module.exports = (req, res) => {
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -60,8 +60,7 @@ export default async function handler(req, res) {
         
         return res.status(500).json({
             status: 'ERROR',
-            message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Error interno del servidor',            error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
         });
     }
-}
+};
