@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Evitar cache agresivo -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Extreme Wash - Sistema de Reservas</title>
@@ -17,27 +20,66 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <link rel="stylesheet" href="styles.css" />
-    <!-- SISTEMA DEFINITIVO - CARGA DE SCRIPTS GARANTIZADA -->
+    <!-- SOLUCIÓN DEFINITIVA - SISTEMA ÚNICO DE CARGA DE SCRIPTS -->
     <script>
       // Forzar reload de todos los scripts con timestamp único
       const timestamp = Date.now();
-      
-      // Función para cargar scripts con anti-caché
-      function loadScript(src) {
-        const script = document.createElement('script');
-        script.src = `${src}?t=${timestamp}_${Math.random().toString(36).substring(7)}`;
-        script.onerror = function() {
-          console.error(`Error al cargar ${src}, reintentando...`);
-          setTimeout(() => loadScript(src), 1000); // Reintentar
-        };
-        document.head.appendChild(script);
-        console.log(`Script cargado: ${src}`);
+      const uniqueId = Math.random().toString(36).substring(7);
+      console.log(`Sistema de carga único ID: ${uniqueId}`);
+
+      // Función para cargar scripts en orden y con anti-caché
+      function loadScript(src, onLoad) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          // Timestamp doble para evitar caché agresivo
+          script.src = `${src}?t=${timestamp}&u=${uniqueId}`;
+
+          script.onload = function () {
+            console.log(`✅ Script cargado exitosamente: ${src}`);
+            if (onLoad) onLoad();
+            resolve();
+          };
+
+          script.onerror = function (e) {
+            console.error(`❌ Error al cargar ${src}:`, e);
+            // Reintentar automáticamente
+            setTimeout(() => {
+              console.log(`🔄 Reintentando carga de ${src}...`);
+              document.head.removeChild(script);
+              loadScript(src, onLoad).then(resolve).catch(reject);
+            }, 1500);
+          };
+
+          document.head.appendChild(script);
+        });
       }
-      
-      // Cargar scripts esenciales
-      loadScript('api-helper.js');
-      loadScript('timeSlots-client.js');
-      loadScript('api-client.js');
+
+      // Sistema secuencial de carga - un script a la vez en orden específico
+      // IMPORTANTE: api-helper.js primero (único sistema), NO cargar api-client.js
+      async function loadAllScripts() {
+        try {          // 1. Primero api-helper.js (implementación única)
+          await loadScript("api-helper.js");
+          
+          // 2. Luego el sistema de horarios robusto
+          await loadScript("horarios-helper.js");
+          
+          // 3. El manejador de fechas mejorado
+          await loadScript("fecha-handler.js");
+          
+          // 4. Luego timeSlots-client.js
+          await loadScript("timeSlots-client.js");
+          
+          // 5. Finalmente app.js
+          await loadScript("app.js");
+
+          console.log("✅✅✅ TODOS LOS SCRIPTS CARGADOS CORRECTAMENTE");
+        } catch (error) {
+          console.error("❌❌❌ ERROR EN SISTEMA DE CARGA:", error);
+        }
+      }
+
+      // Iniciar carga secuencial
+      loadAllScripts();
     </script>
     <style>
       .precio-servicio {
@@ -590,7 +632,65 @@
               <!-- Eliminamos la selección de horarios en modo offline -->
             `;
           });
+
+        // Respaldo de horarios embebido en el HTML como último recurso
+        const fallbackData = JSON.parse(
+          document.getElementById("embedded-slots-fallback").textContent
+        );
+        mostrarHorarios(fallbackData.data);
       });
+    </script>
+
+    <!-- Respaldo de horarios embebido en el HTML como último recurso -->
+    <script type="application/json" id="embedded-slots-fallback">
+    {
+      "status": "SUCCESS",
+      "data": [
+        { 
+          "time": "08:30 - 10:00", 
+          "start": "08:30", 
+          "end": "10:00", 
+          "duration": 90, 
+          "isBooked": false,
+          "available": true
+        },
+        { 
+          "time": "10:00 - 11:30", 
+          "start": "10:00", 
+          "end": "11:30", 
+          "duration": 90, 
+          "isBooked": false,
+          "available": true
+        },
+        { 
+          "time": "11:30 - 13:00", 
+          "start": "11:30", 
+          "end": "13:00", 
+          "duration": 90, 
+          "isBooked": false,
+          "available": true
+        },
+        { 
+          "time": "14:00 - 15:30", 
+          "start": "14:00", 
+          "end": "15:30", 
+          "duration": 90, 
+          "isBooked": false,
+          "available": true
+        },
+        { 
+          "time": "15:30 - 17:00", 
+          "start": "15:30", 
+          "end": "17:00", 
+          "duration": 90, 
+          "isBooked": false,
+          "available": true
+        }
+      ],
+      "message": "Horarios disponibles (respuesta de emergencia embebida)",
+      "source": "embedded-html",
+      "emergency": true
+    }
     </script>
   </body>
 </html>

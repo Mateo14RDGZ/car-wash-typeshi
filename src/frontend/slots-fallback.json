@@ -1,11 +1,55 @@
 {
   "status": "SUCCESS",
   "data": [
-    { "time": "08:30 - 10:00", "start": "08:30", "end": "10:00", "duration": 90, "isBooked": false },
-    { "time": "10:00 - 11:30", "start": "10:00", "end": "11:30", "duration": 90, "isBooked": false },
-    { "time": "11:30 - 13:00", "start": "11:30", "end": "13:00", "duration": 90, "isBooked": false },
-    { "time": "14:00 - 15:30", "start": "14:00", "end": "15:30", "duration": 90, "isBooked": false },
-    { "time": "15:30 - 17:00", "start": "15:30", "end": "17:00", "duration": 90, "isBooked": false }
+    { 
+      "time": "08:30 - 10:00", 
+      "start": "08:30", 
+      "end": "10:00", 
+      "duration": 90, 
+      "isBooked": false,
+      "id": "slot-1",
+      "available": true
+    },
+    { 
+      "time": "10:00 - 11:30", 
+      "start": "10:00", 
+      "end": "11:30", 
+      "duration": 90, 
+      "isBooked": false,
+      "id": "slot-2",
+      "available": true
+    },
+    { 
+      "time": "11:30 - 13:00", 
+      "start": "11:30", 
+      "end": "13:00", 
+      "duration": 90, 
+      "isBooked": false,
+      "id": "slot-3",
+      "available": true
+    },
+    { 
+      "time": "14:00 - 15:30", 
+      "start": "14:00", 
+      "end": "15:30", 
+      "duration": 90, 
+      "isBooked": false,
+      "id": "slot-4",
+      "available": true
+    },
+    { 
+      "time": "15:30 - 17:00", 
+      "start": "15:30", 
+      "end": "17:00", 
+      "duration": 90, 
+      "isBooked": false,
+      "id": "slot-5",
+      "available": true
+    }
   ],
-  "message": "Horarios disponibles (respuesta estática de emergencia)"
+  "message": "Horarios disponibles (respuesta local de emergencia)",
+  "source": "fallback-json",
+  "timestamp": "2025-06-17T12:00:00Z",
+  "version": "1.0.0",
+  "emergency": true
 }
