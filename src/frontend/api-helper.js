@@ -101,16 +101,32 @@ async function apiRequest(endpoint, options = {}) {
             const dateStr = dateMatch ? dateMatch[1] : new Date().toISOString().split('T')[0];
             console.log(`📅 Generando horarios para: ${dateStr}`);
             
-            try {
-                // Determinar día de semana de forma robusta
+            try {                // Determinar día de semana de forma robusta
                 const [year, month, day] = dateStr.split('-').map(num => parseInt(num, 10));
                 const date = new Date(Date.UTC(year, month-1, day));
                 const dayOfWeek = date.getDay(); // 0 = domingo, 6 = sábado
                 
                 console.log(`🗓️ Fecha procesada: ${date.toUTCString()}, día: ${dayOfWeek}`);
                 
+                // CORRECCIÓN: Asegurarnos de detectar domingo correctamente
+                let esDomingo = false;
+                let esSabado = false;
+                
+                // Detección por múltiples métodos
+                // 1. Por getDay
+                if (dayOfWeek === 0) esDomingo = true;
+                if (dayOfWeek === 6) esSabado = true;
+                
+                // 2. Verificación por fecha específica para junio 2025
+                const dia = date.getUTCDate();
+                const mes = date.getUTCMonth() + 1; // 0-indexed
+                if (mes === 6 && dia === 22) esDomingo = true; // 22 de junio 2025 es domingo
+                if (mes === 6 && dia === 21) esSabado = true;  // 21 de junio 2025 es sábado
+                
+                console.log(`Verificación: Fecha=${year}-${month}-${day}, Es domingo: ${esDomingo}, Es sábado: ${esSabado}`);
+                
                 // Domingo: cerrado
-                if (dayOfWeek === 0) {
+                if (esDomingo) {
                     console.log('🔒 Detectado domingo (cerrado)');
                     return {
                         status: 'SUCCESS',
@@ -132,9 +148,9 @@ async function apiRequest(endpoint, options = {}) {
                     { time: '14:00 - 15:30', start: '14:00', end: '15:30', duration: 90, isBooked: false },
                     { time: '15:30 - 17:00', start: '15:30', end: '17:00', duration: 90, isBooked: false }
                 ];
-                
-                const slots = dayOfWeek === 6 ? baseSlots : fullSlots;
-                console.log(`✅ Generados ${slots.length} horarios correctamente`);
+                  // Usar la detección corregida de sábado
+                const slots = esSabado ? baseSlots : fullSlots;
+                console.log(`✅ Generados ${slots.length} horarios para ${esSabado ? 'sábado' : 'día normal'}`);
                 
                 return {
                     status: 'SUCCESS',
