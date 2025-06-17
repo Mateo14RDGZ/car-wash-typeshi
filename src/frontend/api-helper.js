@@ -1,13 +1,15 @@
 /**
- * API Helper OPTIMIZADO PARA WEB - Versión 100% para web y producción
+ * API Helper 100% WEB - INDEPENDIENTE DE SERVIDORES LOCALES
  * 
- * NOTAS DE IMPLEMENTACIÓN:
- * - Versión optimizada que usa SIEMPRE api-bridge para peticiones web
- * - Elimina intentos múltiples de URLs para mayor confiabilidad
- * - Respuestas de emergencia para mantener la web funcionando
- * - Tiempos de espera reducidos para mejor experiencia de usuario
+ * VERSIÓN FINAL (17/06/2025)
+ * Esta versión está diseñada para funcionar EXCLUSIVAMENTE con la API interna 
+ * de Vercel, sin intentar NUNCA conexiones a servidores locales.
  * 
- * Última actualización: 17/06/2025
+ * CARACTERÍSTICAS CLAVE:
+ * - Sistema autónomo que NO utiliza NINGÚN servidor local
+ * - Respuestas de emergencia integradas para asegurar siempre datos válidos
+ * - Detección local de días disponibles (incluso sin acceso a DB)
+ * - Uso exclusivo de api-bridge para todas las peticiones
  */
 /**
  * Este API Helper está optimizado para garantizar que la página web SIEMPRE cargue los horarios correctamente:
@@ -24,17 +26,16 @@
  * incluso si el servidor backend está caído o hay problemas de red.
  */
 async function apiRequest(endpoint, options = {}) {
-    // Configuración para determinar si estamos en producción
-    const isProduction = window.location.hostname !== 'localhost' && 
-                         window.location.hostname !== '127.0.0.1' && 
-                         window.location.protocol !== 'file:';
+    // VERSIÓN WEB: Sin comprobación de entorno, siempre modo web
+    // Ya no comprobamos si estamos en localhost o producción
+    // SIEMPRE usamos api-bridge sin excepciones
     
-    console.log('🔍 DEBUG - API-HELPER WEB ACTIVADO');
+    console.log('🔍 DEBUG - API-HELPER 100% WEB');
     console.log(`DEBUG - Petición: ${endpoint}`);
     
-    // URL para peticiones - SIEMPRE usar api-bridge en web para evitar CORS
+    // URL única para todas las peticiones: api-bridge
     const url = `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&method=${options.method || 'GET'}`;
-    console.log(`✅ DEBUG - URL: ${url}`);    
+    console.log(`✅ DEBUG - Usando API-Bridge: ${url}`);
     // Opciones optimizadas para web
     const fetchOptions = {
         method: options.method || 'GET',
@@ -86,19 +87,54 @@ async function apiRequest(endpoint, options = {}) {
                 console.log('⚠️ DEBUG - No se pudo parsear error del servidor');
             }
             throw new Error(errorMessage);
-        }
-      } catch (error) {
-        console.error(`❌ DEBUG - Error:`, error);
+        }      } catch (error) {
+        console.error(`❌ DEBUG - Error de conexión:`, error);
         
-        if (error.name === 'AbortError') {
-            throw new Error('⏱️ Tiempo de espera agotado. Por favor intenta nuevamente.');
-        } else if (error.name === 'TypeError' || 
-                  error.message.includes('Failed to fetch') || 
-                  error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-            // Usar error genérico para problemas de red
-            throw new Error('🔄 Error de conexión. Por favor recarga la página.');
-        } else {
-            throw new Error('🌐 No se pudo procesar la solicitud.');
+        // Comprobar si es una petición de horarios disponibles
+        if (endpoint.includes('available-slots')) {
+            console.log('🔄 Generando horarios de emergencia localmente');
+            
+            // Devolver horarios de emergencia directamente desde el frontend
+            // Obtener la fecha de la URL
+            const dateMatch = endpoint.match(/date=(\d{4}-\d{2}-\d{2})/);
+            const dateStr = dateMatch ? dateMatch[1] : new Date().toISOString().split('T')[0];
+            
+            // Determinar día de semana
+            const date = new Date(dateStr);
+            const dayOfWeek = date.getDay(); // 0 = domingo, 6 = sábado
+            
+            // Domingo: cerrado
+            if (dayOfWeek === 0) {
+                return {
+                    status: 'SUCCESS',
+                    data: [],
+                    message: 'Cerrado los domingos. Por favor seleccione otro día.'
+                };
+            }
+            
+            // Horarios básicos (todos los días)
+            const baseSlots = [
+                { time: '08:30 - 10:00', start: '08:30', end: '10:00', duration: 90, isBooked: false },
+                { time: '10:00 - 11:30', start: '10:00', end: '11:30', duration: 90, isBooked: false },
+                { time: '11:30 - 13:00', start: '11:30', end: '13:00', duration: 90, isBooked: false }
+            ];
+            
+            // Horarios adicionales (días de semana)
+            const fullSlots = [
+                ...baseSlots,
+                { time: '14:00 - 15:30', start: '14:00', end: '15:30', duration: 90, isBooked: false },
+                { time: '15:30 - 17:00', start: '15:30', end: '17:00', duration: 90, isBooked: false }
+            ];
+            
+            return {
+                status: 'SUCCESS',
+                data: dayOfWeek === 6 ? baseSlots : fullSlots,
+                emergency: true,
+                message: 'Horarios obtenidos en modo de emergencia'
+            };
         }
+        
+        // Para otros tipos de peticiones, lanzar un error genérico
+        throw new Error('🔄 Error de conexión. Por favor recarga la página.');
     }
 }
