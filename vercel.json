@@ -1,31 +1,15 @@
 {
     "version": 2,
-    "functions": {
-        "api/**/*.js": {
-            "runtime": "@vercel/node"
-        }
-    },
-    "rewrites": [
-        {
-            "source": "/",
-            "destination": "/src/frontend/index.html"
-        },
-        {
-            "source": "/api/(.*)",
-            "destination": "/api/$1"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/src/frontend/$1"
-        }
+    "builds": [
+        { "src": "api/**/*.js", "use": "@vercel/node" },
+        { "src": "src/frontend/**/*", "use": "@vercel/static" }
+    ],
+    "routes": [
+        { "src": "/", "dest": "/src/frontend/index.html" },
+        { "src": "/api/(.*)", "dest": "/api/$1" },
+        { "src": "/(.*)", "dest": "/src/frontend/$1" }
     ],
     "env": {
-        "NODE_ENV": "production",
-        "VERCEL_DEPLOYMENT": "true"
-    },
-    "build": {
-        "env": {
-            "NODE_ENV": "production"
-        }
+        "NODE_ENV": "production"
     }
 }
