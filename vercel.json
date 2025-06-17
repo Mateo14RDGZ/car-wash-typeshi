@@ -1,40 +1,13 @@
 {
     "version": 2,
-    "builds": [
+    "rewrites": [
         {
-            "src": "api/**/*.js",
-            "use": "@vercel/node"
+            "source": "/",
+            "destination": "/src/frontend/index.html"
         },
         {
-            "src": "src/frontend/**/*",
-            "use": "@vercel/static"
+            "source": "/((?!api/).*)",
+            "destination": "/src/frontend/$1"
         }
-    ],
-    "routes": [
-        {
-            "src": "/api/bookings/available-slots",
-            "dest": "api/bookings/available-slots.js"
-        },
-        {
-            "src": "/api/bookings",
-            "dest": "api/bookings/index.js"
-        },
-        {
-            "src": "/api/services",
-            "dest": "api/services/index.js"
-        },
-        {
-            "src": "/",
-            "dest": "src/frontend/index.html"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "src/frontend/$1"
-        }
-    ],
-    "functions": {
-        "api/**/*.js": {
-            "runtime": "nodejs18.x"
-        }
-    }
+    ]
 }

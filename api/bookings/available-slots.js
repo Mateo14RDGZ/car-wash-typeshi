@@ -1,5 +1,76 @@
 // API Route para Vercel - Horarios Disponibles
-const { generateTimeSlots } = require('../../src/backend/services/timeSlots');
+
+// Configuración de horarios (copiada del backend)
+const BUSINESS_HOURS = {
+    1: { open: '08:30', close: '17:00' }, // Lunes
+    2: { open: '08:30', close: '17:00' }, // Martes
+    3: { open: '08:30', close: '17:00' }, // Miércoles
+    4: { open: '08:30', close: '17:00' }, // Jueves
+    5: { open: '08:30', close: '17:00' }, // Viernes
+    6: { open: '08:30', close: '13:00' }, // Sábado
+    0: null // Domingo cerrado
+};
+
+const SLOT_DURATION = 90;
+
+// Horarios específicos para días de semana
+const WEEKDAY_SLOTS = [
+    { start: '08:30', end: '10:00' },
+    { start: '10:00', end: '11:30' },
+    { start: '11:30', end: '13:00' },
+    { start: '14:00', end: '15:30' },
+    { start: '15:30', end: '17:00' }
+];
+
+// Horarios específicos para sábados
+const SATURDAY_SLOTS = [
+    { start: '08:30', end: '10:00' },
+    { start: '10:00', end: '11:30' },
+    { start: '11:30', end: '13:00' }
+];
+
+function generateTimeSlots(date) {
+    if (!date || typeof date !== 'string') {
+        console.error('DEBUG - Fecha no proporcionada o no es string:', date);
+        return [];
+    }
+    
+    const inputDate = new Date(date + 'T00:00:00');
+    
+    if (isNaN(inputDate.getTime())) {
+        console.error('DEBUG - Fecha inválida recibida:', date);
+        return [];
+    }
+
+    const dayOfWeek = inputDate.getDay();
+    
+    if (!BUSINESS_HOURS.hasOwnProperty(dayOfWeek) || !BUSINESS_HOURS[dayOfWeek]) {
+        console.log('DEBUG - No hay horarios de atención para el día:', dayOfWeek);
+        return [];
+    }
+
+    let slots = [];
+
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        slots = WEEKDAY_SLOTS.map(slot => ({
+            time: `${slot.start} - ${slot.end}`,
+            start: slot.start,
+            end: slot.end,
+            isBooked: false,
+            duration: SLOT_DURATION
+        }));
+    } else if (dayOfWeek === 6) {
+        slots = SATURDAY_SLOTS.map(slot => ({
+            time: `${slot.start} - ${slot.end}`,
+            start: slot.start,
+            end: slot.end,
+            isBooked: false,
+            duration: SLOT_DURATION
+        }));
+    }
+    
+    return slots;
+}
 
 export default async function handler(req, res) {
     // Configurar CORS

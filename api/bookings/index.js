@@ -1,5 +1,4 @@
 // API Route para Vercel - Crear Reservas
-const { generateTimeSlots } = require('../../src/backend/services/timeSlots');
 
 // Almacenamiento temporal en memoria para reservas (en producción usarías una BD)
 let reservas = [];
