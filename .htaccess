@@ -1,0 +1,30 @@
+# Redirección para todas las llamadas API al api-bridge
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # No redirigir si ya está en api-bridge
+    RewriteCond %{REQUEST_URI} !^/api-bridge
+    
+    # Redirigir todas las llamadas API al api-bridge
+    RewriteRule ^api/(.*)$ /api-bridge?endpoint=/$1 [L,QSA]
+</IfModule>
+
+# Cabeceras anti-caché para archivos JS y API
+<IfModule mod_headers.c>
+    # JavaScript - evitar caché agresivo
+    <FilesMatch "\.(js)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
+    </FilesMatch>
+    
+    # API - evitar caché completamente
+    <FilesMatch "^(api-bridge|api)">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
+    </FilesMatch>
+</IfModule>
+
+# Errores
+ErrorDocument 404 /src/frontend/index.html

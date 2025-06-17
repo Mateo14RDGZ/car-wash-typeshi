@@ -1,0 +1,11 @@
+{
+  "status": "SUCCESS",
+  "data": [
+    { "time": "08:30 - 10:00", "start": "08:30", "end": "10:00", "duration": 90, "isBooked": false },
+    { "time": "10:00 - 11:30", "start": "10:00", "end": "11:30", "duration": 90, "isBooked": false },
+    { "time": "11:30 - 13:00", "start": "11:30", "end": "13:00", "duration": 90, "isBooked": false },
+    { "time": "14:00 - 15:30", "start": "14:00", "end": "15:30", "duration": 90, "isBooked": false },
+    { "time": "15:30 - 17:00", "start": "15:30", "end": "17:00", "duration": 90, "isBooked": false }
+  ],
+  "message": "Horarios disponibles (respuesta estática de emergencia)"
+}
