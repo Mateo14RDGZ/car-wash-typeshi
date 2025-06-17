@@ -17,13 +17,27 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <link rel="stylesheet" href="styles.css" />
-    <!-- API Client FORZAR CACHE REFRESH -->
+    <!-- SISTEMA DEFINITIVO - CARGA DE SCRIPTS GARANTIZADA -->
     <script>
-      // Forzar reload del script con timestamp
+      // Forzar reload de todos los scripts con timestamp único
       const timestamp = Date.now();
-      const script = document.createElement('script');
-      script.src = `api-client.js?t=${timestamp}`;
-      document.head.appendChild(script);
+      
+      // Función para cargar scripts con anti-caché
+      function loadScript(src) {
+        const script = document.createElement('script');
+        script.src = `${src}?t=${timestamp}_${Math.random().toString(36).substring(7)}`;
+        script.onerror = function() {
+          console.error(`Error al cargar ${src}, reintentando...`);
+          setTimeout(() => loadScript(src), 1000); // Reintentar
+        };
+        document.head.appendChild(script);
+        console.log(`Script cargado: ${src}`);
+      }
+      
+      // Cargar scripts esenciales
+      loadScript('api-helper.js');
+      loadScript('timeSlots-client.js');
+      loadScript('api-client.js');
     </script>
     <style>
       .precio-servicio {
