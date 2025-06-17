@@ -1,8 +1,15 @@
 /**
  * API Bridge para Car Wash - Reemplazo de api-proxy.php para Vercel
+ * VERSIÓN OPTIMIZADA PARA WEB (17/06/2025)
  * 
  * Este archivo actúa como un puente entre el frontend y el backend,
  * evitando problemas de CORS y Mixed Content en Vercel.
+ * 
+ * MEJORAS:
+ * - Simplificación de rutas de api
+ * - Sistema de respuesta de emergencia mejorado
+ * - Detección más robusta de días no laborables
+ * - Optimizado para rendimiento web
  */
 
 const axios = require('axios');
@@ -59,15 +66,12 @@ module.exports = async (req, res) => {
   // Información de depuración
   console.log(`[API Bridge] Solicitud recibida para endpoint: ${endpoint}`);
   console.log(`[API Bridge] Método: ${req.method}`);
-  
-  // Verificar si estamos en producción o desarrollo
-  const isProduction = process.env.NODE_ENV === 'production';
-  console.log(`[API Bridge] Entorno: ${isProduction ? 'Producción' : 'Desarrollo'}`);
+    // Siempre considerarlo como producción para el api-bridge
+  const isProduction = true;
+  console.log(`[API Bridge] Procesando petición en modo optimizado para web`);
 
-  // Determinar la base URL más adecuada
-  let baseUrls = isProduction 
-    ? ['https://car-wash-typeshi.vercel.app/api', '/api'] 
-    : ['http://localhost:3003/api', '/api'];
+  // URLs simplificadas para mayor fiabilidad
+  let baseUrls = ['/api', 'https://car-wash-typeshi.vercel.app/api'];
   
   // Inicializar variables para seguimiento de intentos
   let lastError = null;
@@ -125,33 +129,49 @@ module.exports = async (req, res) => {
       // Continuar con la siguiente URL
     }
   }
+    // Si llegamos aquí, todas las URLs fallaron
+  console.error('[API Bridge] Todas las URLs fallaron, usando respuesta de emergencia');
   
-  // Si llegamos aquí, todas las URLs fallaron
-  console.error('[API Bridge] Todas las URLs fallaron:', lastError);
-  
-  // Respuesta de fallback para horarios disponibles
+  // RESPUESTAS OFFLINE - Datos de emergencia para mantener la web funcionando
+    // Respuesta de fallback para horarios disponibles
   if (endpoint.includes('available-slots')) {
     const date = req.query.date || new Date().toISOString().split('T')[0];
-    const requestedDate = new Date(date);
+    console.log(`[API Bridge] Analizando fecha: ${date}`);
+    
+    // Forzar el formato correcto de la fecha (YYYY-MM-DD)
+    const [year, month, day] = date.split('-').map(num => parseInt(num, 10));
+    const requestedDate = new Date(year, month-1, day); // Mes en JS es 0-indexed
+    
     const dayOfWeek = requestedDate.getDay(); // 0 = domingo, 6 = sábado
+    console.log(`[API Bridge] Fecha parseada: ${requestedDate.toDateString()}, día de semana: ${dayOfWeek}`)
+      // Verificar primero si es domingo (cerrado)
+    if (dayOfWeek === 0) {
+      console.log('[API Bridge] Detectado domingo, día cerrado:', date);
+      return res.status(200).json({
+        status: 'SUCCESS',
+        data: [],
+        fallback: true,
+        message: 'Cerrado los domingos. Por favor seleccione otro día.'
+      });
+    }
     
-    // Determinar si es fin de semana para horarios diferentes
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    // Determinar si es sábado para horarios diferentes
+    const isSaturday = dayOfWeek === 6;
     
-    // Generar slots de fallback
-    const fallbackSlots = isWeekend 
-      ? [
-          { time: '08:30 - 10:00', start: '08:30', end: '10:00', duration: 90, isBooked: false },
-          { time: '10:00 - 11:30', start: '10:00', end: '11:30', duration: 90, isBooked: false },
-          { time: '11:30 - 13:00', start: '11:30', end: '13:00', duration: 90, isBooked: false }
-        ]
-      : [
-          { time: '08:30 - 10:00', start: '08:30', end: '10:00', duration: 90, isBooked: false },
-          { time: '10:00 - 11:30', start: '10:00', end: '11:30', duration: 90, isBooked: false },
-          { time: '11:30 - 13:00', start: '11:30', end: '13:00', duration: 90, isBooked: false },
-          { time: '14:00 - 15:30', start: '14:00', end: '15:30', duration: 90, isBooked: false },
-          { time: '15:30 - 17:00', start: '15:30', end: '17:00', duration: 90, isBooked: false }
-        ];
+    // Generar horarios de emergencia de manera inteligente
+    const baseSlots = [
+      { time: '08:30 - 10:00', start: '08:30', end: '10:00', duration: 90, isBooked: false },
+      { time: '10:00 - 11:30', start: '10:00', end: '11:30', duration: 90, isBooked: false },
+      { time: '11:30 - 13:00', start: '11:30', end: '13:00', duration: 90, isBooked: false }
+    ];
+    
+    // Para días de semana, añadir horarios de tarde
+    const afternoonSlots = [
+      { time: '14:00 - 15:30', start: '14:00', end: '15:30', duration: 90, isBooked: false },
+      { time: '15:30 - 17:00', start: '15:30', end: '17:00', duration: 90, isBooked: false }
+    ];
+      // Determinar slots disponibles según día (sábado solo mañana, resto día completo)
+    const fallbackSlots = isSaturday ? baseSlots : [...baseSlots, ...afternoonSlots];
     
     return res.status(200).json({
       status: 'SUCCESS',
