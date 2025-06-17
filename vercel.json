@@ -2,7 +2,7 @@
     "version": 2,
     "functions": {
         "api/**/*.js": {
-            "runtime": "nodejs18.x"
+            "runtime": "@vercel/node@2.15.11"
         }
     },
     "rewrites": [
@@ -18,5 +18,14 @@
             "source": "/(.*)",
             "destination": "/src/frontend/$1"
         }
-    ]
+    ],
+    "env": {
+        "NODE_ENV": "production",
+        "VERCEL_DEPLOYMENT": "true"
+    },
+    "build": {
+        "env": {
+            "NODE_ENV": "production"
+        }
+    }
 }
