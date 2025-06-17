@@ -1,37 +1,40 @@
 {
-    "version": 2,    "builds": [
+    "version": 2,
+    "builds": [
         {
-            "src": "src/backend/serverDB.js",
+            "src": "api/**/*.js",
             "use": "@vercel/node"
         },
         {
-            "src": "src/frontend/*",
+            "src": "src/frontend/**/*",
             "use": "@vercel/static"
-        },
-        {
-            "src": "api-bridge.js",
-            "use": "@vercel/node"
         }
     ],
     "routes": [
         {
-            "src": "/api/(.*)",
-            "dest": "src/backend/serverDB.js"
+            "src": "/api/bookings/available-slots",
+            "dest": "api/bookings/available-slots.js"
         },
         {
-            "src": "/api-bridge",
-            "dest": "api-bridge.js"
+            "src": "/api/bookings",
+            "dest": "api/bookings/index.js"
+        },
+        {
+            "src": "/api/services",
+            "dest": "api/services/index.js"
+        },
+        {
+            "src": "/",
+            "dest": "src/frontend/index.html"
         },
         {
             "src": "/(.*)",
             "dest": "src/frontend/$1"
         }
     ],
-    "env": {
-        "DB_HOST": "db4free.net",
-        "DB_USER": "car_wash_db_user",
-        "DB_PASS": "db4free_password",
-        "DB_NAME": "car_wash_db",
-        "PORT": "3000"
+    "functions": {
+        "api/**/*.js": {
+            "runtime": "nodejs18.x"
+        }
     }
 }
