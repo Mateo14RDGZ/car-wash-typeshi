@@ -1,5 +1,6 @@
 {
-    "version": 2,    "builds": [
+    "version": 2,
+    "builds": [
         { "src": "api-bridge.js", "use": "@vercel/node" },
         { "src": "api/**/*.js", "use": "@vercel/node" },
         { "src": "src/frontend/**/*", "use": "@vercel/static" }
@@ -10,8 +11,13 @@
         { "src": "/", "dest": "/src/frontend/index.html" },
         { "src": "/api/(.*)", "dest": "/api/$1" },
         { "src": "/(.*)", "dest": "/src/frontend/$1" }
-    ],
-    "env": {
+    ],    "env": {
         "NODE_ENV": "production"
+    },
+    "functions": {
+        "api-bridge.js": {
+            "memory": 1024,
+            "maxDuration": 10
+        }
     }
 }
