@@ -1014,3 +1014,41 @@ function procesarHorariosDisponiblesOld(horarios) {
     // ...existing code...
 }
 */
+
+// Verificación de que todos los elementos necesarios existen
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 VERIFICANDO ELEMENTOS NECESARIOS:');
+    
+    const checks = [
+        { id: 'fecha', name: 'Input de fecha' },
+        { id: 'horariosContainer', name: 'Contenedor de horarios' },
+        { id: 'reservaForm', name: 'Formulario de reserva' },
+        { id: 'carga-info', name: 'Indicador de carga' }
+    ];
+    
+    checks.forEach(check => {
+        const element = document.getElementById(check.id);
+        if (element) {
+            console.log(`✅ ${check.name} encontrado`);
+        } else {
+            console.error(`❌ ${check.name} NO encontrado (ID: ${check.id})`);
+        }
+    });
+    
+    // Verificar que .horarios-grid existe dentro del contenedor
+    const horariosGrid = document.querySelector('#horariosContainer .horarios-grid');
+    if (horariosGrid) {
+        console.log('✅ Grid de horarios encontrado');
+    } else {
+        console.error('❌ Grid de horarios NO encontrado');
+    }
+    
+    // Verificar que apiRequest está disponible
+    if (typeof window.apiRequest === 'function') {
+        console.log('✅ apiRequest disponible');
+    } else {
+        console.error('❌ apiRequest NO disponible');
+    }
+    
+    console.log('🎯 VERIFICACIÓN COMPLETADA - La aplicación debería funcionar correctamente');
+});
