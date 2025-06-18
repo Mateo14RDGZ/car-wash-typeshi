@@ -13,6 +13,9 @@
  */
 
 const axios = require('axios');
+
+// Importar la lógica de timeSlots desde el backend para consistencia
+const timeSlots = require('./src/backend/services/timeSlots');
 const { URL } = require('url');
 
 // Opciones de configuración
@@ -218,28 +221,11 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
         message: 'No hay horarios disponibles los domingos'
       });
     }
+      // Generar slots usando la lógica de timeSlots.js para consistencia
+    console.log(`[API Bridge] Usando timeSlots.generateTimeSlots para fecha: ${dateStr}`);
+    const availableSlots = timeSlots.generateTimeSlots(dateStr);
     
-    // Generar slots según el día de la semana
-    let availableSlots = [];
-    
-    // Para sábados
-    if (dayOfWeek === 6) {
-      availableSlots = [
-        { time: '08:30 - 10:00', start: '08:30', end: '10:00', duration: SLOT_DURATION, isBooked: false },
-        { time: '10:00 - 11:30', start: '10:00', end: '11:30', duration: SLOT_DURATION, isBooked: false },
-        { time: '11:30 - 13:00', start: '11:30', end: '13:00', duration: SLOT_DURATION, isBooked: false }
-      ];
-    }
-    // Para días de semana (lunes a viernes)
-    else {
-      availableSlots = [
-        { time: '08:30 - 10:00', start: '08:30', end: '10:00', duration: SLOT_DURATION, isBooked: false },
-        { time: '10:00 - 11:30', start: '10:00', end: '11:30', duration: SLOT_DURATION, isBooked: false },
-        { time: '11:30 - 13:00', start: '11:30', end: '13:00', duration: SLOT_DURATION, isBooked: false },
-        { time: '14:00 - 15:30', start: '14:00', end: '15:30', duration: SLOT_DURATION, isBooked: false },
-        { time: '15:30 - 17:00', start: '15:30', end: '17:00', duration: SLOT_DURATION, isBooked: false }
-      ];
-    }
+    console.log(`[API Bridge] timeSlots.js generó ${availableSlots.length} horarios para ${dateStr}`);
 
     // Intentar obtener datos de reservas existentes en MySQL
     try {
