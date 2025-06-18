@@ -215,7 +215,6 @@ function mostrarErrorConexion() {
 }
 
 // Exportar las funciones para que sean accesibles desde fuera
-// Exportar las funciones para que sean accesibles desde fuera
 if (typeof window !== 'undefined') {
     window.cargarHorariosDisponibles = cargarHorariosDisponibles;
     window.procesarHorariosDisponibles = procesarHorariosDisponibles;

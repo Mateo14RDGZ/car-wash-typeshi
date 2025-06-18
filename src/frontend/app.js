@@ -262,30 +262,8 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             // Cuando lleguen los datos reales, actualizar los horarios
             if (data && data.data && Array.isArray(data.data)) {
                 debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
-                
-                // Usar la nueva función para procesar los horarios
+                  // Usar la nueva función para procesar los horarios
                 procesarHorariosDisponibles(data.data);
-                        
-                        // Actualizar contenido
-                        const durationDiv = element.querySelector('.horario-duracion');
-                        durationDiv.innerHTML = '<i class="fas fa-clock"></i>';
-                    } else {
-                        // Marcar como no disponible
-                        element.classList.add('horario-no-disponible');
-                        const durationDiv = element.querySelector('.horario-duracion');
-                        durationDiv.innerHTML = '<i class="fas fa-times"></i>';
-                    }
-                });
-                
-                // Actualizar mensaje de carga
-                const infoText = document.getElementById('carga-info');
-                if (infoText) {
-                    if (Object.keys(availableSlotsMap).length === 0) {
-                        infoText.innerHTML = '<span class="badge bg-info text-dark"><i class="fas fa-info-circle me-1"></i> No hay horarios disponibles para esta fecha</span>';
-                    } else {
-                        infoText.remove();
-                    }
-                }
             } else {
                 // Si no hay datos o el formato es incorrecto
                 debugLog('DEBUG - Los datos recibidos no tienen el formato esperado o están vacíos');

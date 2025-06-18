@@ -3,11 +3,12 @@
  * Contiene la misma lógica pero adaptada para ser usada en el navegador
  */
 
-// Configuración de horarios
-const BUSINESS_HOURS = {
-    1: { open: '08:30', close: '17:00' }, // Lunes
-    2: { open: '08:30', close: '17:00' }, // Martes
-    3: { open: '08:30', close: '17:00' }, // Miércoles
+// Configuración de horarios (evitar conflictos con otras declaraciones)
+if (typeof BUSINESS_HOURS === 'undefined') {
+    var BUSINESS_HOURS = {
+        1: { open: '08:30', close: '17:00' }, // Lunes
+        2: { open: '08:30', close: '17:00' }, // Martes
+        3: { open: '08:30', close: '17:00' }, // Miércoles
     4: { open: '08:30', close: '17:00' }, // Jueves
     5: { open: '08:30', close: '17:00' }, // Viernes
     6: { open: '08:30', close: '12:30' }, // Sábado
@@ -80,3 +81,5 @@ function getBusinessHoursForDay(dayOfWeek) {
     if (!hours) return 'Cerrado';
     return `${hours.open} a ${hours.close}`;
 }
+
+console.log('⏰ TimeSlots Client cargado correctamente');
