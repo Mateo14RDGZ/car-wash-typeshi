@@ -524,8 +524,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     // Validación de campos
     if (!validarFormulario(formData)) {
         return;
-    }    try {
-        // Enviar la reserva al servidor
+    }    try {        // Enviar la reserva al servidor
         const data = await apiRequest('/bookings', {
             method: 'POST',
             headers: {
@@ -533,6 +532,10 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
             },
             body: JSON.stringify(formData)
         });
+        
+        console.log('📡 RESPUESTA DEL SERVIDOR AL CREAR RESERVA:', data);
+        console.log('📋 data.data:', data.data);
+        console.log('📋 Estructura completa de data:', Object.keys(data || {}));
         
         // Si tiene éxito, mostrar confirmación
         mostrarReservaConfirmada(data.data);
@@ -568,6 +571,10 @@ function validarFormulario(formData) {
 
 // Función para mostrar la confirmación de reserva
 function mostrarReservaConfirmada(reserva) {
+    console.log('🎯 MOSTRAR RESERVA CONFIRMADA - Datos recibidos:', reserva);
+    console.log('🔍 Tipo de datos:', typeof reserva);
+    console.log('🔍 Estructura de reserva:', Object.keys(reserva || {}));
+    
     // Crear los elementos para la confirmación
     const container = document.getElementById('reservar');
     const originalContent = container.innerHTML;
