@@ -16,23 +16,30 @@ if (typeof window !== 'undefined' && typeof window.BUSINESS_HOURS === 'undefined
     };
 }
 
-const SLOT_DURATION = 90; // minutos
+// Variables globales usando window para evitar conflictos de recarga
+if (typeof window !== 'undefined' && typeof window.SLOT_DURATION === 'undefined') {
+    window.SLOT_DURATION = 90; // minutos
+}
 
-// Horarios específicos para días de semana
-const WEEKDAY_SLOTS = [
-    { start: '08:30', end: '10:00' },
-    { start: '10:00', end: '11:30' },
-    { start: '11:30', end: '13:00' },
-    { start: '14:00', end: '15:30' },
-    { start: '15:30', end: '17:00' }
-];
+// Horarios específicos para días de semana (usar window para evitar conflictos)
+if (typeof window !== 'undefined' && typeof window.WEEKDAY_SLOTS === 'undefined') {
+    window.WEEKDAY_SLOTS = [
+        { start: '08:30', end: '10:00' },
+        { start: '10:00', end: '11:30' },
+        { start: '11:30', end: '13:00' },
+        { start: '14:00', end: '15:30' },
+        { start: '15:30', end: '17:00' }
+    ];
+}
 
-// Horarios específicos para sábados
-const SATURDAY_SLOTS = [
-    { start: '08:30', end: '10:00' },
-    { start: '10:00', end: '11:30' },
-    { start: '11:30', end: '13:00' }
-];
+// Horarios específicos para sábados (usar window para evitar conflictos)
+if (typeof window !== 'undefined' && typeof window.SATURDAY_SLOTS === 'undefined') {
+    window.SATURDAY_SLOTS = [
+        { start: '08:30', end: '10:00' },
+        { start: '10:00', end: '11:30' },
+        { start: '11:30', end: '13:00' }
+    ];
+}
 
 /**
  * Genera los slots de tiempo para un día específico
@@ -46,15 +53,13 @@ function generateTimeSlots(date) {
     if (dayOfWeek === 0) {
         return [];
     }
+      // Usar slots de sábado o día de semana
+    const slots = dayOfWeek === 6 ? window.SATURDAY_SLOTS : window.WEEKDAY_SLOTS;
     
-    // Usar slots de sábado o día de semana
-    const slots = dayOfWeek === 6 ? SATURDAY_SLOTS : WEEKDAY_SLOTS;
-    
-    return slots.map(slot => ({
-        time: `${slot.start} - ${slot.end}`,
+    return slots.map(slot => ({        time: `${slot.start} - ${slot.end}`,
         start: slot.start,
         end: slot.end,
-        duration: SLOT_DURATION,
+        duration: window.SLOT_DURATION,
         isBooked: false
     }));
 }

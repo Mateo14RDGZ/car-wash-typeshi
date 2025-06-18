@@ -1,18 +1,22 @@
-// Función para manejar errores de depuración
-function debugError(...args) {
-    if (!isProduction) {
-        console.error(...args);
-    } else {
-        // En producción, registrar errores pero sin incluir detalles sensibles
-        console.error('Se ha producido un error. Consulta con el administrador si el problema persiste.');
-    }
+// Función para manejar errores de depuración (protegida contra redeclaración)
+if (typeof window.debugError === 'undefined') {
+    window.debugError = function(...args) {
+        if (!window.isProduction) {
+            console.error(...args);
+        } else {
+            // En producción, registrar errores pero sin incluir detalles sensibles
+            console.error('Se ha producido un error. Consulta con el administrador si el problema persiste.');
+        }
+    };
 }
 
-// Función para manejar logs de depuración
-function debugLog(...args) {
-    if (!isProduction) {
-        console.log(...args);
-    }
+// Función para manejar logs de depuración (protegida contra redeclaración)
+if (typeof window.debugLog === 'undefined') {
+    window.debugLog = function(...args) {
+        if (!window.isProduction) {
+            console.log(...args);
+        }
+    };
 }
 
 // Variables globales (usar window para evitar conflictos de carga múltiple)
@@ -22,16 +26,22 @@ if (typeof window.servicioSeleccionado === 'undefined') {
 if (typeof window.horarioSeleccionado === 'undefined') {
     window.horarioSeleccionado = null;
 }
-const precios = {
-    basico: 600,
-    premium: 1100,
-    detailing: 3850
-};
+if (typeof window.precios === 'undefined') {
+    window.precios = {
+        basico: 600,
+        premium: 1100,
+        detailing: 3850
+    };
+}
 
 // SISTEMA DEFINITIVO: Forzar uso exclusivo del api-bridge
 // No hay más intento de múltiples URLs o servidores locales
-const isProduction = true; // Siempre tratar como producción
-const isSecureContext = true; // Siempre asumir contexto seguro
+if (typeof window.isProduction === 'undefined') {
+    window.window.isProduction = true; // Siempre tratar como producción
+}
+if (typeof window.isSecureContext === 'undefined') {
+    window.isSecureContext = true; // Siempre asumir contexto seguro
+}
 
 // ELIMINADAS TODAS LAS RUTAS ALTERNATIVAS
 // Asegurar que no haya variables globales que puedan interferir
@@ -39,7 +49,7 @@ window.API_URL = null;
 window.API_URLS_FALLBACK = null;
 
 // Solo mostrar logs de depuración en entorno de desarrollo
-debugLog('DEBUG - Entorno: Desarrollo', 
+window.debugLog('DEBUG - Entorno: Desarrollo', 
                '| Protocolo:', isSecureContext ? 'HTTPS' : 'HTTP',
                '| API principal:', window.API_URL);
 
@@ -110,7 +120,7 @@ window.seleccionarServicio = function(tipo) {
 // Función para actualizar el precio sumando extras
 function actualizarPrecioConExtras() {
     if (!window.servicioSeleccionado) return;
-    let total = precios[window.servicioSeleccionado];
+    let total = window.precios[window.servicioSeleccionado];
     // Seleccionar los extras visibles del servicio seleccionado
     let extrasChecks = [];
     if (window.servicioSeleccionado === 'basico') {
@@ -167,13 +177,13 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
         const fecha = new Date(fechaStr);
         const ahora = new Date();
 
-        debugLog('DEBUG - Fecha seleccionada:', fecha.toLocaleDateString());
-        debugLog('DEBUG - Valor del input:', this.value);
-        debugLog('DEBUG - Día de la semana:', fecha.getDay());
+        window.debugLog('DEBUG - Fecha seleccionada:', fecha.toLocaleDateString());
+        window.debugLog('DEBUG - Valor del input:', this.value);
+        window.debugLog('DEBUG - Día de la semana:', fecha.getDay());
 
         // Validar que la fecha sea futura
         if (fecha < ahora) {
-            debugLog('DEBUG - Fecha rechazada: es pasada');
+            window.debugLog('DEBUG - Fecha rechazada: es pasada');
             mostrarError('Por favor, selecciona una fecha futura');
             this.value = '';
             return;
@@ -184,7 +194,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
 
         // Validar que no sea domingo
         if (dia === 0) {
-            debugLog('DEBUG - Fecha rechazada: es domingo');
+            window.debugLog('DEBUG - Fecha rechazada: es domingo');
             mostrarError('Lo sentimos, no atendemos los domingos');
             this.value = '';
             return;
@@ -192,7 +202,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
 
         const horariosContainer = document.getElementById('horariosContainer');
         if (!horariosContainer) {
-            debugError('DEBUG - No se encontró el contenedor de horarios');
+            window.debugError('DEBUG - No se encontró el contenedor de horarios');
             return;
         }
 
@@ -256,7 +266,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
 
             // Usar la función helper para realizar la petición
             const data = await apiRequest(endpoint);
-            debugLog('DEBUG - Datos recibidos del servidor:', data);
+            window.debugLog('DEBUG - Datos recibidos del servidor:', data);
 
             // Verificar si los datos vienen de MySQL o generación local
             if (data && data.dataSource) {
@@ -265,12 +275,12 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             
             // Cuando lleguen los datos reales, actualizar los horarios
             if (data && data.data && Array.isArray(data.data)) {
-                debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
+                window.debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
                   // Usar la nueva función para procesar los horarios
                 procesarHorariosDisponibles(data.data);
             } else {
                 // Si no hay datos o el formato es incorrecto
-                debugLog('DEBUG - Los datos recibidos no tienen el formato esperado o están vacíos');
+                window.debugLog('DEBUG - Los datos recibidos no tienen el formato esperado o están vacíos');
                 document.querySelectorAll('.horario-slot').forEach(element => {
                     // Quitar clase de carga
                     element.classList.remove('horario-loading');
@@ -293,7 +303,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                     }
                 }
             }
-        } catch (error) {            debugError('ERROR al obtener horarios disponibles:', error);
+        } catch (error) {            window.debugError('ERROR al obtener horarios disponibles:', error);
             console.error('INTENTANDO RECUPERACIÓN DE EMERGENCIA...');
             
             // Intentar cargar los horarios de fallback como último recurso
@@ -348,7 +358,7 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             }
         }
     } catch (error) {
-        debugError('DEBUG - Error general al procesar la fecha:', error);
+        window.debugError('DEBUG - Error general al procesar la fecha:', error);
         mostrarError('Ocurrió un error al procesar la fecha seleccionada');
     }
 });
@@ -433,13 +443,13 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         return;
     }
 
-    const fecha = document.getElementById('fecha').value;    debugLog('DEBUG - Submit - Fecha seleccionada:', fecha);
-    debugLog('DEBUG - Submit - Horario seleccionado:', window.horarioSeleccionado);    
+    const fecha = document.getElementById('fecha').value;    window.debugLog('DEBUG - Submit - Fecha seleccionada:', fecha);
+    window.debugLog('DEBUG - Submit - Horario seleccionado:', window.horarioSeleccionado);    
     // Crear objeto Date para validación
     const [horaInicio] = window.horarioSeleccionado.split(' - ');    const fechaHora = new Date(fecha + 'T' + horaInicio);
-    debugLog('DEBUG - Submit - Fecha y hora combinadas:', fechaHora.toISOString());
-    debugLog('DEBUG - Submit - Fecha y hora local:', fechaHora.toLocaleString());
-    debugLog('DEBUG - Submit - Día de la semana:', fechaHora.getDay());
+    window.debugLog('DEBUG - Submit - Fecha y hora combinadas:', fechaHora.toISOString());
+    window.debugLog('DEBUG - Submit - Fecha y hora local:', fechaHora.toLocaleString());
+    window.debugLog('DEBUG - Submit - Día de la semana:', fechaHora.getDay());
 
     // Obtener el día de la semana (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
     const dia = fechaHora.getDay();
@@ -469,7 +479,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     }
 
     // Calcular el precio total con extras seleccionados
-    let total = precios[window.servicioSeleccionado];
+    let total = window.precios[window.servicioSeleccionado];
     let extrasChecks = [];
     if (window.servicioSeleccionado === 'basico') {
         extrasChecks = [
@@ -515,7 +525,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         mostrarReservaConfirmada(data.data);
         
     } catch (error) {
-        debugError('Error al enviar la reserva:', error);
+        window.debugError('Error al enviar la reserva:', error);
         mostrarError('No se pudo procesar la reserva. Por favor, verifica tu conexión a internet e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.');
     }
 });
