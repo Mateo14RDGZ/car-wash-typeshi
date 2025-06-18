@@ -37,7 +37,7 @@ if (typeof window.precios === 'undefined') {
 // SISTEMA DEFINITIVO: Forzar uso exclusivo del api-bridge
 // No hay más intento de múltiples URLs o servidores locales
 if (typeof window.isProduction === 'undefined') {
-    window.window.isProduction = true; // Siempre tratar como producción
+    window.isProduction = true; // Siempre tratar como producción
 }
 if (typeof window.isSecureContext === 'undefined') {
     window.isSecureContext = true; // Siempre asumir contexto seguro
@@ -198,13 +198,15 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             mostrarError('Lo sentimos, no atendemos los domingos');
             this.value = '';
             return;
-        }
-
-        const horariosContainer = document.getElementById('horariosContainer');
+        }        const horariosContainer = document.getElementById('horariosContainer');
         if (!horariosContainer) {
-            window.debugError('DEBUG - No se encontró el contenedor de horarios');
+            window.debugError('DEBUG - No se encontró el contenedor de horarios con ID "horariosContainer"');
+            console.error('❌ CONTENEDOR DE HORARIOS NO ENCONTRADO - Elementos disponibles:', 
+                Array.from(document.querySelectorAll('[id*="horario"]')).map(el => el.id));
             return;
         }
+        
+        console.log('✅ Contenedor de horarios encontrado:', horariosContainer);
 
         // Formatear la fecha para la API
         const fechaFormateada = fecha.toISOString().split('T')[0];
@@ -253,9 +255,13 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                 </div>
             </div>
         `;
-        horariosContainer.style.display = 'block';
-          // Realizar la petición al backend utilizando el helper
+        horariosContainer.style.display = 'block';        // Realizar la petición al backend utilizando el helper
         const endpoint = '/bookings/available-slots?date=' + fechaFormateada;
+        console.log('🚀 INICIANDO PETICIÓN DE HORARIOS:', {
+            endpoint: endpoint,
+            fechaFormateada: fechaFormateada,
+            apiRequestDisponible: typeof apiRequest !== 'undefined'
+        });
         
         try {
             // Mostrar estado de carga mejorado
@@ -264,8 +270,15 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                 infoText.innerHTML = '<span class="badge bg-primary"><i class="fas fa-database fa-spin me-1"></i> Consultando base de datos...</span>';
             }
 
+            // Verificar que apiRequest esté disponible
+            if (typeof apiRequest === 'undefined') {
+                throw new Error('apiRequest no está definida. API Helper no se cargó correctamente.');
+            }
+
             // Usar la función helper para realizar la petición
+            console.log('📡 Ejecutando apiRequest...');
             const data = await apiRequest(endpoint);
+            console.log('📊 RESPUESTA RECIBIDA:', data);
             window.debugLog('DEBUG - Datos recibidos del servidor:', data);
 
             // Verificar si los datos vienen de MySQL o generación local
@@ -910,10 +923,14 @@ document.getElementById('fecha') && document.getElementById('fecha').addEventLis
 
 // Esta función procesa los horarios disponibles y actualiza la UI - MYSQL Edition
 function procesarHorariosDisponibles(horarios) {
-    console.log('Procesando horarios desde MySQL:', horarios.length);
+    console.log('🔄 PROCESANDO HORARIOS RECIBIDOS:', {
+        cantidad: horarios.length,
+        datos: horarios
+    });
     
     // Verificar si hay horarios disponibles
     if (horarios.length === 0) {
+        console.log('⚠️ No hay horarios disponibles');
         // Mostrar mensaje de que no hay horarios disponibles
         const infoText = document.getElementById('carga-info');
         if (infoText) {

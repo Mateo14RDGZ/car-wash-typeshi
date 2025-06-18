@@ -382,3 +382,9 @@ async function apiRequest(endpoint, options = {}) {
         };
     }
 }
+
+// Exportar apiRequest para uso global
+if (typeof window !== 'undefined') {
+    window.apiRequest = apiRequest;
+    console.log('📤 apiRequest exportada correctamente a window');
+}
