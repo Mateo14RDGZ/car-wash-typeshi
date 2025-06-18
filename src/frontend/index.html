@@ -485,7 +485,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="timeSlots-client.js"></script>
     <script src="app.js"></script>
+    <!--
     <script>
+      // SCRIPT DESHABILITADO TEMPORALMENTE - CAUSA CONFLICTOS CON APP.JS
+      // TODO: Integrar con el sistema unificado de app.js
+      /*
       const fechaInput = document.getElementById("fecha");
       const horariosContainer = document.getElementById("horariosContainer");
 
@@ -638,9 +642,11 @@
         const fallbackData = JSON.parse(
           document.getElementById("embedded-slots-fallback").textContent
         );
-        mostrarHorarios(fallbackData.data);
+        // mostrarHorarios(fallbackData.data);
       });
+      */
     </script>
+    -->
 
     <!-- Respaldo de horarios embebido en el HTML como último recurso -->
     <script type="application/json" id="embedded-slots-fallback">

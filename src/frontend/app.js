@@ -921,83 +921,96 @@ document.getElementById('fecha') && document.getElementById('fecha').addEventLis
     }
 });
 
-// Esta función procesa los horarios disponibles y actualiza la UI - MYSQL Edition
+// NUEVA FUNCIÓN PARA MOSTRAR HORARIOS CORRECTAMENTE
 function procesarHorariosDisponibles(horarios) {
     console.log('🔄 PROCESANDO HORARIOS RECIBIDOS:', {
         cantidad: horarios.length,
         datos: horarios
     });
     
+    // Obtener el contenedor de horarios
+    const horariosContainer = document.getElementById('horariosContainer');
+    const horariosGrid = horariosContainer ? horariosContainer.querySelector('.horarios-grid') : null;
+    
+    if (!horariosGrid) {
+        console.error('❌ No se encontró .horarios-grid dentro del contenedor');
+        return;
+    }
+    
+    // Limpiar contenido anterior
+    horariosGrid.innerHTML = '';
+    
     // Verificar si hay horarios disponibles
     if (horarios.length === 0) {
         console.log('⚠️ No hay horarios disponibles');
-        // Mostrar mensaje de que no hay horarios disponibles
-        const infoText = document.getElementById('carga-info');
-        if (infoText) {
-            infoText.innerHTML = '<span class="badge bg-warning text-dark">' +
-                '<i class="fas fa-info-circle me-1"></i> No hay horarios disponibles para esta fecha según la base de datos</span>';
-        }
+        horariosGrid.innerHTML = '<div class="alert alert-info">No hay horarios disponibles para esta fecha</div>';
+        return;
     }
     
-    // Crear un mapa de los slots disponibles para búsqueda rápida
-    const availableSlotsMap = {};
-    if (horarios.length > 0) {
-        horarios.forEach(slot => {
-            if (slot && slot.start && slot.end) {
-                const time = slot.time || `${slot.start} - ${slot.end}`;
-                availableSlotsMap[time] = slot;
+    // Crear botones para cada horario disponible
+    horarios.forEach(slot => {
+        if (slot && slot.time) {
+            console.log(`✅ Creando botón para horario: ${slot.time}`);
+            
+            const horarioBtn = document.createElement('button');
+            horarioBtn.type = 'button';
+            horarioBtn.className = 'btn btn-outline-primary m-1';
+            horarioBtn.textContent = slot.time;
+            horarioBtn.value = slot.time;
+            
+            // Evento para seleccionar horario
+            horarioBtn.onclick = function() {
+                // Remover selección anterior
+                document.querySelectorAll('.horarios-grid .btn').forEach(btn => {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                });
                 
-                // Guardar información adicional sobre la disponibilidad
-                if (slot.isBooked === false) {
-                    console.log(`Horario disponible: ${time}`);
+                // Marcar como seleccionado
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+                
+                // Guardar horario seleccionado
+                window.horarioSeleccionado = slot.time;
+                console.log('⭐ Horario seleccionado:', slot.time);
+                
+                // Crear/actualizar campo oculto para el formulario
+                let horarioInput = document.getElementById('horarioSeleccionado');
+                if (!horarioInput) {
+                    horarioInput = document.createElement('input');
+                    horarioInput.type = 'hidden';
+                    horarioInput.name = 'horario';
+                    horarioInput.id = 'horarioSeleccionado';
+                    document.getElementById('reservaForm').appendChild(horarioInput);
                 }
-            }
-        });
-    }
-    
-    // Actualizar el estado de los slots en el DOM (disponible/no disponible)
-    const slotElements = document.querySelectorAll('.horario-slot');
-    slotElements.forEach(element => {
-        const time = element.getAttribute('data-time');
-        
-        // Quitar clase de carga
-        element.classList.remove('horario-loading');
-        
-        // Si está en el mapa, está disponible
-        if (availableSlotsMap[time]) {
-            // Configurar para selección
-            element.onclick = function() {
-                seleccionarHorario(time, this);
+                horarioInput.value = slot.time;
             };
             
-            // Actualizar contenido
-            const durationDiv = element.querySelector('.horario-duracion');
-            durationDiv.innerHTML = '<i class="fas fa-clock"></i>';
-        } else {
-            // Marcar como no disponible
-            element.classList.add('horario-no-disponible');
-            const durationDiv = element.querySelector('.horario-duracion');
-            durationDiv.innerHTML = '<i class="fas fa-times"></i>';
+            horariosGrid.appendChild(horarioBtn);
         }
     });
-      // Actualizar mensaje de carga
+    
+    // Mostrar mensaje de éxito en el indicador de carga
     const infoText = document.getElementById('carga-info');
     if (infoText) {
-        if (Object.keys(availableSlotsMap).length === 0) {
-            infoText.innerHTML = '<span class="badge bg-info text-dark">' +
-                '<i class="fas fa-database me-1"></i> No hay horarios disponibles para esta fecha según la base de datos MySQL</span>';
-        } else {
-            // Mostrar un mensaje de éxito
-            infoText.innerHTML = '<span class="badge bg-success text-white">' +
-                '<i class="fas fa-check-circle me-1"></i> Horarios cargados desde MySQL</span>';
-            
-            // Desvanecer después de 3 segundos
+        infoText.innerHTML = '<span class="badge bg-success text-white">' +
+            '<i class="fas fa-check-circle me-1"></i> ' + horarios.length + ' horarios cargados desde MySQL</span>';
+        
+        // Desvanecer después de 3 segundos
+        setTimeout(() => {
+            infoText.style.opacity = '0';
             setTimeout(() => {
-                infoText.style.opacity = '0';
-                setTimeout(() => {
-                    infoText.style.display = 'none';
-                }, 500);
-            }, 3000);
-        }
+                infoText.style.display = 'none';
+            }, 500);
+        }, 3000);
     }
+    
+    console.log('✅ Horarios procesados y mostrados correctamente');
 }
+
+// Función antigua comentada (mantener como referencia)
+/*
+function procesarHorariosDisponiblesOld(horarios) {
+    // ...existing code...
+}
+*/
