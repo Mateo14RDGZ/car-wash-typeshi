@@ -201,8 +201,8 @@ function mostrarErrorConexion() {
     if (infoText) {
         infoText.innerHTML = '<span class="badge bg-danger text-white"><i class="fas fa-exclamation-triangle me-1"></i> Error de conexión - No se pudieron cargar los horarios</span>';
     }
-    
-    // Mostrar notificación de error detallada usando la función global mostrarError    if (typeof window !== 'undefined' && window.mostrarError) {
+      // Mostrar notificación de error detallada usando la función global mostrarError
+    if (typeof window !== 'undefined' && window.mostrarError) {
         window.mostrarError(`
             <strong>Error de conexión</strong><br>
             <small>
@@ -214,9 +214,10 @@ function mostrarErrorConexion() {
     }
 }
 
+
 // Exportar las funciones para que sean accesibles desde fuera
 if (typeof window !== 'undefined') {
     window.cargarHorariosDisponibles = cargarHorariosDisponibles;
     window.procesarHorariosDisponibles = procesarHorariosDisponibles;
 }
-}
+

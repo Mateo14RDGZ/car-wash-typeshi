@@ -16,11 +16,11 @@ function debugLog(...args) {
 }
 
 // Variables globales (usar window para evitar conflictos de carga múltiple)
-if (typeof window.window.servicioSeleccionado === 'undefined') {
-    window.window.servicioSeleccionado = null;
+if (typeof window.servicioSeleccionado === 'undefined') {
+    window.servicioSeleccionado = null;
 }
-if (typeof window.window.horarioSeleccionado === 'undefined') {
-    window.window.horarioSeleccionado = null;
+if (typeof window.horarioSeleccionado === 'undefined') {
+    window.horarioSeleccionado = null;
 }
 const precios = {
     basico: 600,
