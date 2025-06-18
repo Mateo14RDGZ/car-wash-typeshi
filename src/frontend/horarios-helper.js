@@ -219,3 +219,4 @@ if (typeof window !== 'undefined') {
     window.cargarHorariosDisponibles = cargarHorariosDisponibles;
     window.procesarHorariosDisponibles = procesarHorariosDisponibles;
 }
+}

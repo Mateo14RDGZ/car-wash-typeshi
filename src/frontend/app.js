@@ -15,9 +15,13 @@ function debugLog(...args) {
     }
 }
 
-// Variables globales
-let servicioSeleccionado = null;
-let horarioSeleccionado = null;
+// Variables globales (usar window para evitar conflictos de carga múltiple)
+if (typeof window.window.servicioSeleccionado === 'undefined') {
+    window.window.servicioSeleccionado = null;
+}
+if (typeof window.window.horarioSeleccionado === 'undefined') {
+    window.window.horarioSeleccionado = null;
+}
 const precios = {
     basico: 600,
     premium: 1100,
@@ -65,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Función para seleccionar servicio con animación
 // La declaramos como variable global para que sea accesible desde el HTML
 window.seleccionarServicio = function(tipo) {
-    servicioSeleccionado = tipo;
+    window.servicioSeleccionado = tipo;
     const botones = document.querySelectorAll('.card button');
     const cards = document.querySelectorAll('.card');
 
@@ -105,18 +109,18 @@ window.seleccionarServicio = function(tipo) {
 
 // Función para actualizar el precio sumando extras
 function actualizarPrecioConExtras() {
-    if (!servicioSeleccionado) return;
-    let total = precios[servicioSeleccionado];
+    if (!window.servicioSeleccionado) return;
+    let total = precios[window.servicioSeleccionado];
     // Seleccionar los extras visibles del servicio seleccionado
     let extrasChecks = [];
-    if (servicioSeleccionado === 'basico') {
+    if (window.servicioSeleccionado === 'basico') {
         extrasChecks = [
             document.getElementById('extra-aroma-basico'),
             document.getElementById('extra-encerado-basico'),
             document.getElementById('extra-tapizado-basico'),
             document.getElementById('extra-opticas-basico')
         ];
-    } else if (servicioSeleccionado === 'premium') {
+    } else if (window.servicioSeleccionado === 'premium') {
         extrasChecks = [
             document.getElementById('extra-tapizado-premium'),
             document.getElementById('extra-opticas-premium')
@@ -135,14 +139,14 @@ function actualizarPrecioConExtras() {
 // Agrega listeners a los checkboxes de extras para actualizar el precio en tiempo real
 function agregarListenersExtras() {
     let extrasChecks = [];
-    if (servicioSeleccionado === 'basico') {
+    if (window.servicioSeleccionado === 'basico') {
         extrasChecks = [
             document.getElementById('extra-aroma-basico'),
             document.getElementById('extra-encerado-basico'),
             document.getElementById('extra-tapizado-basico'),
             document.getElementById('extra-opticas-basico')
         ];
-    } else if (servicioSeleccionado === 'premium') {
+    } else if (window.servicioSeleccionado === 'premium') {
         extrasChecks = [
             document.getElementById('extra-tapizado-premium'),
             document.getElementById('extra-opticas-premium')
@@ -387,7 +391,7 @@ window.seleccionarHorario = function(hora, elemento) {
 
     // Seleccionar nuevo horario
     elemento.classList.add('selected');
-    horarioSeleccionado = hora;
+    window.horarioSeleccionado = hora;
 
     // Mostrar confirmación visual
     const confirmacion = document.createElement('div');
@@ -419,20 +423,20 @@ window.seleccionarHorario = function(hora, elemento) {
 document.getElementById('reservaForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    if (!servicioSeleccionado) {
+    if (!window.servicioSeleccionado) {
         mostrarError('Por favor, selecciona un servicio antes de continuar');
         return;
     }
 
-    if (!horarioSeleccionado) {
+    if (!window.horarioSeleccionado) {
         mostrarError('Por favor, selecciona un horario');
         return;
     }
 
     const fecha = document.getElementById('fecha').value;    debugLog('DEBUG - Submit - Fecha seleccionada:', fecha);
-    debugLog('DEBUG - Submit - Horario seleccionado:', horarioSeleccionado);    
+    debugLog('DEBUG - Submit - Horario seleccionado:', window.horarioSeleccionado);    
     // Crear objeto Date para validación
-    const [horaInicio] = horarioSeleccionado.split(' - ');    const fechaHora = new Date(fecha + 'T' + horaInicio);
+    const [horaInicio] = window.horarioSeleccionado.split(' - ');    const fechaHora = new Date(fecha + 'T' + horaInicio);
     debugLog('DEBUG - Submit - Fecha y hora combinadas:', fechaHora.toISOString());
     debugLog('DEBUG - Submit - Fecha y hora local:', fechaHora.toLocaleString());
     debugLog('DEBUG - Submit - Día de la semana:', fechaHora.getDay());
@@ -454,27 +458,27 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
 
     // Capturar extras seleccionados
     let extrasSeleccionados = [];
-    if (servicioSeleccionado === 'basico') {
+    if (window.servicioSeleccionado === 'basico') {
         if (document.getElementById('extra-aroma-basico')?.checked) extrasSeleccionados.push('Aromatización');
         if (document.getElementById('extra-encerado-basico')?.checked) extrasSeleccionados.push('Encerado');
         if (document.getElementById('extra-tapizado-basico')?.checked) extrasSeleccionados.push('Limpieza de tapizados');
         if (document.getElementById('extra-opticas-basico')?.checked) extrasSeleccionados.push('Pulido de ópticas');
-    } else if (servicioSeleccionado === 'premium') {
+    } else if (window.servicioSeleccionado === 'premium') {
         if (document.getElementById('extra-tapizado-premium')?.checked) extrasSeleccionados.push('Limpieza de tapizados');
         if (document.getElementById('extra-opticas-premium')?.checked) extrasSeleccionados.push('Pulido de ópticas');
     }
 
     // Calcular el precio total con extras seleccionados
-    let total = precios[servicioSeleccionado];
+    let total = precios[window.servicioSeleccionado];
     let extrasChecks = [];
-    if (servicioSeleccionado === 'basico') {
+    if (window.servicioSeleccionado === 'basico') {
         extrasChecks = [
             document.getElementById('extra-aroma-basico'),
             document.getElementById('extra-encerado-basico'),
             document.getElementById('extra-tapizado-basico'),
             document.getElementById('extra-opticas-basico')
         ];
-    } else if (servicioSeleccionado === 'premium') {
+    } else if (window.servicioSeleccionado === 'premium') {
         extrasChecks = [
             document.getElementById('extra-tapizado-premium'),
             document.getElementById('extra-opticas-premium')
@@ -489,7 +493,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         date: fecha + 'T' + horaInicio,
         vehicleType: document.getElementById('vehiculo').value,
         vehiclePlate: document.getElementById('patente').value,
-        serviceType: servicioSeleccionado,
+        serviceType: window.servicioSeleccionado,
         price: total,
         extras: extrasSeleccionados
     };
@@ -678,8 +682,8 @@ function mostrarReservaConfirmada(reserva) {
         // Recuperar el contenido original
         container.innerHTML = container.dataset.originalContent;
         // Resetear variables globales
-        servicioSeleccionado = null;
-        horarioSeleccionado = null;
+        window.servicioSeleccionado = null;
+        window.horarioSeleccionado = null;
         // Limpiar campos
         const form = document.getElementById('reservaForm');
         if (form) form.reset();
