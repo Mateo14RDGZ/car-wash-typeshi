@@ -42,6 +42,22 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
   
+  // PARSING DEL BODY PARA PETICIONES POST/PUT
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    if (!req.body || typeof req.body === 'string') {
+      try {
+        // Intentar parsear el body si es string
+        if (typeof req.body === 'string') {
+          req.body = JSON.parse(req.body);
+        }
+        console.log('[API Bridge] Body parseado correctamente:', req.body);
+      } catch (parseError) {
+        console.error('[API Bridge] Error parseando body:', parseError);
+        console.log('[API Bridge] Body raw:', req.body);
+      }
+    }
+  }
+  
   // Obtener el endpoint y otros parámetros
   const { endpoint } = req.query;
   
@@ -298,16 +314,23 @@ function generateEmergencyResponse(req, res, endpoint) {
   console.log('[API Bridge] Generando respuesta de emergencia para:', endpoint);
   console.log('[API Bridge] Método:', req.method);
   console.log('[API Bridge] Body recibido:', req.body);
+  console.log('[API Bridge] Tipo de req.body:', typeof req.body);
+  console.log('[API Bridge] Claves de req.body:', Object.keys(req.body || {}));
+  console.log('[API Bridge] Raw body length:', JSON.stringify(req.body || {}).length);
   
   // Respuesta de fallback para reservas (creación)
   if (endpoint.includes('/bookings') && (req.method === 'POST' || req.method === 'PUT')) {
     const bookingId = Math.floor(100000 + Math.random() * 900000);
     
+    // Verificar si req.body tiene datos
+    const hasBodyData = req.body && Object.keys(req.body).length > 0;
+    console.log('[API Bridge] ¿Tiene datos el body?:', hasBodyData);
+    
     // Construir respuesta con todos los datos necesarios
     const responseData = {
       id: bookingId,
-      ...req.body, // Incluir todos los datos del formulario
-      status: 'confirmed', // Cambiar a confirmed para que se vea como exitoso
+      ...(hasBodyData ? req.body : {}), // Incluir datos del formulario si existen
+      status: 'confirmed',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
