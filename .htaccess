@@ -1,4 +1,5 @@
 # Redirección para todas las llamadas API al api-bridge
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
@@ -10,6 +11,7 @@
 </IfModule>
 
 # Cabeceras anti-caché para archivos JS y API
+
 <IfModule mod_headers.c>
     # JavaScript - evitar caché agresivo
     <FilesMatch "\.(js)$">
@@ -27,4 +29,5 @@
 </IfModule>
 
 # Errores
+
 ErrorDocument 404 /src/frontend/index.html

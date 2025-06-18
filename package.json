@@ -1,0 +1,40 @@
+{
+    "name": "car-wash-booking",
+    "version": "1.0.0",
+    "description": "Sistema de reservas para lavado de autos",
+    "main": "src/backend/server.js",
+    "scripts": {
+        "start": "node src/backend/server.js",
+        "start:db": "node src/backend/serverDB.js",
+        "build": "echo \"Build completado para Vercel\"",
+        "vercel-build": "echo \"Vercel build completado exitosamente\"",
+        "dev": "nodemon src/backend/server.js",
+        "dev:db": "nodemon src/backend/serverDB.js",
+        "frontend": "node serve-frontend.js",
+        "dev:full": "concurrently \"npm run dev:db\" \"npm run frontend\"",
+        "client": "cd src/frontend && npm start",
+        "setup:db": "node setup-database.js",
+        "configure-db": "node configure-db.js",
+        "db:sync": "node -e \"require('./src/database/init').initDatabase()\"",
+        "db:reset": "node -e \"require('./src/database/init').initDatabase().then(() => require('./src/database/init').sequelize.sync({force: true}))\""
+    },
+    "dependencies": {
+        "axios": "^1.9.0",
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.5",
+        "dotenv": "^16.5.0",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.2",
+        "mysql2": "^3.14.1",
+        "nodemailer": "^6.9.7",
+        "sequelize": "^6.37.7"
+    },
+    "engines": {
+        "node": "18.x",
+        "npm": ">=8.0.0"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "nodemon": "^3.0.1"
+    }
+}

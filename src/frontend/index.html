@@ -57,18 +57,19 @@
       // Sistema secuencial de carga - un script a la vez en orden específico
       // IMPORTANTE: api-helper.js primero (único sistema), NO cargar api-client.js
       async function loadAllScripts() {
-        try {          // 1. Primero api-helper.js (implementación única)
+        try {
+          // 1. Primero api-helper.js (implementación única)
           await loadScript("api-helper.js");
-          
+
           // 2. Luego el sistema de horarios robusto
           await loadScript("horarios-helper.js");
-          
+
           // 3. El manejador de fechas mejorado
           await loadScript("fecha-handler.js");
-          
+
           // 4. Luego timeSlots-client.js
           await loadScript("timeSlots-client.js");
-          
+
           // 5. Finalmente app.js
           await loadScript("app.js");
 
@@ -643,54 +644,54 @@
 
     <!-- Respaldo de horarios embebido en el HTML como último recurso -->
     <script type="application/json" id="embedded-slots-fallback">
-    {
-      "status": "SUCCESS",
-      "data": [
-        { 
-          "time": "08:30 - 10:00", 
-          "start": "08:30", 
-          "end": "10:00", 
-          "duration": 90, 
-          "isBooked": false,
-          "available": true
-        },
-        { 
-          "time": "10:00 - 11:30", 
-          "start": "10:00", 
-          "end": "11:30", 
-          "duration": 90, 
-          "isBooked": false,
-          "available": true
-        },
-        { 
-          "time": "11:30 - 13:00", 
-          "start": "11:30", 
-          "end": "13:00", 
-          "duration": 90, 
-          "isBooked": false,
-          "available": true
-        },
-        { 
-          "time": "14:00 - 15:30", 
-          "start": "14:00", 
-          "end": "15:30", 
-          "duration": 90, 
-          "isBooked": false,
-          "available": true
-        },
-        { 
-          "time": "15:30 - 17:00", 
-          "start": "15:30", 
-          "end": "17:00", 
-          "duration": 90, 
-          "isBooked": false,
-          "available": true
-        }
-      ],
-      "message": "Horarios disponibles (respuesta de emergencia embebida)",
-      "source": "embedded-html",
-      "emergency": true
-    }
+      {
+        "status": "SUCCESS",
+        "data": [
+          {
+            "time": "08:30 - 10:00",
+            "start": "08:30",
+            "end": "10:00",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          },
+          {
+            "time": "10:00 - 11:30",
+            "start": "10:00",
+            "end": "11:30",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          },
+          {
+            "time": "11:30 - 13:00",
+            "start": "11:30",
+            "end": "13:00",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          },
+          {
+            "time": "14:00 - 15:30",
+            "start": "14:00",
+            "end": "15:30",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          },
+          {
+            "time": "15:30 - 17:00",
+            "start": "15:30",
+            "end": "17:00",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          }
+        ],
+        "message": "Horarios disponibles (respuesta de emergencia embebida)",
+        "source": "embedded-html",
+        "emergency": true
+      }
     </script>
   </body>
 </html>

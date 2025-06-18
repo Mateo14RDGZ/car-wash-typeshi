@@ -24,25 +24,15 @@ const precios = {
     detailing: 3850
 };
 
-// Configuración de la API basada en el entorno
-const isProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
-const isSecureContext = window.location.protocol === 'https:';
+// SISTEMA DEFINITIVO: Forzar uso exclusivo del api-bridge
+// No hay más intento de múltiples URLs o servidores locales
+const isProduction = true; // Siempre tratar como producción
+const isSecureContext = true; // Siempre asumir contexto seguro
 
-// Configuración inteligente basada en el entorno
-window.API_URL = isProduction 
-    ? '/api'  // En producción, usar ruta relativa
-    : 'http://localhost:3003/api'; // En desarrollo local
-
-// URLs alternativas en caso de bloqueo
-window.API_URLS_FALLBACK = isProduction 
-    ? [
-        'https://car-wash-typeshi.vercel.app/api', // URL completa segura
-        '/api' // URL relativa como alternativa
-      ]
-    : [
-        'http://127.0.0.1:3003/api',
-        '/api'
-      ];
+// ELIMINADAS TODAS LAS RUTAS ALTERNATIVAS
+// Asegurar que no haya variables globales que puedan interferir
+window.API_URL = null;
+window.API_URLS_FALLBACK = null;
 
 // Solo mostrar logs de depuración en entorno de desarrollo
 debugLog('DEBUG - Entorno: Desarrollo', 
@@ -258,36 +248,12 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             // Usar la función helper para realizar la petición
             const data = await apiRequest(endpoint);
             debugLog('DEBUG - Datos recibidos del servidor:', data);
-            
-            // Cuando lleguen los datos reales, actualizar los horarios
+              // Cuando lleguen los datos reales, actualizar los horarios
             if (data && data.data && Array.isArray(data.data)) {
                 debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
                 
-                // Crear un mapa de los slots disponibles para búsqueda rápida
-                const availableSlotsMap = {};
-                if (data.data.length > 0) {
-                    data.data.forEach(slot => {
-                        if (slot && slot.start && slot.end) {
-                            const time = slot.time || `${slot.start} - ${slot.end}`;
-                            availableSlotsMap[time] = slot;
-                        }
-                    });
-                }
-                
-                // Actualizar el estado de los slots en el DOM (disponible/no disponible)
-                const slotElements = document.querySelectorAll('.horario-slot');
-                slotElements.forEach(element => {
-                    const time = element.getAttribute('data-time');
-                    
-                    // Quitar clase de carga
-                    element.classList.remove('horario-loading');
-                    
-                    // Si está en el mapa, está disponible
-                    if (availableSlotsMap[time]) {
-                        // Configurar para selección
-                        element.onclick = function() {
-                            seleccionarHorario(time, this);
-                        };
+                // Usar la nueva función para procesar los horarios
+                procesarHorariosDisponibles(data.data);
                         
                         // Actualizar contenido
                         const durationDiv = element.querySelector('.horario-duracion');
@@ -334,28 +300,59 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
                     }
                 }
             }
-        } catch (error) {
-            debugError('ERROR al obtener horarios disponibles:', error);
+        } catch (error) {            debugError('ERROR al obtener horarios disponibles:', error);
+            console.error('INTENTANDO RECUPERACIÓN DE EMERGENCIA...');
             
-            // En caso de error, marcar todos como no disponibles pero con mensaje de error de conexión
-            document.querySelectorAll('.horario-slot').forEach(element => {
-                // Quitar clase de carga
-                element.classList.remove('horario-loading');
-                element.classList.add('horario-no-disponible');
-                element.onclick = null; // Eliminar evento click
-                // Actualizar contenido
-                const durationDiv = element.querySelector('.horario-duracion');
-                durationDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
-            });
-            
-            // Actualizar mensaje de carga
-            const infoText = document.getElementById('carga-info');
-            if (infoText) {
-                infoText.innerHTML = '<span class="badge bg-danger text-white"><i class="fas fa-exclamation-triangle me-1"></i> Error de conexión - No se pudieron cargar los horarios</span>';
+            // Intentar cargar los horarios de fallback como último recurso
+            try {
+                console.log('Cargando respaldo de emergencia...');
+                fetch('slots-fallback.json?' + new Date().getTime())
+                    .then(response => response.json())
+                    .then(fallbackData => {
+                        console.log('HORARIOS DE EMERGENCIA CARGADOS:', fallbackData);
+                        // Procesar los datos del fallback como si fueran datos normales
+                        if (fallbackData && fallbackData.data && Array.isArray(fallbackData.data)) {
+                            procesarHorariosDisponibles(fallbackData.data);
+                            
+                            // Mostrar mensaje de advertencia
+                            const infoText = document.getElementById('carga-info');
+                            if (infoText) {
+                                infoText.innerHTML = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i> Mostrando horarios de respaldo</span>';
+                            }
+                            return;
+                        }
+                    })
+                    .catch(fallbackError => {
+                        console.error('ERROR EN RESPALDO:', fallbackError);
+                        mostrarErrorConexion();
+                    });
+            } catch (fallbackError) {
+                console.error('ERROR AL CARGAR RESPALDO:', fallbackError);
+                mostrarErrorConexion();
             }
             
-            // Mostrar notificación de error
-            mostrarError('Error al cargar horarios: ' + error);
+            // Función para mostrar error de conexión
+            function mostrarErrorConexion() {
+                // En caso de error, marcar todos como no disponibles pero con mensaje de error de conexión
+                document.querySelectorAll('.horario-slot').forEach(element => {
+                    // Quitar clase de carga
+                    element.classList.remove('horario-loading');
+                    element.classList.add('horario-no-disponible');
+                    element.onclick = null; // Eliminar evento click
+                    // Actualizar contenido
+                    const durationDiv = element.querySelector('.horario-duracion');
+                    durationDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+                });
+                
+                // Actualizar mensaje de carga
+                const infoText = document.getElementById('carga-info');
+                if (infoText) {
+                    infoText.innerHTML = '<span class="badge bg-danger text-white"><i class="fas fa-exclamation-triangle me-1"></i> Error de conexión - No se pudieron cargar los horarios</span>';
+                }
+                
+                // Mostrar notificación de error detallada
+                mostrarError('Error de conexión<br><small>No se pudieron cargar los horarios disponibles. Esta aplicación requiere conexión a internet para funcionar correctamente.<br><br>Por favor, verifica tu conexión e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.</small>');
+            }
         }
     } catch (error) {
         debugError('DEBUG - Error general al procesar la fecha:', error);
@@ -907,3 +904,54 @@ document.getElementById('fecha') && document.getElementById('fecha').addEventLis
         horarioContainer.style.display = 'none';
     }
 });
+
+// Esta función procesa los horarios disponibles y actualiza la UI
+function procesarHorariosDisponibles(horarios) {
+    console.log('Procesando horarios:', horarios.length);
+    // Crear un mapa de los slots disponibles para búsqueda rápida
+    const availableSlotsMap = {};
+    if (horarios.length > 0) {
+        horarios.forEach(slot => {
+            if (slot && slot.start && slot.end) {
+                const time = slot.time || `${slot.start} - ${slot.end}`;
+                availableSlotsMap[time] = slot;
+            }
+        });
+    }
+    
+    // Actualizar el estado de los slots en el DOM (disponible/no disponible)
+    const slotElements = document.querySelectorAll('.horario-slot');
+    slotElements.forEach(element => {
+        const time = element.getAttribute('data-time');
+        
+        // Quitar clase de carga
+        element.classList.remove('horario-loading');
+        
+        // Si está en el mapa, está disponible
+        if (availableSlotsMap[time]) {
+            // Configurar para selección
+            element.onclick = function() {
+                seleccionarHorario(time, this);
+            };
+            
+            // Actualizar contenido
+            const durationDiv = element.querySelector('.horario-duracion');
+            durationDiv.innerHTML = '<i class="fas fa-clock"></i>';
+        } else {
+            // Marcar como no disponible
+            element.classList.add('horario-no-disponible');
+            const durationDiv = element.querySelector('.horario-duracion');
+            durationDiv.innerHTML = '<i class="fas fa-times"></i>';
+        }
+    });
+    
+    // Actualizar mensaje de carga
+    const infoText = document.getElementById('carga-info');
+    if (infoText) {
+        if (Object.keys(availableSlotsMap).length === 0) {
+            infoText.innerHTML = '<span class="badge bg-info text-dark"><i class="fas fa-info-circle me-1"></i> No hay horarios disponibles para esta fecha</span>';
+        } else {
+            infoText.remove();
+        }
+    }
+}
