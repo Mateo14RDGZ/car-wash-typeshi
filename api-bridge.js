@@ -220,26 +220,28 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
         data: [],
         message: 'No hay horarios disponibles los domingos'
       });
-    }
-      // Generar slots usando la lógica de timeSlots.js para consistencia
+    }      // Generar slots usando la lógica de timeSlots.js para consistencia
     console.log(`[API Bridge] Usando timeSlots.generateTimeSlots para fecha: ${dateStr}`);
     const availableSlots = timeSlots.generateTimeSlots(dateStr);
     
     console.log(`[API Bridge] timeSlots.js generó ${availableSlots.length} horarios para ${dateStr}`);
+    console.log(`[API Bridge] Horarios generados:`, availableSlots.map(slot => slot.time));
 
     // Intentar obtener datos de reservas existentes en MySQL
     try {
       // En un entorno real, aquí se haría una consulta a la base de datos
       // Ejemplo: const bookings = await Booking.findAll({where: {date: dateStr}});
-      
-      // Simulamos información de reservas para la demostración
+        // Simulamos información de reservas para la demostración
       const existingBookings = getExistingBookingsFromCache(dateStr);
+      console.log(`[API Bridge] Reservas existentes encontradas:`, existingBookings.length);
       
       // Marcar los horarios ya reservados
       if (existingBookings && existingBookings.length > 0) {
+        console.log(`[API Bridge] Marcando horarios como reservados:`, existingBookings.map(b => b.time));
         existingBookings.forEach(booking => {
           const slot = availableSlots.find(s => s.start === booking.time.split(' - ')[0]);
           if (slot) {
+            console.log(`[API Bridge] Marcando slot ${slot.time} como reservado`);
             slot.isBooked = true;
           }
         });
@@ -247,6 +249,7 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
       
       // Filtrar para mostrar solo los disponibles
       const availableSlotsOnly = availableSlots.filter(slot => !slot.isBooked);
+      console.log(`[API Bridge] Horarios finales disponibles:`, availableSlotsOnly.map(slot => slot.time));
       
       return res.status(200).json({
         status: 'SUCCESS',
@@ -273,14 +276,12 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
 }
 
 // Caché local de reservas para simulación
+// Cache de reservas - TEMPORAL VACÍO para mostrar todos los horarios disponibles
 const bookingsCache = {
-  '2025-06-18': [
-    { id: 1, time: '10:00 - 11:30', clientName: 'Juan Pérez' },
-    { id: 2, time: '14:00 - 15:30', clientName: 'María Rodríguez' }
-  ],
-  '2025-06-19': [
-    { id: 3, time: '08:30 - 10:00', clientName: 'Pedro González' }
-  ]
+  // Ejemplo de estructura para futuras reservas reales:
+  // '2025-06-18': [
+  //   { id: 1, time: '10:00 - 11:30', clientName: 'Juan Pérez' }
+  // ]
 };
 
 // Función para obtener reservas de caché
