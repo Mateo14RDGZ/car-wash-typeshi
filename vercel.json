@@ -12,8 +12,12 @@
     { "src": "/", "dest": "/src/frontend/index.html" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/src/frontend/$1" }
-  ],
-  "env": {
-    "NODE_ENV": "production"
+  ],  "env": {
+    "NODE_ENV": "production",
+    "DB_HOST": "us-east.connect.psdb.cloud",
+    "DB_NAME": "car_wash_db",
+    "DB_USER": "dbuser",
+    "DB_PASS": "dbpassword",
+    "DB_PORT": "3306"
   }
 }

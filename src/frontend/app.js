@@ -240,15 +240,26 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             </div>
         `;
         horariosContainer.style.display = 'block';
-        
-        // Realizar la petición al backend utilizando el helper
+          // Realizar la petición al backend utilizando el helper
         const endpoint = '/bookings/available-slots?date=' + fechaFormateada;
         
         try {
+            // Mostrar estado de carga mejorado
+            const infoText = document.getElementById('carga-info');
+            if (infoText) {
+                infoText.innerHTML = '<span class="badge bg-primary"><i class="fas fa-database fa-spin me-1"></i> Consultando base de datos...</span>';
+            }
+
             // Usar la función helper para realizar la petición
             const data = await apiRequest(endpoint);
             debugLog('DEBUG - Datos recibidos del servidor:', data);
-              // Cuando lleguen los datos reales, actualizar los horarios
+
+            // Verificar si los datos vienen de MySQL o generación local
+            if (data && data.dataSource) {
+                console.log(`Origen de datos: ${data.dataSource}`);
+            }
+            
+            // Cuando lleguen los datos reales, actualizar los horarios
             if (data && data.data && Array.isArray(data.data)) {
                 debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
                 
@@ -905,9 +916,20 @@ document.getElementById('fecha') && document.getElementById('fecha').addEventLis
     }
 });
 
-// Esta función procesa los horarios disponibles y actualiza la UI
+// Esta función procesa los horarios disponibles y actualiza la UI - MYSQL Edition
 function procesarHorariosDisponibles(horarios) {
-    console.log('Procesando horarios:', horarios.length);
+    console.log('Procesando horarios desde MySQL:', horarios.length);
+    
+    // Verificar si hay horarios disponibles
+    if (horarios.length === 0) {
+        // Mostrar mensaje de que no hay horarios disponibles
+        const infoText = document.getElementById('carga-info');
+        if (infoText) {
+            infoText.innerHTML = '<span class="badge bg-warning text-dark">' +
+                '<i class="fas fa-info-circle me-1"></i> No hay horarios disponibles para esta fecha según la base de datos</span>';
+        }
+    }
+    
     // Crear un mapa de los slots disponibles para búsqueda rápida
     const availableSlotsMap = {};
     if (horarios.length > 0) {
@@ -915,6 +937,11 @@ function procesarHorariosDisponibles(horarios) {
             if (slot && slot.start && slot.end) {
                 const time = slot.time || `${slot.start} - ${slot.end}`;
                 availableSlotsMap[time] = slot;
+                
+                // Guardar información adicional sobre la disponibilidad
+                if (slot.isBooked === false) {
+                    console.log(`Horario disponible: ${time}`);
+                }
             }
         });
     }
@@ -944,14 +971,24 @@ function procesarHorariosDisponibles(horarios) {
             durationDiv.innerHTML = '<i class="fas fa-times"></i>';
         }
     });
-    
-    // Actualizar mensaje de carga
+      // Actualizar mensaje de carga
     const infoText = document.getElementById('carga-info');
     if (infoText) {
         if (Object.keys(availableSlotsMap).length === 0) {
-            infoText.innerHTML = '<span class="badge bg-info text-dark"><i class="fas fa-info-circle me-1"></i> No hay horarios disponibles para esta fecha</span>';
+            infoText.innerHTML = '<span class="badge bg-info text-dark">' +
+                '<i class="fas fa-database me-1"></i> No hay horarios disponibles para esta fecha según la base de datos MySQL</span>';
         } else {
-            infoText.remove();
+            // Mostrar un mensaje de éxito
+            infoText.innerHTML = '<span class="badge bg-success text-white">' +
+                '<i class="fas fa-check-circle me-1"></i> Horarios cargados desde MySQL</span>';
+            
+            // Desvanecer después de 3 segundos
+            setTimeout(() => {
+                infoText.style.opacity = '0';
+                setTimeout(() => {
+                    infoText.style.display = 'none';
+                }, 500);
+            }, 3000);
         }
     }
 }

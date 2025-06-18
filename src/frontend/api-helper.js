@@ -22,7 +22,7 @@
 
 // Anunciar inicialización del sistema único
 if (typeof window !== 'undefined') { // Verificar que estamos en el navegador (no en Vercel build)
-    console.log('🔵🔵🔵 SISTEMA ÚNICO API HELPER INICIADO 🔵🔵🔵');
+    console.log('🔵🔵🔵 SISTEMA ÚNICO API HELPER INICIADO - CONEXIÓN MYSQL 🔵🔵🔵');
     console.log('📌 Timestamp:', new Date().toISOString());
     
     // Eliminar posibles implementaciones duplicadas
@@ -36,6 +36,20 @@ if (typeof window !== 'undefined') { // Verificar que estamos en el navegador (n
     // Forzar variables globales a valores seguros
     window.API_URL = null;
     window.API_URLS_FALLBACK = null;
+    
+    // Establecer conexión de prueba al servidor para verificar acceso a la BD
+    console.log('🔌 Verificando conexión con la base de datos MySQL...');
+    setTimeout(() => {
+        fetch('/api-bridge?endpoint=/system/status&_=' + Date.now())
+            .then(res => {
+                if (res.ok) {
+                    console.log('✅ Conexión con el servidor establecida correctamente');
+                } else {
+                    console.warn('⚠️ Conexión al servidor establecida, pero con advertencias');
+                }
+            })
+            .catch(err => console.error('❌ Error al verificar estado del servidor:', err));
+    }, 1000);
 }
 async function apiRequest(endpoint, options = {}) {
     // ⚠️ SOLUCIÓN DEFINITIVA: Implementación única y oficial
