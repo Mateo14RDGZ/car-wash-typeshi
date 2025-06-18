@@ -5,7 +5,10 @@
  */
 
 // Variable global para indicar si estamos en modo de emergencia
-window.horariosEmergencia = false;
+// Comprobamos que el objeto window esté disponible (para compatibilidad con Vercel)
+if (typeof window !== 'undefined') {
+    window.horariosEmergencia = false;
+}
 
 // Esta función es el punto de entrada principal para cargar horarios
 async function cargarHorariosDisponibles(fecha) {
@@ -22,7 +25,7 @@ async function cargarHorariosDisponibles(fecha) {
         // Intentar la petición normal
         try {
             // Hacer la petición usando el apiRequest centralizado
-            const data = await window.apiRequest(endpoint);
+            const data = await (typeof window !== 'undefined' && window.apiRequest ? window.apiRequest(endpoint) : { error: 'API request no disponible' });
             console.log('✅ Datos de horarios recibidos:', data);
             
             if (data && data.data && Array.isArray(data.data)) {
@@ -60,7 +63,9 @@ async function cargarFallbackHorarios(fecha) {
         console.log('✅ Horarios de fallback cargados:', fallbackData);
         
         // Marcar que estamos en modo de emergencia
-        window.horariosEmergencia = true;
+        if (typeof window !== 'undefined') {
+            window.horariosEmergencia = true;
+        }
         
         // Procesar los horarios
         if (fallbackData && fallbackData.data && Array.isArray(fallbackData.data)) {
@@ -197,8 +202,7 @@ function mostrarErrorConexion() {
         infoText.innerHTML = '<span class="badge bg-danger text-white"><i class="fas fa-exclamation-triangle me-1"></i> Error de conexión - No se pudieron cargar los horarios</span>';
     }
     
-    // Mostrar notificación de error detallada usando la función global mostrarError
-    if (window.mostrarError) {
+    // Mostrar notificación de error detallada usando la función global mostrarError    if (typeof window !== 'undefined' && window.mostrarError) {
         window.mostrarError(`
             <strong>Error de conexión</strong><br>
             <small>
@@ -211,5 +215,8 @@ function mostrarErrorConexion() {
 }
 
 // Exportar las funciones para que sean accesibles desde fuera
-window.cargarHorariosDisponibles = cargarHorariosDisponibles;
-window.procesarHorariosDisponibles = procesarHorariosDisponibles;
+// Exportar las funciones para que sean accesibles desde fuera
+if (typeof window !== 'undefined') {
+    window.cargarHorariosDisponibles = cargarHorariosDisponibles;
+    window.procesarHorariosDisponibles = procesarHorariosDisponibles;
+}

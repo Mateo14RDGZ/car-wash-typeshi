@@ -21,20 +21,22 @@
  */
 
 // Anunciar inicialización del sistema único
-console.log('🔵🔵🔵 SISTEMA ÚNICO API HELPER INICIADO 🔵🔵🔵');
-console.log('📌 Timestamp:', new Date().toISOString());
-
-// Eliminar posibles implementaciones duplicadas
-if (window.apiRequestInitialized) {
-    console.error('🚨 ALERTA: Intento de doble inicialización de apiRequest()');
-} else {
-    window.apiRequestInitialized = true;
-    console.log('✅ Primera inicialización de apiRequest() - OK');
+if (typeof window !== 'undefined') { // Verificar que estamos en el navegador (no en Vercel build)
+    console.log('🔵🔵🔵 SISTEMA ÚNICO API HELPER INICIADO 🔵🔵🔵');
+    console.log('📌 Timestamp:', new Date().toISOString());
+    
+    // Eliminar posibles implementaciones duplicadas
+    if (window.apiRequestInitialized) {
+        console.error('🚨 ALERTA: Intento de doble inicialización de apiRequest()');
+    } else {
+        window.apiRequestInitialized = true;
+        console.log('✅ Primera inicialización de apiRequest() - OK');
+    }
+    
+    // Forzar variables globales a valores seguros
+    window.API_URL = null;
+    window.API_URLS_FALLBACK = null;
 }
-
-// Forzar variables globales a valores seguros
-window.API_URL = null;
-window.API_URLS_FALLBACK = null;
 async function apiRequest(endpoint, options = {}) {
     // ⚠️ SOLUCIÓN DEFINITIVA: Implementación única y oficial
     // Cada llamada genera un ID único para rastreo y depuración
