@@ -81,11 +81,19 @@ async function apiRequest(endpoint, options = {}) {
             ...(options.headers || {})
         }
     };
-    
-    // Agregar body si es necesario
-    if (options.body && typeof options.body === 'object') {
-        fetchOptions.body = JSON.stringify(options.body);
-    }    // Sistema principal de peticiones con multi-timeout
+      // Agregar body si es necesario
+    if (options.body) {
+        console.log(`📦[${callId}] Body recibido:`, options.body);
+        console.log(`📦[${callId}] Tipo de body:`, typeof options.body);
+        
+        if (typeof options.body === 'string') {
+            fetchOptions.body = options.body;
+        } else if (typeof options.body === 'object') {
+            fetchOptions.body = JSON.stringify(options.body);
+        }
+        
+        console.log(`📦[${callId}] Body final para enviar:`, fetchOptions.body);
+    }// Sistema principal de peticiones con multi-timeout
     try {
         console.log(`🚀[${callId}] Enviando petición...`);
         

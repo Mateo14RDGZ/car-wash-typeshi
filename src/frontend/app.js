@@ -519,12 +519,16 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         serviceType: window.servicioSeleccionado,
         price: total,
         extras: extrasSeleccionados
-    };
-
-    // Validación de campos
+    };    // Validación de campos
     if (!validarFormulario(formData)) {
         return;
-    }    try {        // Enviar la reserva al servidor
+    }
+    
+    console.log('📤 DATOS ENVIADOS AL SERVIDOR:', formData);
+    console.log('📤 JSON stringified:', JSON.stringify(formData));
+
+    try {
+        // Enviar la reserva al servidor
         const data = await apiRequest('/bookings', {
             method: 'POST',
             headers: {

@@ -338,36 +338,31 @@ function generateEmergencyResponse(req, res, endpoint) {
   // Respuesta de fallback para reservas (creación)
   if (endpoint.includes('/bookings') && (req.method === 'POST' || req.method === 'PUT')) {
     const bookingId = Math.floor(100000 + Math.random() * 900000);
-    
-    // Verificar si req.body tiene datos
+      // Verificar si req.body tiene datos
     const hasBodyData = req.body && Object.keys(req.body).length > 0;
     console.log('[API Bridge] ¿Tiene datos el body?:', hasBodyData);
     
-    // Si no tiene datos, crear datos de ejemplo para debugging
-    let bodyData = req.body || {};
+    // Si no hay datos en req.body, es porque no se están enviando correctamente
+    // En lugar de datos de ejemplo, vamos a devolver un error claro
     if (!hasBodyData) {
-      console.log('[API Bridge] ⚠️ Body vacío, creando datos de ejemplo para debugging');
-      bodyData = {
-        clientName: "Usuario de Prueba",
-        date: new Date().toISOString(),
-        vehicleType: "auto",
-        vehiclePlate: "ABC1234",
-        serviceType: "basico",
-        price: 600,
-        extras: []
-      };
+      console.error('[API Bridge] ❌ ERROR: No se recibieron datos del formulario');
+      return res.status(400).json({
+        status: 'ERROR',
+        message: 'No se recibieron datos del formulario. Por favor, verifica que todos los campos estén completos.',
+        error: 'MISSING_FORM_DATA'
+      });
     }
     
-    // Construir respuesta con todos los datos necesarios
+    // Construir respuesta con todos los datos reales del formulario
     const responseData = {
       id: bookingId,
-      ...bodyData, // Usar bodyData (original o ejemplo)
+      ...req.body, // Usar solo los datos reales del formulario
       status: 'confirmed',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     
-    console.log('[API Bridge] Respuesta de reserva generada:', responseData);
+    console.log('[API Bridge] Respuesta de reserva generada con datos reales:', responseData);
     
     return res.status(200).json({
       status: 'SUCCESS',
