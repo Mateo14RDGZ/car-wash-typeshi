@@ -41,13 +41,23 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+    // DEBUGGING COMPLETO DEL REQUEST
+  console.log('[API Bridge] ===== DEBUGGING COMPLETO =====');
+  console.log('[API Bridge] Método:', req.method);
+  console.log('[API Bridge] Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('[API Bridge] Query:', JSON.stringify(req.query, null, 2));
+  console.log('[API Bridge] Body (inicial):', req.body);
+  console.log('[API Bridge] Tipo de body:', typeof req.body);
   
   // PARSING DEL BODY PARA PETICIONES POST/PUT
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    console.log('[API Bridge] Procesando body para método POST/PUT...');
+    
     if (!req.body || typeof req.body === 'string') {
       try {
         // Intentar parsear el body si es string
         if (typeof req.body === 'string') {
+          console.log('[API Bridge] Body es string, parseando...');
           req.body = JSON.parse(req.body);
         }
         console.log('[API Bridge] Body parseado correctamente:', req.body);
@@ -55,7 +65,11 @@ module.exports = async (req, res) => {
         console.error('[API Bridge] Error parseando body:', parseError);
         console.log('[API Bridge] Body raw:', req.body);
       }
+    } else {
+      console.log('[API Bridge] Body ya es objeto:', req.body);
     }
+    
+    console.log('[API Bridge] Body final para procesar:', JSON.stringify(req.body, null, 2));
   }
   
   // Obtener el endpoint y otros parámetros
@@ -118,11 +132,13 @@ module.exports = async (req, res) => {
         },
         timeout: CONFIG.timeout,
       };
-      
-      // Añadir datos para métodos POST/PUT
+        // Añadir datos para métodos POST/PUT
       if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
         axiosConfig.data = req.body;
+        console.log(`[API Bridge] Configurando axiosConfig.data:`, JSON.stringify(axiosConfig.data, null, 2));
       }
+      
+      console.log(`[API Bridge] Configuración completa de axios:`, JSON.stringify(axiosConfig, null, 2));
         // Realizar la solicitud única
       try {
         const response = await axios(axiosConfig);
@@ -311,6 +327,7 @@ const SLOT_DURATION = 90;
 
 // FUNCIÓN PARA GENERAR RESPUESTAS DE EMERGENCIA
 function generateEmergencyResponse(req, res, endpoint) {
+  console.log('[API Bridge] ===== RESPUESTA DE EMERGENCIA =====');
   console.log('[API Bridge] Generando respuesta de emergencia para:', endpoint);
   console.log('[API Bridge] Método:', req.method);
   console.log('[API Bridge] Body recibido:', req.body);
@@ -326,10 +343,25 @@ function generateEmergencyResponse(req, res, endpoint) {
     const hasBodyData = req.body && Object.keys(req.body).length > 0;
     console.log('[API Bridge] ¿Tiene datos el body?:', hasBodyData);
     
+    // Si no tiene datos, crear datos de ejemplo para debugging
+    let bodyData = req.body || {};
+    if (!hasBodyData) {
+      console.log('[API Bridge] ⚠️ Body vacío, creando datos de ejemplo para debugging');
+      bodyData = {
+        clientName: "Usuario de Prueba",
+        date: new Date().toISOString(),
+        vehicleType: "auto",
+        vehiclePlate: "ABC1234",
+        serviceType: "basico",
+        price: 600,
+        extras: []
+      };
+    }
+    
     // Construir respuesta con todos los datos necesarios
     const responseData = {
       id: bookingId,
-      ...(hasBodyData ? req.body : {}), // Incluir datos del formulario si existen
+      ...bodyData, // Usar bodyData (original o ejemplo)
       status: 'confirmed',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
