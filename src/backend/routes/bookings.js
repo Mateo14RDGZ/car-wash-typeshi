@@ -136,7 +136,7 @@ router.post('/', async (req, res) => {
             });
         }
 
-        const newBooking = bookingService.createBooking({
+        const newBooking = await bookingService.createBooking({
             clientName,
             date,
             vehicleType,
@@ -182,13 +182,13 @@ router.get('/', (req, res) => {
 });
 
 // Cancelar una reserva
-router.delete('/', (req, res) => {
+router.delete('/', async (req, res) => {
     try {
         const bookingId = req.body.bookingId;
-        bookingService.cancelBooking(bookingId);
+        const result = await bookingService.cancelBooking(bookingId);
         res.json({
             status: 'SUCCESS',
-            message: 'Reserva cancelada exitosamente'
+            message: result.message
         });
     } catch (error) {
         console.error('Error al cancelar la reserva:', error);

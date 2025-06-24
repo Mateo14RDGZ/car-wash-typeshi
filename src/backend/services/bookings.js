@@ -150,12 +150,31 @@ function getBookingsByDate(date) {
 }
 
 // Función para cancelar una reserva
-function cancelBooking(bookingId) {
+async function cancelBooking(bookingId) {
     const index = bookings.findIndex(booking => booking.id === bookingId);
     if (index === -1) {
         throw new Error('Reserva no encontrada');
     }
+    
+    const booking = bookings[index];
+    
+    // Enviar correo de notificación de cancelación
+    try {
+        await emailService.sendBookingCancellation(booking, 'Cancelación solicitada por el cliente');
+        console.log('✅ Notificación de cancelación enviada al administrador');
+    } catch (emailError) {
+        console.error('❌ Error al enviar notificación de cancelación:', emailError);
+        // Continuar con la cancelación aunque falle el email
+    }
+    
+    // Eliminar la reserva del array
     bookings.splice(index, 1);
+    console.log(`✅ Reserva cancelada exitosamente - ID: ${bookingId}`);
+    
+    return { 
+        message: 'Reserva cancelada exitosamente',
+        booking: booking
+    };
 }
 
 module.exports = {

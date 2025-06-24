@@ -273,17 +273,49 @@ async function getBookingsByDate(date) {
 }
 
 // Función para cancelar una reserva
-async function cancelBooking(bookingId) {
+async function cancelBooking(clientName, date) {
     try {
-        const booking = await Booking.findByPk(bookingId);
+        // Buscar la reserva por nombre del cliente y fecha
+        const bookingDate = new Date(date);
+        const startOfDay = new Date(bookingDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(bookingDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const booking = await Booking.findOne({
+            where: {
+                clientName: clientName,
+                date: {
+                    [Op.between]: [startOfDay, endOfDay]
+                },
+                status: {
+                    [Op.ne]: 'cancelled' // Solo buscar reservas que no estén ya canceladas
+                }
+            }
+        });
         
         if (!booking) {
-            throw new Error('Reserva no encontrada');
+            throw new Error('No se encontró una reserva activa para el cliente especificado en la fecha indicada');
         }
 
+        // Enviar correo de notificación de cancelación antes de cancelar
+        try {
+            await emailService.sendBookingCancellation(booking.toJSON(), 'Cancelación solicitada por el cliente');
+            console.log('✅ Notificación de cancelación enviada al administrador');
+        } catch (emailError) {
+            console.error('❌ Error al enviar notificación de cancelación:', emailError);
+            // Continuar con la cancelación aunque falle el email
+        }
+
+        // Actualizar el estado de la reserva a cancelada
         await booking.update({ status: 'cancelled' });
         
-        return { message: 'Reserva cancelada exitosamente' };
+        console.log(`✅ Reserva cancelada exitosamente - ID: ${booking.id}, Cliente: ${clientName}`);
+        
+        return { 
+            message: 'Reserva cancelada exitosamente',
+            booking: booking.toJSON()
+        };
     } catch (error) {
         console.error('Error al cancelar reserva:', error);
         throw error;
