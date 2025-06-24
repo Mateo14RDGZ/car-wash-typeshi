@@ -26,10 +26,73 @@ const mimeTypes = {
     '.svg': 'image/svg+xml'
 };
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
     // Parse URL
-    const parsedUrl = url.parse(req.url);
+    const parsedUrl = url.parse(req.url, true);
     let pathname = parsedUrl.pathname;
+      // Handle API Bridge requests
+    if (pathname.startsWith('/api-bridge')) {
+        console.log('🔀 Redirigiendo a api-bridge:', req.url);
+        
+        try {
+            // Import and execute api-bridge
+            const apiBridge = require('./api-bridge.js');
+            
+            // Setup req.query from parsed URL
+            req.query = parsedUrl.query || {};
+            
+            // Create a mock response object that matches Express.js interface
+            const mockRes = {
+                statusCode: 200,
+                headers: {},
+                setHeader: function(name, value) {
+                    this.headers[name] = value;
+                },
+                status: function(code) {
+                    this.statusCode = code;
+                    return this;
+                },
+                json: function(data) {
+                    res.writeHead(this.statusCode, {
+                        'Content-Type': 'application/json',
+                        ...this.headers
+                    });
+                    res.end(JSON.stringify(data));
+                    return this;
+                },
+                end: function() {
+                    res.end();
+                }
+            };
+            
+            // Handle body for POST requests
+            if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+                let body = '';
+                req.on('data', chunk => {
+                    body += chunk.toString();
+                });
+                req.on('end', async () => {
+                    try {
+                        req.body = JSON.parse(body);
+                    } catch (e) {
+                        req.body = body;
+                    }
+                    
+                    // Execute api-bridge
+                    await apiBridge(req, mockRes);
+                });
+            } else {
+                // For GET requests
+                await apiBridge(req, mockRes);
+            }
+            return;
+        } catch (error) {
+            console.error('❌ Error en api-bridge:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Error interno del servidor' }));
+            return;
+        }
+    }
     
     // Default to index.html
     if (pathname === '/') {
