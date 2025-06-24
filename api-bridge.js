@@ -352,8 +352,7 @@ function generateEmergencyResponse(req, res, endpoint) {
         error: 'MISSING_FORM_DATA'
       });
     }
-    
-    // Construir respuesta con todos los datos reales del formulario
+      // Construir respuesta con todos los datos reales del formulario
     const responseData = {
       id: bookingId,
       ...req.body, // Usar solo los datos reales del formulario
@@ -363,6 +362,37 @@ function generateEmergencyResponse(req, res, endpoint) {
     };
     
     console.log('[API Bridge] Respuesta de reserva generada con datos reales:', responseData);
+    
+    // VERIFICACIÓN FINAL: Asegurar que los campos críticos están presentes
+    console.log('[API Bridge] ===== VERIFICACIÓN FINAL DE CAMPOS CRÍTICOS =====');
+    console.log('[API Bridge] clientName presente:', !!responseData.clientName, '=', responseData.clientName);
+    console.log('[API Bridge] vehiclePlate presente:', !!responseData.vehiclePlate, '=', responseData.vehiclePlate);
+    console.log('[API Bridge] price presente:', !!responseData.price, '=', responseData.price);
+    console.log('[API Bridge] serviceType presente:', !!responseData.serviceType, '=', responseData.serviceType);
+    console.log('[API Bridge] vehicleType presente:', !!responseData.vehicleType, '=', responseData.vehicleType);
+    console.log('[API Bridge] date presente:', !!responseData.date, '=', responseData.date);
+    console.log('[API Bridge] ============================================');
+    
+    // Validar que los campos críticos estén presentes antes de enviar
+    if (!responseData.clientName || !responseData.vehiclePlate || !responseData.price) {
+      console.error('[API Bridge] ❌ ERROR: Faltan campos críticos en la respuesta');
+      console.error('[API Bridge] clientName:', responseData.clientName);
+      console.error('[API Bridge] vehiclePlate:', responseData.vehiclePlate);
+      console.error('[API Bridge] price:', responseData.price);
+      
+      return res.status(400).json({
+        status: 'ERROR',
+        message: 'Faltan datos críticos para completar la reserva. Por favor, verifica que todos los campos estén completos.',
+        error: 'MISSING_CRITICAL_DATA',
+        missingFields: {
+          clientName: !responseData.clientName,
+          vehiclePlate: !responseData.vehiclePlate,
+          price: !responseData.price
+        }
+      });
+    }
+    
+    console.log('[API Bridge] ✅ Todos los campos críticos están presentes, enviando respuesta');
     
     return res.status(200).json({
       status: 'SUCCESS',
