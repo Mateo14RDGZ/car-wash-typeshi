@@ -454,11 +454,11 @@ async function generateEmergencyResponse(req, res, endpoint) {
         });
         
         console.log('[API Bridge] ✅ Reserva guardada en MySQL con ID:', newBooking.id);
-        
-        // Construir respuesta con datos de la base de datos
+          // Construir respuesta con datos de la base de datos
         const responseData = {
           id: newBooking.id,
           clientName: newBooking.clientName,
+          clientPhone: newBooking.clientPhone, // Agregar el teléfono
           date: req.body.date, // Mantener formato original para el frontend
           vehicleType: newBooking.vehicleType,
           vehiclePlate: newBooking.vehiclePlate,

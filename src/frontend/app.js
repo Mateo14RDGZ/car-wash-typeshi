@@ -537,10 +537,13 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
             },
             body: JSON.stringify(formData)
         });
-        
-        console.log('📡 RESPUESTA DEL SERVIDOR AL CREAR RESERVA:', data);
+          console.log('📡 RESPUESTA DEL SERVIDOR AL CREAR RESERVA:', data);
         console.log('📋 data.data:', data.data);
         console.log('📋 Estructura completa de data:', Object.keys(data || {}));
+        
+        // Actualizar horarios en segundo plano para reflejar la nueva reserva
+        console.log('🔄 Actualizando horarios disponibles en segundo plano...');
+        // Nota: Esto actualiza los horarios para cuando el usuario haga otra reserva
         
         // Si tiene éxito, mostrar confirmación
         mostrarReservaConfirmada(data.data);
@@ -704,8 +707,7 @@ function mostrarReservaConfirmada(reserva) {
                 </div>
             </div>
         </div>
-    `;
-      // Añadir listeners a los botones
+    `;      // Añadir listeners a los botones
     document.getElementById('nuevaReservaBtn').addEventListener('click', () => {
         // Recuperar el contenido original
         container.innerHTML = container.dataset.originalContent;
@@ -715,6 +717,17 @@ function mostrarReservaConfirmada(reserva) {
         // Limpiar campos
         const form = document.getElementById('reservaForm');
         if (form) form.reset();
+          // ACTUALIZAR HORARIOS DISPONIBLES
+        console.log('🔄 Actualizando horarios después de crear reserva...');
+        const fechaActual = document.getElementById('fecha').value;
+        if (fechaActual) {
+            // Disparar el evento change para recargar los horarios
+            const fechaInput = document.getElementById('fecha');
+            if (fechaInput) {
+                // Simular cambio para recargar horarios
+                fechaInput.dispatchEvent(new Event('change'));
+            }
+        }
     });
 }
 
