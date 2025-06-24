@@ -1067,45 +1067,54 @@ function procesarHorariosDisponibles(horarios) {
         horariosGrid.innerHTML = '<div class="alert alert-info">No hay horarios disponibles para esta fecha</div>';
         return;
     }
-    
-    // Crear botones para cada horario disponible
+      // Crear botones para cada horario (disponibles y reservados)
     horarios.forEach(slot => {
         if (slot && slot.time) {
-            console.log(`✅ Creando botón para horario: ${slot.time}`);
+            const isReserved = slot.isBooked === true;
+            console.log(`${isReserved ? '🔒' : '✅'} Creando botón para horario: ${slot.time} - ${isReserved ? 'RESERVADO' : 'DISPONIBLE'}`);
             
             const horarioBtn = document.createElement('button');
             horarioBtn.type = 'button';
-            horarioBtn.className = 'btn btn-outline-primary m-1';
             horarioBtn.textContent = slot.time;
             horarioBtn.value = slot.time;
             
-            // Evento para seleccionar horario
-            horarioBtn.onclick = function() {
-                // Remover selección anterior
-                document.querySelectorAll('.horarios-grid .btn').forEach(btn => {
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-outline-primary');
-                });
+            if (isReserved) {
+                // Horario reservado - mostrar pero deshabilitar
+                horarioBtn.className = 'btn btn-outline-secondary m-1';
+                horarioBtn.disabled = true;
+                horarioBtn.innerHTML = `${slot.time} <i class="fas fa-lock ms-1"></i>`;
+                horarioBtn.title = 'Este horario ya está reservado';
+            } else {
+                // Horario disponible - normal
+                horarioBtn.className = 'btn btn-outline-primary m-1';
                 
-                // Marcar como seleccionado
-                this.classList.remove('btn-outline-primary');
-                this.classList.add('btn-primary');
-                
-                // Guardar horario seleccionado
-                window.horarioSeleccionado = slot.time;
-                console.log('⭐ Horario seleccionado:', slot.time);
-                
-                // Crear/actualizar campo oculto para el formulario
-                let horarioInput = document.getElementById('horarioSeleccionado');
-                if (!horarioInput) {
-                    horarioInput = document.createElement('input');
-                    horarioInput.type = 'hidden';
-                    horarioInput.name = 'horario';
-                    horarioInput.id = 'horarioSeleccionado';
-                    document.getElementById('reservaForm').appendChild(horarioInput);
-                }
-                horarioInput.value = slot.time;
-            };
+                // Evento para seleccionar horario solo si está disponible
+                horarioBtn.onclick = function() {
+                    // Remover selección anterior
+                    document.querySelectorAll('.horarios-grid .btn:not(:disabled)').forEach(btn => {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-outline-primary');
+                    });
+                    
+                    // Marcar como seleccionado
+                    this.classList.remove('btn-outline-primary');
+                    this.classList.add('btn-primary');
+                    
+                    // Guardar horario seleccionado
+                    window.horarioSeleccionado = slot.time;
+                    console.log('⭐ Horario seleccionado:', slot.time);
+                      // Crear/actualizar campo oculto para el formulario
+                    let horarioInput = document.getElementById('horarioSeleccionado');
+                    if (!horarioInput) {
+                        horarioInput = document.createElement('input');
+                        horarioInput.type = 'hidden';
+                        horarioInput.name = 'horario';
+                        horarioInput.id = 'horarioSeleccionado';
+                        document.getElementById('reservaForm').appendChild(horarioInput);
+                    }
+                    horarioInput.value = slot.time;
+                };
+            }
             
             horariosGrid.appendChild(horarioBtn);
         }

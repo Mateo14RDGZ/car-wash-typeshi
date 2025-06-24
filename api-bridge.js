@@ -90,10 +90,25 @@ module.exports = async (req, res) => {
       example: '/api-bridge?endpoint=/bookings/available-slots'
     });
   }
-
   // Información de depuración
   console.log(`[API Bridge] Solicitud recibida para endpoint: ${endpoint}`);
   console.log(`[API Bridge] Método: ${req.method}`);
+  
+  // ===== ROUTING ESPECIAL - DEBE IR ANTES DEL MANEJO GENERAL =====
+  
+  // Manejo especial para búsqueda de reservas
+  if (endpoint.includes('/bookings/search')) {
+    console.log('[API Bridge] 🔍 Solicitud de búsqueda de reservas detectada');
+    return await searchBookings(req, res);
+  }
+  
+  // Manejo especial para cancelación de reservas
+  if (endpoint.includes('/bookings/') && endpoint.includes('/cancel') && req.method === 'PUT') {
+    console.log('[API Bridge] ❌ Solicitud de cancelación de reserva detectada');
+    return await cancelBooking(req, res, endpoint);
+  }
+  
+  // ===== FIN ROUTING ESPECIAL =====
   
   // Endpoint para verificar estado del sistema
   if (endpoint.includes('/system/status')) {
@@ -156,20 +171,9 @@ module.exports = async (req, res) => {
       } catch (error) {        console.error(`[API Bridge] Error en la petición a API interna:`, error.message);
         console.log(`[API Bridge] Activando respuesta de emergencia para endpoint: ${endpoint}`);
         // Ir a respuesta de emergencia
-        return await generateEmergencyResponse(req, res, endpoint);      }    } catch (error) {
-      console.error(`[API Bridge] Error general:`, error.message);
+        return await generateEmergencyResponse(req, res, endpoint);      }    } catch (error) {      console.error(`[API Bridge] Error general:`, error.message);
       return await generateEmergencyResponse(req, res, endpoint);
     }
-  }
-  // Manejo especial para búsqueda de reservas
-  if (endpoint.includes('/bookings/search')) {
-    console.log('[API Bridge] Solicitud de búsqueda de reservas detectada');
-    return await searchBookings(req, res);
-  }
-  // Manejo especial para cancelación de reservas
-  if (endpoint.includes('/bookings/') && endpoint.includes('/cancel') && req.method === 'PUT') {
-    console.log('[API Bridge] Solicitud de cancelación de reserva detectada');
-    return await cancelBooking(req, res, endpoint);
   }
 };
 
@@ -269,12 +273,13 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
         data: [],
         message: 'No hay horarios disponibles los domingos'
       });
-    }      // Generar slots usando la lógica de timeSlots.js para consistencia
+    }    // Generar slots usando la lógica de timeSlots.js para consistencia
     console.log(`[API Bridge] Usando timeSlots.generateTimeSlots para fecha: ${dateStr}`);
     const availableSlots = timeSlots.generateTimeSlots(dateStr);
     
     console.log(`[API Bridge] timeSlots.js generó ${availableSlots.length} horarios para ${dateStr}`);
-    console.log(`[API Bridge] Horarios generados:`, availableSlots.map(slot => slot.time));    // Intentar obtener datos de reservas existentes en MySQL
+    console.log(`[API Bridge] Horarios generados:`, availableSlots.map(slot => slot.time));
+    console.log(`[API Bridge] DEBUG - Verificando estructura completa:`, availableSlots.map((slot, i) => `${i+1}: ${slot.time} (start: ${slot.start}, isBooked: ${slot.isBooked})`));// Intentar obtener datos de reservas existentes en MySQL
     try {
       // Consultar reservas reales de la base de datos MySQL
       let existingBookings = [];
@@ -333,28 +338,40 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
         existingBookings = getExistingBookingsFromCache(dateStr);
       }
       console.log(`[API Bridge] Reservas existentes encontradas:`, existingBookings.length);
-      
-      // Marcar los horarios ya reservados
+        // Marcar los horarios ya reservados
       if (existingBookings && existingBookings.length > 0) {
         console.log(`[API Bridge] Marcando horarios como reservados:`, existingBookings.map(b => b.time));
+        console.log(`[API Bridge] Slots disponibles antes de marcar:`, availableSlots.map(s => `${s.time} (start: ${s.start})`));
+        
         existingBookings.forEach(booking => {
-          const slot = availableSlots.find(s => s.start === booking.time.split(' - ')[0]);
+          const bookingStartTime = booking.time.split(' - ')[0];
+          console.log(`[API Bridge] Buscando slot que empiece con: "${bookingStartTime}"`);
+          
+          const slot = availableSlots.find(s => s.start === bookingStartTime);
           if (slot) {
-            console.log(`[API Bridge] Marcando slot ${slot.time} como reservado`);
+            console.log(`[API Bridge] ✅ Marcando slot ${slot.time} como reservado`);
             slot.isBooked = true;
+          } else {
+            console.log(`[API Bridge] ❌ No se encontró slot que empiece con "${bookingStartTime}"`);
+            console.log(`[API Bridge] Slots disponibles:`, availableSlots.map(s => `"${s.start}"`));
           }
         });
+        
+        console.log(`[API Bridge] Estados finales:`, availableSlots.map(s => `${s.time}: ${s.isBooked ? 'RESERVADO' : 'LIBRE'}`));
       }
-      
-      // Filtrar para mostrar solo los disponibles
-      const availableSlotsOnly = availableSlots.filter(slot => !slot.isBooked);
-      console.log(`[API Bridge] Horarios finales disponibles:`, availableSlotsOnly.map(slot => slot.time));
+        // Devolver TODOS los slots (disponibles y reservados) para que el frontend pueda mostrarlos correctamente
+      console.log(`[API Bridge] Horarios finales (todos):`, availableSlots.map(slot => `${slot.time} - ${slot.isBooked ? 'RESERVADO' : 'LIBRE'}`));
       
       return res.status(200).json({
         status: 'SUCCESS',
-        data: availableSlotsOnly,
+        data: availableSlots, // Devolver todos los slots con información de estado
         dataSource: 'mysql-db',
-        message: 'Horarios disponibles desde MySQL'
+        message: 'Horarios completos desde MySQL',
+        summary: {
+          total: availableSlots.length,
+          available: availableSlots.filter(slot => !slot.isBooked).length,
+          booked: availableSlots.filter(slot => slot.isBooked).length
+        }
       });
       
     } catch (dbError) {
@@ -572,15 +589,23 @@ function processSystemStatus(req, res) {
 // FUNCIÓN PARA BUSCAR RESERVAS POR TELÉFONO Y FECHA
 async function searchBookings(req, res) {
   console.log('[API Bridge] ===== BÚSQUEDA DE RESERVAS =====');
+  console.log('[API Bridge] Method:', req.method);
   console.log('[API Bridge] Query params:', req.query);
+  console.log('[API Bridge] Body params:', req.body);
   
-  const { phone, date } = req.query;
+  // Para POST, usar body; para GET, usar query
+  const searchParams = req.method === 'POST' ? req.body : req.query;
+  const { phone, date } = searchParams;
+  
+  console.log('[API Bridge] Search params from:', req.method === 'POST' ? 'body' : 'query');
+  console.log('[API Bridge] Phone:', phone, 'Date:', date);
   
   if (!phone || !date) {
     return res.status(400).json({
       status: 'ERROR',
       message: 'Se requieren los parámetros phone y date',
-      error: 'MISSING_PARAMETERS'
+      error: 'MISSING_PARAMETERS',
+      received: { phone, date, method: req.method }
     });
   }
   
