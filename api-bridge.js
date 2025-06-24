@@ -279,20 +279,37 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
     
     console.log(`[API Bridge] timeSlots.js generó ${availableSlots.length} horarios para ${dateStr}`);
     console.log(`[API Bridge] Horarios generados:`, availableSlots.map(slot => slot.time));
-    console.log(`[API Bridge] DEBUG - Verificando estructura completa:`, availableSlots.map((slot, i) => `${i+1}: ${slot.time} (start: ${slot.start}, isBooked: ${slot.isBooked})`));// Intentar obtener datos de reservas existentes en MySQL
+    console.log(`[API Bridge] DEBUG - Verificando estructura completa:`, availableSlots.map((slot, i) => `${i+1}: ${slot.time} (start: ${slot.start}, isBooked: ${slot.isBooked})`));    // Intentar obtener datos de reservas existentes en MySQL
     try {
       // Consultar reservas reales de la base de datos MySQL
       let existingBookings = [];
       
+      console.log(`[API Bridge] 🔍 DEBUG - Verificando BookingModel disponible:`, !!BookingModel);
+      console.log(`[API Bridge] 🔍 DEBUG - Tipo de BookingModel:`, typeof BookingModel);
+      
       if (BookingModel) {
-        console.log(`[API Bridge] Consultando reservas de MySQL para fecha: ${dateStr}`);
+        console.log(`[API Bridge] ✅ BookingModel disponible - Consultando reservas de MySQL para fecha: ${dateStr}`);
         
         // Crear rango de fechas para el día completo
         const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
         const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
         
+        console.log(`[API Bridge] 📅 Rango de búsqueda: ${startOfDay.toISOString()} a ${endOfDay.toISOString()}`);
+        
         try {
-          // Consultar reservas del día en la base de datos
+          // Primero, consultar TODAS las reservas para debugging
+          const allBookings = await BookingModel.findAll({
+            attributes: ['id', 'clientName', 'date', 'status'],
+            limit: 10,
+            order: [['id', 'DESC']]
+          });
+          
+          console.log(`[API Bridge] 📊 Total de reservas en BD: ${allBookings.length}`);
+          allBookings.forEach(booking => {
+            console.log(`[API Bridge] 📋 Reserva ID ${booking.id}: ${booking.clientName} - ${booking.date.toISOString()} - ${booking.status}`);
+          });
+          
+          // Ahora consultar reservas del día específico
           const dbBookings = await BookingModel.findAll({
             where: {
               date: {

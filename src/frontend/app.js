@@ -854,8 +854,10 @@ async function cancelarReserva() {
     document.getElementById('btnFinalizarCancelacion').style.display = 'none';
 }
 
-// Variable global para almacenar la reserva encontrada
-let reservaEncontradaParaCancelar = null;
+// Variable global para almacenar la reserva encontrada (protegida contra redeclaración)
+if (typeof window.reservaEncontradaParaCancelar === 'undefined') {
+    window.reservaEncontradaParaCancelar = null;
+}
 
 // Función para buscar reserva por teléfono y fecha
 async function buscarReservaPorTelefono() {
@@ -890,9 +892,8 @@ async function buscarReservaPorTelefono() {
         console.log('📋 Respuesta de búsqueda:', response);
         
         if (response.status === 'SUCCESS' && response.data && response.data.length > 0) {
-            // Reserva encontrada
-            reservaEncontradaParaCancelar = response.data[0]; // Tomar la primera reserva encontrada
-            mostrarReservaEncontrada(reservaEncontradaParaCancelar);
+            // Reserva encontrada            window.reservaEncontradaParaCancelar = response.data[0]; // Tomar la primera reserva encontrada
+            mostrarReservaEncontrada(window.reservaEncontradaParaCancelar);
         } else {
             mostrarErrorCancelacion('No se encontró ninguna reserva con ese teléfono y fecha. Verifica los datos ingresados.');
         }
@@ -967,12 +968,12 @@ function mostrarReservaEncontrada(reserva) {
 
 // Función para confirmar la cancelación
 async function confirmarCancelacionReserva() {
-    if (!reservaEncontradaParaCancelar) {
+    if (!window.reservaEncontradaParaCancelar) {
         mostrarErrorCancelacion('Error: No se encontró la reserva a cancelar');
         return;
     }
     
-    console.log('❌ Confirmando cancelación de reserva ID:', reservaEncontradaParaCancelar.id);
+    console.log('❌ Confirmando cancelación de reserva ID:', window.reservaEncontradaParaCancelar.id);
     
     // Mostrar loading
     const btnConfirmar = document.getElementById('btnConfirmarCancelacion');
@@ -980,9 +981,8 @@ async function confirmarCancelacionReserva() {
     btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Cancelando...';
     btnConfirmar.disabled = true;
     
-    try {
-        // Cancelar la reserva en la base de datos
-        const response = await apiRequest(`/bookings/${reservaEncontradaParaCancelar.id}/cancel`, {
+    try {        // Cancelar la reserva en la base de datos
+        const response = await apiRequest(`/bookings/${window.reservaEncontradaParaCancelar.id}/cancel`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1024,9 +1024,8 @@ function mostrarCancelacionExitosa() {
     // Cambiar botones
     document.getElementById('btnConfirmarCancelacion').style.display = 'none';
     document.getElementById('btnFinalizarCancelacion').style.display = 'inline-block';
-    
-    // Limpiar variable global
-    reservaEncontradaParaCancelar = null;
+      // Limpiar variable global
+    window.reservaEncontradaParaCancelar = null;
 }
 
 // Función para mostrar errores de cancelación

@@ -61,16 +61,16 @@ function generateTimeSlots(date) {
     if (!BUSINESS_HOURS.hasOwnProperty(dayOfWeek) || !BUSINESS_HOURS[dayOfWeek]) {
         console.log('DEBUG - No hay horarios de atención para el día:', dayOfWeek);
         return [];
-    }
-
-    // Verificar si podemos usar el cache
+    }    // Verificar si podemos usar el cache
     if (dayOfWeek >= 1 && dayOfWeek <= 5 && slotsCache.weekday) {
         console.log('DEBUG - Usando cache para día entre semana');
-        return [...slotsCache.weekday]; // Devolver copia para evitar modificaciones
+        // Devolver deep copy para evitar modificaciones del cache
+        return slotsCache.weekday.map(slot => ({ ...slot }));
     } 
     else if (dayOfWeek === 6 && slotsCache.saturday) {
         console.log('DEBUG - Usando cache para sábado');
-        return [...slotsCache.saturday]; // Devolver copia para evitar modificaciones
+        // Devolver deep copy para evitar modificaciones del cache
+        return slotsCache.saturday.map(slot => ({ ...slot }));
     }
 
     let slots = [];
@@ -85,9 +85,8 @@ function generateTimeSlots(date) {
             isBooked: false,
             duration: SLOT_DURATION
         }));
-        
-        // Guardar en cache
-        slotsCache.weekday = [...slots];
+          // Guardar en cache (deep copy para evitar modificaciones)
+        slotsCache.weekday = slots.map(slot => ({ ...slot }));
     }
     // Para sábados
     else if (dayOfWeek === 6) {
@@ -99,9 +98,8 @@ function generateTimeSlots(date) {
             isBooked: false,
             duration: SLOT_DURATION
         }));
-        
-        // Guardar en cache
-        slotsCache.saturday = [...slots];
+          // Guardar en cache (deep copy para evitar modificaciones)
+        slotsCache.saturday = slots.map(slot => ({ ...slot }));
     }
     // Si no es un día válido, devolver array vacío
     else {
