@@ -687,21 +687,10 @@ function mostrarReservaConfirmada(reserva) {
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="border-top pt-4 mt-4">
-                                <p class="text-center mb-4">
-                                    <i class="fas fa-info-circle me-2 text-info"></i>
-                                    Se ha enviado un correo con los detalles de tu reserva.
-                                </p>
-                            </div>
-                            <hr>
+                              <hr>
                             <div class="text-center pt-2">
                                 <button class="btn btn-primary" id="nuevaReservaBtn">
                                     <i class="fas fa-calendar-plus me-2"></i>Hacer otra reserva
-                                </button>
-                                
-                                <button class="btn btn-outline-secondary ms-2" id="imprimirReservaBtn">
-                                    <i class="fas fa-print me-2"></i>Imprimir
                                 </button>
                             </div>
                         </div>
@@ -710,8 +699,7 @@ function mostrarReservaConfirmada(reserva) {
             </div>
         </div>
     `;
-    
-    // Añadir listeners a los botones
+      // Añadir listeners a los botones
     document.getElementById('nuevaReservaBtn').addEventListener('click', () => {
         // Recuperar el contenido original
         container.innerHTML = container.dataset.originalContent;
@@ -722,180 +710,6 @@ function mostrarReservaConfirmada(reserva) {
         const form = document.getElementById('reservaForm');
         if (form) form.reset();
     });
-    
-    document.getElementById('imprimirReservaBtn').addEventListener('click', () => {
-        imprimirReserva(reserva);
-    });
-}
-
-// Función para imprimir la reserva
-function imprimirReserva(reserva) {
-    // Implementar la generación de impresión
-    const date = new Date(reserva.date);
-    const opciones = { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-    };
-    const fechaFormateada = date.toLocaleDateString('es-ES', opciones);
-    
-    // Mapeo de tipos de servicio a nombres legibles
-    const serviciosNombres = {
-        'basico': 'Lavado Básico',
-        'premium': 'Lavado Premium',
-        'detailing': 'Detailing Completo'
-    };
-    
-    // Mapeo de tipos de vehículo a nombres legibles
-    const vehiculosNombres = {
-        'auto': 'Auto',
-        'camioneta_caja': 'Camioneta con caja',
-        'camioneta_sin_caja': 'Camioneta sin caja'
-    };
-    
-    // Crear un elemento para la impresión
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Reserva #${reserva.id} - Extreme Wash</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    max-width: 800px;
-                    margin: 0 auto;
-                    padding: 20px;
-                }
-                .header {
-                    text-align: center;
-                    margin-bottom: 30px;
-                    border-bottom: 2px solid #ddd;
-                    padding-bottom: 20px;
-                }
-                .logo {
-                    font-size: 28px;
-                    font-weight: bold;
-                }
-                .highlight {
-                    color: #0d6efd;
-                }
-                h1 {
-                    font-size: 24px;
-                    margin: 15px 0;
-                }
-                .detail-row {
-                    margin-bottom: 20px;
-                    padding-bottom: 10px;
-                    border-bottom: 1px solid #eee;
-                }
-                .detail-label {
-                    font-weight: bold;
-                    display: inline-block;
-                    width: 150px;
-                }
-                .footer {
-                    margin-top: 40px;
-                    text-align: center;
-                    font-size: 12px;
-                    color: #666;
-                }
-                .footer p {
-                    margin: 5px 0;
-                }
-                .qr {
-                    text-align: center;
-                    margin: 30px 0;
-                }
-                .qr-code {
-                    border: 1px solid #ddd;
-                    padding: 10px;
-                    display: inline-block;
-                }
-                .terms {
-                    font-size: 11px;
-                    margin-top: 40px;
-                }
-                .extras {
-                    margin-left: 155px;
-                    margin-top: 5px;
-                }
-                .extras ul {
-                    margin-top: 5px;
-                    margin-bottom: 0;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <div class="logo">
-                    <span class="highlight">EXTREME</span> WASH
-                </div>
-                <p>Dr. Cipriano Goñi 59, Durazno</p>
-            </div>
-            
-            <h1>Comprobante de Reserva #${reserva.id}</h1>
-            
-            <div class="detail-row">
-                <span class="detail-label">Cliente:</span> ${reserva.clientName}
-            </div>
-            
-            <div class="detail-row">
-                <span class="detail-label">Fecha y hora:</span> ${fechaFormateada}
-            </div>
-            
-            <div class="detail-row">
-                <span class="detail-label">Servicio:</span> ${serviciosNombres[reserva.serviceType] || reserva.serviceType}
-                ${reserva.extras && reserva.extras.length > 0 ? 
-                `<div class="extras">
-                    <small>Extras:</small>
-                    <ul>
-                        ${reserva.extras.map(extra => `<li>${extra}</li>`).join('')}
-                    </ul>
-                </div>` : ''}
-            </div>
-            
-            <div class="detail-row">
-                <span class="detail-label">Vehículo:</span> ${vehiculosNombres[reserva.vehicleType] || reserva.vehicleType} (Patente: ${reserva.vehiclePlate})
-            </div>
-            
-            <div class="detail-row">
-                <span class="detail-label">Precio total:</span> $${reserva.price}
-            </div>
-            
-            <div class="qr">
-                <div class="qr-code">
-                    [Código QR: ${reserva.id}]
-                </div>
-                <p>Presenta este código en tu visita</p>
-            </div>
-            
-            <div class="terms">
-                <p><strong>Términos y condiciones:</strong></p>
-                <p>Si necesitas cancelar o reprogramar tu reserva, por favor hazlo con al menos 2 horas de anticipación llamando al 098 385 709.</p>
-                <p>Se aplica un tiempo de gracia de 15 minutos. Después de este tiempo, podríamos no ser capaces de garantizar el servicio.</p>
-            </div>
-            
-            <div class="footer">
-                <p>Extreme Wash - Tu auto merece brillar como nuevo</p>
-                <p>Tel: 098 385 709 - Dr Cipriano Goñi 59</p>
-                <p>Reserva generada el ${new Date().toLocaleString()}</p>
-            </div>
-            
-            <script>
-                window.onload = function() {
-                    window.print();
-                }
-            </script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
 }
 
 // Función para mostrar los extras
