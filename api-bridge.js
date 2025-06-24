@@ -18,6 +18,15 @@ const axios = require('axios');
 const timeSlots = require('./src/backend/services/timeSlots');
 const { URL } = require('url');
 
+// Importar el modelo de base de datos para reservas
+let BookingModel = null;
+try {
+  BookingModel = require('./src/database/models/BookingSimple');
+  console.log('[API Bridge] ✅ Modelo BookingSimple cargado correctamente');
+} catch (error) {
+  console.warn('[API Bridge] ⚠️ No se pudo cargar BookingSimple, usando modo fallback:', error.message);
+}
+
 // Opciones de configuración
 const CONFIG = {
   // Timeout en milisegundos
@@ -144,15 +153,13 @@ module.exports = async (req, res) => {
         const response = await axios(axiosConfig);
         console.log(`[API Bridge] Respuesta exitosa de API interna:`, response.data);
         return res.status(response.status).json(response.data);
-      } catch (error) {
-        console.error(`[API Bridge] Error en la petición a API interna:`, error.message);
+      } catch (error) {        console.error(`[API Bridge] Error en la petición a API interna:`, error.message);
         console.log(`[API Bridge] Activando respuesta de emergencia para endpoint: ${endpoint}`);
         // Ir a respuesta de emergencia
-        return generateEmergencyResponse(req, res, endpoint);
-      }
-    } catch (error) {
+        return await generateEmergencyResponse(req, res, endpoint);
+      }    } catch (error) {
       console.error(`[API Bridge] Error general:`, error.message);
-      return generateEmergencyResponse(req, res, endpoint);
+      return await generateEmergencyResponse(req, res, endpoint);
     }
   }
 };
@@ -258,14 +265,64 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
     const availableSlots = timeSlots.generateTimeSlots(dateStr);
     
     console.log(`[API Bridge] timeSlots.js generó ${availableSlots.length} horarios para ${dateStr}`);
-    console.log(`[API Bridge] Horarios generados:`, availableSlots.map(slot => slot.time));
-
-    // Intentar obtener datos de reservas existentes en MySQL
+    console.log(`[API Bridge] Horarios generados:`, availableSlots.map(slot => slot.time));    // Intentar obtener datos de reservas existentes en MySQL
     try {
-      // En un entorno real, aquí se haría una consulta a la base de datos
-      // Ejemplo: const bookings = await Booking.findAll({where: {date: dateStr}});
-        // Simulamos información de reservas para la demostración
-      const existingBookings = getExistingBookingsFromCache(dateStr);
+      // Consultar reservas reales de la base de datos MySQL
+      let existingBookings = [];
+      
+      if (BookingModel) {
+        console.log(`[API Bridge] Consultando reservas de MySQL para fecha: ${dateStr}`);
+        
+        // Crear rango de fechas para el día completo
+        const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+        const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
+        
+        try {
+          // Consultar reservas del día en la base de datos
+          const dbBookings = await BookingModel.findAll({
+            where: {
+              date: {
+                [require('sequelize').Op.between]: [startOfDay, endOfDay]
+              },
+              status: ['confirmed', 'pending'] // Solo reservas activas
+            },
+            attributes: ['id', 'date', 'clientName', 'vehiclePlate', 'serviceType']
+          });
+          
+          // Convertir a formato compatible con el sistema de horarios
+          existingBookings = dbBookings.map(booking => {
+            const bookingDate = new Date(booking.date);
+            const hours = bookingDate.getHours().toString().padStart(2, '0');
+            const minutes = bookingDate.getMinutes().toString().padStart(2, '0');
+            const startTime = `${hours}:${minutes}`;
+            
+            // Calcular hora de fin (90 minutos después)
+            const endDate = new Date(bookingDate.getTime() + 90 * 60000);
+            const endHours = endDate.getHours().toString().padStart(2, '0');
+            const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
+            const endTime = `${endHours}:${endMinutes}`;
+            
+            return {
+              id: booking.id,
+              time: `${startTime} - ${endTime}`,
+              startTime: startTime,
+              clientName: booking.clientName,
+              vehiclePlate: booking.vehiclePlate,
+              serviceType: booking.serviceType
+            };
+          });
+          
+          console.log(`[API Bridge] ✅ Encontradas ${existingBookings.length} reservas en MySQL para ${dateStr}`);
+          console.log(`[API Bridge] Reservas existentes:`, existingBookings.map(b => `${b.time} - ${b.clientName}`));
+          
+        } catch (dbQueryError) {
+          console.error(`[API Bridge] Error en consulta MySQL:`, dbQueryError.message);
+          existingBookings = getExistingBookingsFromCache(dateStr); // Fallback al caché
+        }
+      } else {
+        console.log(`[API Bridge] BookingModel no disponible, usando caché local`);
+        existingBookings = getExistingBookingsFromCache(dateStr);
+      }
       console.log(`[API Bridge] Reservas existentes encontradas:`, existingBookings.length);
       
       // Marcar los horarios ya reservados
@@ -326,7 +383,7 @@ function getExistingBookingsFromCache(dateStr) {
 const SLOT_DURATION = 90;
 
 // FUNCIÓN PARA GENERAR RESPUESTAS DE EMERGENCIA
-function generateEmergencyResponse(req, res, endpoint) {
+async function generateEmergencyResponse(req, res, endpoint) {
   console.log('[API Bridge] ===== RESPUESTA DE EMERGENCIA =====');
   console.log('[API Bridge] Generando respuesta de emergencia para:', endpoint);
   console.log('[API Bridge] Método:', req.method);
@@ -341,8 +398,7 @@ function generateEmergencyResponse(req, res, endpoint) {
       // Verificar si req.body tiene datos
     const hasBodyData = req.body && Object.keys(req.body).length > 0;
     console.log('[API Bridge] ¿Tiene datos el body?:', hasBodyData);
-    
-    // Si no hay datos en req.body, es porque no se están enviando correctamente
+      // Si no hay datos en req.body, es porque no se están enviando correctamente
     // En lugar de datos de ejemplo, vamos a devolver un error claro
     if (!hasBodyData) {
       console.error('[API Bridge] ❌ ERROR: No se recibieron datos del formulario');
@@ -352,7 +408,75 @@ function generateEmergencyResponse(req, res, endpoint) {
         error: 'MISSING_FORM_DATA'
       });
     }
-      // Construir respuesta con todos los datos reales del formulario
+    
+    // Intentar guardar en la base de datos MySQL
+    try {
+      if (BookingModel) {
+        console.log('[API Bridge] 💾 Guardando reserva en base de datos MySQL...');
+        
+        // Crear la reserva en la base de datos
+        const newBooking = await BookingModel.create({
+          clientName: req.body.clientName,
+          date: new Date(req.body.date),
+          vehicleType: req.body.vehicleType,
+          vehiclePlate: req.body.vehiclePlate,
+          serviceType: req.body.serviceType,
+          extras: req.body.extras || [],
+          price: req.body.price,
+          status: 'confirmed',
+          notes: `Reserva creada via web el ${new Date().toISOString()}`
+        });
+        
+        console.log('[API Bridge] ✅ Reserva guardada en MySQL con ID:', newBooking.id);
+        
+        // Construir respuesta con datos de la base de datos
+        const responseData = {
+          id: newBooking.id,
+          clientName: newBooking.clientName,
+          date: req.body.date, // Mantener formato original para el frontend
+          vehicleType: newBooking.vehicleType,
+          vehiclePlate: newBooking.vehiclePlate,
+          serviceType: newBooking.serviceType,
+          extras: newBooking.extras,
+          price: parseFloat(newBooking.price),
+          status: newBooking.status,
+          createdAt: newBooking.createdAt,
+          updatedAt: newBooking.updatedAt
+        };
+        
+        console.log('[API Bridge] Respuesta con datos de MySQL:', responseData);
+        
+        // VERIFICACIÓN FINAL: Asegurar que los campos críticos están presentes
+        console.log('[API Bridge] ===== VERIFICACIÓN FINAL DE CAMPOS CRÍTICOS (MySQL) =====');
+        console.log('[API Bridge] clientName presente:', !!responseData.clientName, '=', responseData.clientName);
+        console.log('[API Bridge] vehiclePlate presente:', !!responseData.vehiclePlate, '=', responseData.vehiclePlate);
+        console.log('[API Bridge] price presente:', !!responseData.price, '=', responseData.price);
+        console.log('[API Bridge] serviceType presente:', !!responseData.serviceType, '=', responseData.serviceType);
+        console.log('[API Bridge] vehicleType presente:', !!responseData.vehicleType, '=', responseData.vehicleType);
+        console.log('[API Bridge] date presente:', !!responseData.date, '=', responseData.date);
+        console.log('[API Bridge] ============================================');
+        
+        // Validar que los campos críticos estén presentes antes de enviar
+        if (!responseData.clientName || !responseData.vehiclePlate || !responseData.price) {
+          console.error('[API Bridge] ❌ ERROR: Faltan campos críticos en la respuesta de MySQL');
+          // Continuar con el flujo de fallback
+        } else {
+          console.log('[API Bridge] ✅ Todos los campos críticos están presentes, enviando respuesta desde MySQL');
+          
+          return res.status(200).json({
+            status: 'SUCCESS',
+            data: responseData,
+            message: 'Reserva creada correctamente en base de datos',
+            source: 'mysql'
+          });
+        }
+      }
+    } catch (dbError) {
+      console.error('[API Bridge] ❌ Error guardando en MySQL:', dbError.message);
+      console.log('[API Bridge] Continuando con respuesta de emergencia...');
+    }
+    
+    // FALLBACK: Construir respuesta con todos los datos reales del formulario
     const responseData = {
       id: bookingId,
       ...req.body, // Usar solo los datos reales del formulario
