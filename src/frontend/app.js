@@ -513,13 +513,14 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         }
     });    const formData = {
         clientName: document.getElementById('nombre').value,
+        clientPhone: document.getElementById('telefono').value,
         date: fecha + 'T' + horaInicio,
         vehicleType: document.getElementById('vehiculo').value,
         vehiclePlate: document.getElementById('patente').value,
         serviceType: window.servicioSeleccionado,
         price: total,
         extras: extrasSeleccionados
-    };    // Validación de campos
+    };// Validación de campos
     if (!validarFormulario(formData)) {
         return;
     }
@@ -557,6 +558,11 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
 function validarFormulario(formData) {
     if (!formData.clientName || formData.clientName.trim().length < 3) {
         mostrarError('Por favor, ingresa un nombre válido');
+        return false;
+    }
+
+    if (!formData.clientPhone || formData.clientPhone.trim().length < 8) {
+        mostrarError('Por favor, ingresa un número de teléfono válido (mínimo 8 dígitos)');
         return false;
     }
 
@@ -731,9 +737,299 @@ function mostrarExtras(tipo, btn) {
 }
 
 // Función para cancelar la reserva
-function cancelarReserva() {
-    // Simplemente recarga la página si no hay más lógica
-    location.reload();
+async function cancelarReserva() {
+    console.log('🚫 Iniciando proceso de cancelación de reserva');
+    
+    // Crear modal de cancelación
+    const modalHtml = `
+        <div class="modal fade" id="cancelarReservaModal" tabindex="-1" aria-labelledby="cancelarReservaModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="cancelarReservaModalLabel">
+                            <i class="fas fa-times-circle me-2"></i>Cancelar Reserva
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="cancelarStep1">
+                            <p class="mb-3">Para cancelar tu reserva, necesitamos verificar tu identidad.</p>
+                            
+                            <div class="mb-3">
+                                <label for="telefonoCancelacion" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Número de teléfono registrado:
+                                </label>
+                                <input type="tel" class="form-control" id="telefonoCancelacion" 
+                                       placeholder="Ej: +598 98 123 456" required>
+                                <div class="form-text">Ingresa el teléfono que usaste al hacer la reserva</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="fechaCancelacion" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Fecha de la reserva:
+                                </label>
+                                <input type="date" class="form-control" id="fechaCancelacion" required>
+                            </div>
+                        </div>
+                        
+                        <div id="cancelarStep2" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Reserva encontrada</strong>
+                            </div>
+                            <div id="reservaEncontradaInfo"></div>
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>¿Estás seguro?</strong> Esta acción no se puede deshacer.
+                            </div>
+                        </div>
+                        
+                        <div id="cancelarStep3" style="display: none;">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>¡Reserva cancelada exitosamente!</strong>
+                            </div>
+                            <p>Tu reserva ha sido cancelada. El horario ahora está disponible para otros clientes.</p>
+                        </div>
+                        
+                        <div id="cancelarError" style="display: none;">
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong id="errorMessage"></strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnCerrarCancelar">Cerrar</button>
+                        <button type="button" class="btn btn-primary" id="btnBuscarReserva" onclick="buscarReservaPorTelefono()">
+                            <i class="fas fa-search me-1"></i>Buscar Reserva
+                        </button>
+                        <button type="button" class="btn btn-danger" id="btnConfirmarCancelacion" style="display: none;" onclick="confirmarCancelacionReserva()">
+                            <i class="fas fa-times-circle me-1"></i>Confirmar Cancelación
+                        </button>
+                        <button type="button" class="btn btn-success" id="btnFinalizarCancelacion" style="display: none;" data-bs-dismiss="modal">
+                            <i class="fas fa-check me-1"></i>Entendido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Insertar modal en el DOM si no existe
+    if (!document.getElementById('cancelarReservaModal')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('cancelarReservaModal'));
+    modal.show();
+    
+    // Limpiar campos al abrir
+    document.getElementById('telefonoCancelacion').value = '';
+    document.getElementById('fechaCancelacion').value = '';
+    
+    // Resetear pasos
+    document.getElementById('cancelarStep1').style.display = 'block';
+    document.getElementById('cancelarStep2').style.display = 'none';
+    document.getElementById('cancelarStep3').style.display = 'none';
+    document.getElementById('cancelarError').style.display = 'none';
+    
+    // Resetear botones
+    document.getElementById('btnBuscarReserva').style.display = 'inline-block';
+    document.getElementById('btnConfirmarCancelacion').style.display = 'none';
+    document.getElementById('btnFinalizarCancelacion').style.display = 'none';
+}
+
+// Variable global para almacenar la reserva encontrada
+let reservaEncontradaParaCancelar = null;
+
+// Función para buscar reserva por teléfono y fecha
+async function buscarReservaPorTelefono() {
+    const telefono = document.getElementById('telefonoCancelacion').value.trim();
+    const fecha = document.getElementById('fechaCancelacion').value;
+    
+    console.log('🔍 Buscando reserva con teléfono:', telefono, 'y fecha:', fecha);
+    
+    // Validar campos
+    if (!telefono || telefono.length < 8) {
+        mostrarErrorCancelacion('Por favor, ingresa un número de teléfono válido (mínimo 8 dígitos)');
+        return;
+    }
+    
+    if (!fecha) {
+        mostrarErrorCancelacion('Por favor, selecciona la fecha de tu reserva');
+        return;
+    }
+    
+    // Mostrar loading
+    const btnBuscar = document.getElementById('btnBuscarReserva');
+    const textoOriginal = btnBuscar.innerHTML;
+    btnBuscar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Buscando...';
+    btnBuscar.disabled = true;
+    
+    try {
+        // Buscar la reserva en la base de datos
+        const response = await apiRequest(`/bookings/search?phone=${encodeURIComponent(telefono)}&date=${fecha}`, {
+            method: 'GET'
+        });
+        
+        console.log('📋 Respuesta de búsqueda:', response);
+        
+        if (response.status === 'SUCCESS' && response.data && response.data.length > 0) {
+            // Reserva encontrada
+            reservaEncontradaParaCancelar = response.data[0]; // Tomar la primera reserva encontrada
+            mostrarReservaEncontrada(reservaEncontradaParaCancelar);
+        } else {
+            mostrarErrorCancelacion('No se encontró ninguna reserva con ese teléfono y fecha. Verifica los datos ingresados.');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error buscando reserva:', error);
+        mostrarErrorCancelacion('Error al buscar la reserva. Por favor, intenta nuevamente.');
+    } finally {
+        // Restaurar botón
+        btnBuscar.innerHTML = textoOriginal;
+        btnBuscar.disabled = false;
+    }
+}
+
+// Función para mostrar la reserva encontrada
+function mostrarReservaEncontrada(reserva) {
+    console.log('✅ Mostrando reserva encontrada:', reserva);
+    
+    const date = new Date(reserva.date);
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    };
+    const fechaFormateada = date.toLocaleDateString('es-ES', opciones);
+    
+    // Mapeo de tipos de servicio
+    const serviciosNombres = {
+        'basico': 'Lavado Básico',
+        'premium': 'Lavado Premium',
+        'detailing': 'Detailing Completo'
+    };
+    
+    // Mapeo de tipos de vehículo
+    const vehiculosNombres = {
+        'auto': 'Auto',
+        'camioneta_caja': 'Camioneta con caja',
+        'camioneta_sin_caja': 'Camioneta sin caja'
+    };
+    
+    const infoHtml = `
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">Detalles de la reserva:</h6>
+                <ul class="list-unstyled mb-0">
+                    <li><strong>Cliente:</strong> ${reserva.clientName}</li>
+                    <li><strong>Fecha y hora:</strong> ${fechaFormateada}</li>
+                    <li><strong>Servicio:</strong> ${serviciosNombres[reserva.serviceType] || reserva.serviceType}</li>
+                    <li><strong>Vehículo:</strong> ${vehiculosNombres[reserva.vehicleType] || reserva.vehicleType}</li>
+                    <li><strong>Patente:</strong> ${reserva.vehiclePlate}</li>
+                    <li><strong>Precio:</strong> $${reserva.price}</li>
+                    <li><strong>Código de reserva:</strong> #${reserva.id}</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('reservaEncontradaInfo').innerHTML = infoHtml;
+    
+    // Cambiar a paso 2
+    document.getElementById('cancelarStep1').style.display = 'none';
+    document.getElementById('cancelarStep2').style.display = 'block';
+    document.getElementById('cancelarError').style.display = 'none';
+    
+    // Cambiar botones
+    document.getElementById('btnBuscarReserva').style.display = 'none';
+    document.getElementById('btnConfirmarCancelacion').style.display = 'inline-block';
+}
+
+// Función para confirmar la cancelación
+async function confirmarCancelacionReserva() {
+    if (!reservaEncontradaParaCancelar) {
+        mostrarErrorCancelacion('Error: No se encontró la reserva a cancelar');
+        return;
+    }
+    
+    console.log('❌ Confirmando cancelación de reserva ID:', reservaEncontradaParaCancelar.id);
+    
+    // Mostrar loading
+    const btnConfirmar = document.getElementById('btnConfirmarCancelacion');
+    const textoOriginal = btnConfirmar.innerHTML;
+    btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Cancelando...';
+    btnConfirmar.disabled = true;
+    
+    try {
+        // Cancelar la reserva en la base de datos
+        const response = await apiRequest(`/bookings/${reservaEncontradaParaCancelar.id}/cancel`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cancelReason: 'Cancelado por el cliente via web',
+                cancelledAt: new Date().toISOString()
+            })
+        });
+        
+        console.log('✅ Respuesta de cancelación:', response);
+        
+        if (response.status === 'SUCCESS') {
+            // Cancelación exitosa
+            mostrarCancelacionExitosa();
+        } else {
+            mostrarErrorCancelacion('Error al cancelar la reserva. Por favor, contacta directamente al establecimiento.');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cancelando reserva:', error);
+        mostrarErrorCancelacion('Error al cancelar la reserva. Por favor, intenta nuevamente o contacta directamente al establecimiento.');
+    } finally {
+        // Restaurar botón
+        btnConfirmar.innerHTML = textoOriginal;
+        btnConfirmar.disabled = false;
+    }
+}
+
+// Función para mostrar cancelación exitosa
+function mostrarCancelacionExitosa() {
+    console.log('🎉 Cancelación completada exitosamente');
+    
+    // Cambiar a paso 3
+    document.getElementById('cancelarStep2').style.display = 'none';
+    document.getElementById('cancelarStep3').style.display = 'block';
+    document.getElementById('cancelarError').style.display = 'none';
+    
+    // Cambiar botones
+    document.getElementById('btnConfirmarCancelacion').style.display = 'none';
+    document.getElementById('btnFinalizarCancelacion').style.display = 'inline-block';
+    
+    // Limpiar variable global
+    reservaEncontradaParaCancelar = null;
+}
+
+// Función para mostrar errores de cancelación
+function mostrarErrorCancelacion(mensaje) {
+    console.error('❌ Error en cancelación:', mensaje);
+    
+    document.getElementById('errorMessage').textContent = mensaje;
+    document.getElementById('cancelarError').style.display = 'block';
+    
+    // Scroll hacia el error
+    setTimeout(() => {
+        document.getElementById('cancelarError').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest' 
+        });
+    }, 100);
 }
 
 // Mostrar el selector de horario solo si hay una fecha seleccionada

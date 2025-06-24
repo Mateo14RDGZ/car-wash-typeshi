@@ -156,11 +156,20 @@ module.exports = async (req, res) => {
       } catch (error) {        console.error(`[API Bridge] Error en la petición a API interna:`, error.message);
         console.log(`[API Bridge] Activando respuesta de emergencia para endpoint: ${endpoint}`);
         // Ir a respuesta de emergencia
-        return await generateEmergencyResponse(req, res, endpoint);
-      }    } catch (error) {
+        return await generateEmergencyResponse(req, res, endpoint);      }    } catch (error) {
       console.error(`[API Bridge] Error general:`, error.message);
       return await generateEmergencyResponse(req, res, endpoint);
     }
+  }
+  // Manejo especial para búsqueda de reservas
+  if (endpoint.includes('/bookings/search')) {
+    console.log('[API Bridge] Solicitud de búsqueda de reservas detectada');
+    return await searchBookings(req, res);
+  }
+  // Manejo especial para cancelación de reservas
+  if (endpoint.includes('/bookings/') && endpoint.includes('/cancel') && req.method === 'PUT') {
+    console.log('[API Bridge] Solicitud de cancelación de reserva detectada');
+    return await cancelBooking(req, res, endpoint);
   }
 };
 
@@ -413,10 +422,10 @@ async function generateEmergencyResponse(req, res, endpoint) {
     try {
       if (BookingModel) {
         console.log('[API Bridge] 💾 Guardando reserva en base de datos MySQL...');
-        
-        // Crear la reserva en la base de datos
+          // Crear la reserva en la base de datos
         const newBooking = await BookingModel.create({
           clientName: req.body.clientName,
+          clientPhone: req.body.clientPhone,
           date: new Date(req.body.date),
           vehicleType: req.body.vehicleType,
           vehiclePlate: req.body.vehiclePlate,
@@ -556,6 +565,177 @@ function processSystemStatus(req, res) {
       status: 'ERROR',
       message: 'Error al verificar estado del sistema',
       serverTime: new Date().toISOString()
+    });
+  }
+}
+
+// FUNCIÓN PARA BUSCAR RESERVAS POR TELÉFONO Y FECHA
+async function searchBookings(req, res) {
+  console.log('[API Bridge] ===== BÚSQUEDA DE RESERVAS =====');
+  console.log('[API Bridge] Query params:', req.query);
+  
+  const { phone, date } = req.query;
+  
+  if (!phone || !date) {
+    return res.status(400).json({
+      status: 'ERROR',
+      message: 'Se requieren los parámetros phone y date',
+      error: 'MISSING_PARAMETERS'
+    });
+  }
+  
+  try {
+    if (BookingModel) {
+      console.log(`[API Bridge] Buscando reservas con teléfono: ${phone} y fecha: ${date}`);
+      
+      // Crear rango de fechas para el día completo
+      const startOfDay = new Date(`${date}T00:00:00.000Z`);
+      const endOfDay = new Date(`${date}T23:59:59.999Z`);
+      
+      // Buscar reservas que coincidan con el teléfono y fecha
+      const reservas = await BookingModel.findAll({
+        where: {
+          clientPhone: phone,
+          date: {
+            [require('sequelize').Op.between]: [startOfDay, endOfDay]
+          },
+          status: ['confirmed', 'pending'] // Solo reservas activas
+        },
+        order: [['date', 'ASC']]
+      });
+      
+      console.log(`[API Bridge] ✅ Encontradas ${reservas.length} reservas`);
+      
+      // Convertir a formato amigable para el frontend
+      const reservasFormateadas = reservas.map(reserva => ({
+        id: reserva.id,
+        clientName: reserva.clientName,
+        clientPhone: reserva.clientPhone,
+        date: reserva.date,
+        vehicleType: reserva.vehicleType,
+        vehiclePlate: reserva.vehiclePlate,
+        serviceType: reserva.serviceType,
+        extras: reserva.extras,
+        price: parseFloat(reserva.price),
+        status: reserva.status,
+        createdAt: reserva.createdAt,
+        updatedAt: reserva.updatedAt
+      }));
+      
+      return res.status(200).json({
+        status: 'SUCCESS',
+        data: reservasFormateadas,
+        message: `Encontradas ${reservas.length} reservas`,
+        source: 'mysql'
+      });
+      
+    } else {
+      // Fallback si no hay conexión a base de datos
+      console.log('[API Bridge] ⚠️ BookingModel no disponible, retornando respuesta vacía');
+      return res.status(200).json({
+        status: 'SUCCESS',
+        data: [],
+        message: 'No se encontraron reservas (modo offline)',
+        source: 'fallback'
+      });
+    }
+    
+  } catch (error) {
+    console.error('[API Bridge] ❌ Error buscando reservas:', error.message);
+    return res.status(500).json({
+      status: 'ERROR',
+      message: 'Error interno al buscar reservas',
+      error: error.message
+    });
+  }
+}
+
+// FUNCIÓN PARA CANCELAR RESERVAS
+async function cancelBooking(req, res, endpoint) {
+  console.log('[API Bridge] ===== CANCELACIÓN DE RESERVA =====');
+  console.log('[API Bridge] Endpoint:', endpoint);
+  console.log('[API Bridge] Body:', req.body);
+  
+  // Extraer ID de la reserva del endpoint
+  const bookingIdMatch = endpoint.match(/\/bookings\/(\d+)\/cancel/);
+  if (!bookingIdMatch) {
+    return res.status(400).json({
+      status: 'ERROR',
+      message: 'ID de reserva no válido en la URL',
+      error: 'INVALID_BOOKING_ID'
+    });
+  }
+  
+  const bookingId = parseInt(bookingIdMatch[1]);
+  console.log('[API Bridge] ID de reserva a cancelar:', bookingId);
+  
+  try {
+    if (BookingModel) {
+      // Buscar la reserva
+      const reserva = await BookingModel.findByPk(bookingId);
+      
+      if (!reserva) {
+        return res.status(404).json({
+          status: 'ERROR',
+          message: 'Reserva no encontrada',
+          error: 'BOOKING_NOT_FOUND'
+        });
+      }
+      
+      if (reserva.status === 'cancelled') {
+        return res.status(400).json({
+          status: 'ERROR',
+          message: 'La reserva ya está cancelada',
+          error: 'ALREADY_CANCELLED'
+        });
+      }
+      
+      // Actualizar el estado de la reserva
+      await reserva.update({
+        status: 'cancelled',
+        notes: (reserva.notes || '') + `\n[${new Date().toISOString()}] Cancelado por el cliente via web. Razón: ${req.body.cancelReason || 'No especificada'}`
+      });
+      
+      console.log('[API Bridge] ✅ Reserva cancelada exitosamente');
+      
+      return res.status(200).json({
+        status: 'SUCCESS',
+        data: {
+          id: reserva.id,
+          status: 'cancelled',
+          cancelledAt: new Date().toISOString(),
+          originalBooking: {
+            clientName: reserva.clientName,
+            date: reserva.date,
+            serviceType: reserva.serviceType,
+            vehiclePlate: reserva.vehiclePlate
+          }
+        },
+        message: 'Reserva cancelada exitosamente',
+        source: 'mysql'
+      });
+      
+    } else {
+      // Fallback si no hay conexión a base de datos
+      console.log('[API Bridge] ⚠️ BookingModel no disponible, simulando cancelación');
+      return res.status(200).json({
+        status: 'SUCCESS',
+        data: {
+          id: bookingId,
+          status: 'cancelled',
+          cancelledAt: new Date().toISOString()
+        },
+        message: 'Reserva cancelada (modo offline)',
+        source: 'fallback'
+      });
+    }
+    
+  } catch (error) {
+    console.error('[API Bridge] ❌ Error cancelando reserva:', error.message);
+    return res.status(500).json({
+      status: 'ERROR',
+      message: 'Error interno al cancelar la reserva',
+      error: error.message
     });
   }
 }
