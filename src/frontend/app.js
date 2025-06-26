@@ -1241,12 +1241,27 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ Grid de horarios NO encontrado');
     }
     
-    // Verificar que apiRequest está disponible
-    if (typeof window.apiRequest === 'function') {
-        console.log('✅ apiRequest disponible');
-    } else {
-        console.error('❌ apiRequest NO disponible');
-    }
+    // Verificar que apiRequest está disponible con reintentos
+    let apiRequestTries = 0;
+    const checkApiRequest = () => {
+        if (typeof window.apiRequest === 'function') {
+            console.log('✅ apiRequest disponible');
+            return true;
+        } else {
+            apiRequestTries++;
+            if (apiRequestTries < 10) {
+                console.log(`⏳ Esperando apiRequest (intento ${apiRequestTries}/10)...`);
+                setTimeout(checkApiRequest, 200);
+                return false;
+            } else {
+                console.error('❌ apiRequest NO disponible después de 10 intentos');
+                console.log('🔧 Verificar que api-helper.js se haya cargado correctamente');
+                return false;
+            }
+        }
+    };
+    
+    setTimeout(checkApiRequest, 100); // Esperar un poco antes de la primera verificación
     
     console.log('🎯 VERIFICACIÓN COMPLETADA - La aplicación debería funcionar correctamente');
 });

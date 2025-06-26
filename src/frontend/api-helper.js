@@ -395,4 +395,11 @@ async function apiRequest(endpoint, options = {}) {
 if (typeof window !== 'undefined') {
     window.apiRequest = apiRequest;
     console.log('📤 apiRequest exportada correctamente a window');
+    
+    // Verificar la exportación
+    if (typeof window.apiRequest === 'function') {
+        console.log('✅ Verificación: window.apiRequest está disponible como función');
+    } else {
+        console.error('❌ ERROR: window.apiRequest no es una función');
+    }
 }
