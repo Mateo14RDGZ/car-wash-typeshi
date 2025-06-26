@@ -60,6 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Esta aplicación requiere conexión a internet para funcionar correctamente. Por favor, verifica tu conexión e intenta nuevamente.');
     }
     
+    // Inicializar fecha con valor por defecto
+    const fechaInput = document.getElementById('fecha');
+    if (fechaInput && !fechaInput.value) {
+        const hoy = new Date();
+        const manana = new Date(hoy.getTime() + (24 * 60 * 60 * 1000)); // Mañana
+        const fechaFormateada = manana.toISOString().split('T')[0];
+        fechaInput.value = fechaFormateada;
+        console.log('📅 Fecha inicial establecida:', fechaFormateada);
+    }
+    
     // Animar elementos al cargar la página
     const elementos = document.querySelectorAll('.card, .form-control, .hero-section h1, .hero-section p');
     elementos.forEach((elemento, index) => {
@@ -740,17 +750,29 @@ function mostrarReservaConfirmada(reserva) {
             if (form) form.reset();
             
             // ACTUALIZAR HORARIOS DISPONIBLES
-            console.log('🔄 Actualizando horarios después de crear reserva...');
+            console.log('🔄 Verificando si hay fecha seleccionada para actualizar horarios...');
             const fechaInput = document.getElementById('fecha');
-            if (fechaInput && fechaInput.value) {
-                const fechaActual = fechaInput.value;
-                console.log('📅 Fecha actual encontrada:', fechaActual);
-                // Disparar el evento change para recargar los horarios
-                fechaInput.dispatchEvent(new Event('change'));
+            if (fechaInput) {
+                // Si no hay valor, establecer la fecha de hoy como mínimo
+                if (!fechaInput.value) {
+                    const hoy = new Date();
+                    const manana = new Date(hoy.getTime() + (24 * 60 * 60 * 1000)); // Mañana
+                    const fechaFormateada = manana.toISOString().split('T')[0];
+                    fechaInput.value = fechaFormateada;
+                    console.log('📅 Fecha establecida automáticamente:', fechaFormateada);
+                }
+                
+                // Ahora disparar el evento change para recargar horarios
+                if (fechaInput.value) {
+                    console.log('📅 Recargando horarios para fecha:', fechaInput.value);
+                    fechaInput.dispatchEvent(new Event('change'));
+                } else {
+                    console.log('⚠️ No se pudo establecer una fecha válida');
+                }
             } else {
-                console.log('⚠️ No se encontró el campo fecha o no tiene valor');
+                console.log('⚠️ No se encontró el campo fecha después de restaurar el DOM');
             }
-        }, 100); // Pequeño delay para asegurar que el DOM esté listo
+        }, 150); // Aumentar delay para asegurar que el DOM esté completamente listo
     });
 }
 
