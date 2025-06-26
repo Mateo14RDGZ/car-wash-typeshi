@@ -571,7 +571,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         
         // Actualizar horarios en segundo plano para reflejar la nueva reserva
         console.log('🔄 Actualizando horarios disponibles en segundo plano...');
-        // Nota: Esto actualiza los horarios para cuando el usuario haga otra reserva
+        await actualizarHorariosDisponibles();
         
         // Si tiene éxito, mostrar confirmación
         mostrarReservaConfirmada(data.data);
@@ -581,6 +581,85 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         mostrarError('No se pudo procesar la reserva. Por favor, verifica tu conexión a internet e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.');
     }
 });
+
+// Función para actualizar horarios disponibles después de una reserva
+async function actualizarHorariosDisponibles() {
+    try {
+        console.log('🔄 Iniciando actualización de horarios...');
+        
+        // Obtener la fecha actual seleccionada
+        const fechaInput = document.getElementById('fecha');
+        if (!fechaInput || !fechaInput.value) {
+            console.log('⚠️ No hay fecha seleccionada para actualizar horarios');
+            return;
+        }
+        
+        const fechaSeleccionada = fechaInput.value;
+        console.log('📅 Actualizando horarios para fecha:', fechaSeleccionada);
+        
+        // Buscar el contenedor de horarios
+        const horariosContainer = document.getElementById('horariosContainer');
+        const horariosGrid = horariosContainer?.querySelector('.horarios-grid');
+        
+        if (!horariosGrid) {
+            console.log('⚠️ Grid de horarios no encontrado, no se puede actualizar');
+            return;
+        }
+        
+        // Llamar a la API para obtener horarios actualizados
+        const endpoint = `/bookings/available-slots?date=${fechaSeleccionada}`;
+        console.log('📡 Consultando horarios actualizados:', endpoint);
+        
+        const data = await apiRequest(endpoint);
+        
+        if (data && data.data && Array.isArray(data.data)) {
+            console.log('✅ Horarios actualizados recibidos:', data.data.length, 'slots');
+            
+            // Actualizar el grid de horarios manteniendo las selecciones
+            const horarioActualSeleccionado = window.horarioSeleccionado;
+            
+            // Limpiar y regenerar horarios
+            horariosGrid.innerHTML = '';
+            
+            if (data.data.length > 0) {
+                data.data.forEach(slot => {
+                    const horarioBtn = document.createElement('button');
+                    horarioBtn.type = 'button';
+                    horarioBtn.className = 'btn btn-outline-primary m-1 horario-btn';
+                    horarioBtn.textContent = slot.time;
+                    horarioBtn.value = slot.time;
+                    horarioBtn.setAttribute('data-start', slot.start);
+                    horarioBtn.setAttribute('data-end', slot.end);
+                    
+                    // Agregar evento click
+                    horarioBtn.addEventListener('click', () => seleccionarHorario(slot.time, horarioBtn));
+                    
+                    horariosGrid.appendChild(horarioBtn);
+                });
+                
+                console.log('✅ Grid de horarios actualizado con', data.data.length, 'slots disponibles');
+                
+                // Restaurar selección si el horario aún está disponible
+                if (horarioActualSeleccionado) {
+                    const horarioDisponible = data.data.some(slot => slot.time === horarioActualSeleccionado);
+                    if (!horarioDisponible) {
+                        console.log('⚠️ El horario previamente seleccionado ya no está disponible:', horarioActualSeleccionado);
+                        window.horarioSeleccionado = null;
+                    }
+                }
+            } else {
+                horariosGrid.innerHTML = '<p class="alert alert-warning">No hay horarios disponibles para esta fecha</p>';
+                window.horarioSeleccionado = null;
+                console.log('📝 No hay horarios disponibles para la fecha seleccionada');
+            }
+        } else {
+            console.error('❌ Respuesta inválida al actualizar horarios:', data);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al actualizar horarios:', error);
+    }
+}
 
 // Esta función se ha eliminado debido a que la aplicación ahora requiere conexión a internet
 // para funcionar correctamente y guardar las reservas directamente en la base de datos MySQL
@@ -744,7 +823,7 @@ function mostrarReservaConfirmada(reserva) {
         window.horarioSeleccionado = null;
         
         // Esperar a que el DOM se renderice completamente antes de acceder a los elementos
-        setTimeout(() => {
+        setTimeout(async () => {
             // Limpiar campos
             const form = document.getElementById('reservaForm');
             if (form) form.reset();
@@ -762,9 +841,12 @@ function mostrarReservaConfirmada(reserva) {
                     console.log('📅 Fecha establecida automáticamente:', fechaFormateada);
                 }
                 
-                // Ahora disparar el evento change para recargar horarios
+                // Forzar actualización de horarios usando la nueva función
                 if (fechaInput.value) {
-                    console.log('📅 Recargando horarios para fecha:', fechaInput.value);
+                    console.log('📅 Forzando actualización de horarios para fecha:', fechaInput.value);
+                    await actualizarHorariosDisponibles();
+                    
+                    // También disparar el evento change como respaldo
                     fechaInput.dispatchEvent(new Event('change'));
                 } else {
                     console.log('⚠️ No se pudo establecer una fecha válida');
