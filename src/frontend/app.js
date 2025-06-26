@@ -569,10 +569,6 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         console.log('📋 data.data:', data.data);
         console.log('📋 Estructura completa de data:', Object.keys(data || {}));
         
-        // Actualizar horarios en segundo plano para reflejar la nueva reserva
-        console.log('🔄 Actualizando horarios disponibles en segundo plano...');
-        await actualizarHorariosDisponibles();
-        
         // Si tiene éxito, mostrar confirmación
         mostrarReservaConfirmada(data.data);
         
@@ -582,113 +578,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     }
 });
 
-// Función para actualizar horarios disponibles después de una reserva
-async function actualizarHorariosDisponibles() {
-    try {
-        console.log('🔄 Iniciando actualización de horarios...');
-        
-        // Obtener la fecha actual seleccionada con múltiples intentos
-        let fechaInput = null;
-        let intentos = 0;
-        
-        while (!fechaInput && intentos < 5) {
-            fechaInput = document.getElementById('fecha');
-            if (!fechaInput) {
-                intentos++;
-                console.log(`⏳ Esperando campo fecha (intento ${intentos}/5)...`);
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-        }
-        
-        if (!fechaInput) {
-            console.log('⚠️ No se pudo encontrar el campo fecha después de varios intentos');
-            return;
-        }
-        
-        if (!fechaInput.value) {
-            console.log('⚠️ El campo fecha no tiene valor');
-            return;
-        }
-        
-        const fechaSeleccionada = fechaInput.value;
-        console.log('📅 Actualizando horarios para fecha:', fechaSeleccionada);
-        
-        // Buscar el contenedor de horarios con reintentos
-        let horariosContainer = null;
-        let horariosGrid = null;
-        intentos = 0;
-        
-        while ((!horariosContainer || !horariosGrid) && intentos < 5) {
-            horariosContainer = document.getElementById('horariosContainer');
-            horariosGrid = horariosContainer?.querySelector('.horarios-grid');
-            
-            if (!horariosContainer || !horariosGrid) {
-                intentos++;
-                console.log(`⏳ Esperando contenedor de horarios (intento ${intentos}/5)...`);
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-        }
-        
-        if (!horariosGrid) {
-            console.log('⚠️ Grid de horarios no encontrado después de varios intentos');
-            return;
-        }
-        
-        // Llamar a la API para obtener horarios actualizados
-        const endpoint = `/bookings/available-slots?date=${fechaSeleccionada}`;
-        console.log('📡 Consultando horarios actualizados:', endpoint);
-        
-        const data = await apiRequest(endpoint);
-        
-        if (data && data.data && Array.isArray(data.data)) {
-            console.log('✅ Horarios actualizados recibidos:', data.data.length, 'slots');
-            
-            // Actualizar el grid de horarios manteniendo las selecciones
-            const horarioActualSeleccionado = window.horarioSeleccionado;
-            
-            // Limpiar y regenerar horarios
-            horariosGrid.innerHTML = '';
-            
-            if (data.data.length > 0) {
-                data.data.forEach(slot => {
-                    const horarioBtn = document.createElement('button');
-                    horarioBtn.type = 'button';
-                    horarioBtn.className = 'btn btn-outline-primary m-1 horario-btn';
-                    horarioBtn.textContent = slot.time;
-                    horarioBtn.value = slot.time;
-                    horarioBtn.setAttribute('data-start', slot.start);
-                    horarioBtn.setAttribute('data-end', slot.end);
-                    
-                    // Agregar evento click
-                    horarioBtn.addEventListener('click', () => seleccionarHorario(slot.time, horarioBtn));
-                    
-                    horariosGrid.appendChild(horarioBtn);
-                });
-                
-                console.log('✅ Grid de horarios actualizado con', data.data.length, 'slots disponibles');
-                
-                // Restaurar selección si el horario aún está disponible
-                if (horarioActualSeleccionado) {
-                    const horarioDisponible = data.data.some(slot => slot.time === horarioActualSeleccionado);
-                    if (!horarioDisponible) {
-                        console.log('⚠️ El horario previamente seleccionado ya no está disponible:', horarioActualSeleccionado);
-                        window.horarioSeleccionado = null;
-                    }
-                }
-            } else {
-                horariosGrid.innerHTML = '<p class="alert alert-warning">No hay horarios disponibles para esta fecha</p>';
-                window.horarioSeleccionado = null;
-                console.log('📝 No hay horarios disponibles para la fecha seleccionada');
-            }
-        } else {
-            console.error('❌ Respuesta inválida al actualizar horarios:', data);
-        }
-        
-    } catch (error) {
-        console.error('❌ Error al actualizar horarios:', error);
-        // No lanzar el error, solo loggearlo para evitar romper el flujo
-    }
-}
+
 
 // Esta función se ha eliminado debido a que la aplicación ahora requiere conexión a internet
 // para funcionar correctamente y guardar las reservas directamente en la base de datos MySQL
@@ -845,43 +735,10 @@ function mostrarReservaConfirmada(reserva) {
         </div>
     `;      // Añadir listeners a los botones
     document.getElementById('nuevaReservaBtn').addEventListener('click', () => {
-        // Recuperar el contenido original
-        container.innerHTML = container.dataset.originalContent;
-        // Resetear variables globales
-        window.servicioSeleccionado = null;
-        window.horarioSeleccionado = null;
-        
-        // Esperar a que el DOM se renderice completamente antes de acceder a los elementos
-        setTimeout(async () => {
-            // Limpiar campos
-            const form = document.getElementById('reservaForm');
-            if (form) form.reset();
-            
-            // ACTUALIZAR HORARIOS DISPONIBLES
-            console.log('🔄 Verificando si hay fecha seleccionada para actualizar horarios...');
-            const fechaInput = document.getElementById('fecha');
-            if (fechaInput) {
-                // Si no hay valor, establecer la fecha de hoy como mínimo
-                if (!fechaInput.value) {
-                    const hoy = new Date();
-                    const manana = new Date(hoy.getTime() + (24 * 60 * 60 * 1000)); // Mañana
-                    const fechaFormateada = manana.toISOString().split('T')[0];
-                    fechaInput.value = fechaFormateada;
-                    console.log('📅 Fecha establecida automáticamente:', fechaFormateada);
-                }
-                
-                // Establecer fecha y recargar horarios usando el evento change (más confiable)
-                if (fechaInput.value) {
-                    console.log('📅 Recargando horarios para fecha:', fechaInput.value);
-                    // Usar solo el evento change que ya funciona correctamente
-                    fechaInput.dispatchEvent(new Event('change'));
-                } else {
-                    console.log('⚠️ No se pudo establecer una fecha válida');
-                }
-            } else {
-                console.log('⚠️ No se encontró el campo fecha después de restaurar el DOM');
-            }
-        }, 300); // Aumentar delay significativamente para asegurar que el DOM esté completamente listo
+        console.log('🔄 Recargando página para hacer otra reserva...');
+        // En lugar de intentar restaurar el DOM, simplemente recargar la página
+        // Esto es más seguro y asegura que todos los elementos y eventos estén correctos
+        window.location.reload();
     });
 }
 
