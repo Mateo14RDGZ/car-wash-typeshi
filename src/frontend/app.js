@@ -587,22 +587,50 @@ async function actualizarHorariosDisponibles() {
     try {
         console.log('🔄 Iniciando actualización de horarios...');
         
-        // Obtener la fecha actual seleccionada
-        const fechaInput = document.getElementById('fecha');
-        if (!fechaInput || !fechaInput.value) {
-            console.log('⚠️ No hay fecha seleccionada para actualizar horarios');
+        // Obtener la fecha actual seleccionada con múltiples intentos
+        let fechaInput = null;
+        let intentos = 0;
+        
+        while (!fechaInput && intentos < 5) {
+            fechaInput = document.getElementById('fecha');
+            if (!fechaInput) {
+                intentos++;
+                console.log(`⏳ Esperando campo fecha (intento ${intentos}/5)...`);
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        if (!fechaInput) {
+            console.log('⚠️ No se pudo encontrar el campo fecha después de varios intentos');
+            return;
+        }
+        
+        if (!fechaInput.value) {
+            console.log('⚠️ El campo fecha no tiene valor');
             return;
         }
         
         const fechaSeleccionada = fechaInput.value;
         console.log('📅 Actualizando horarios para fecha:', fechaSeleccionada);
         
-        // Buscar el contenedor de horarios
-        const horariosContainer = document.getElementById('horariosContainer');
-        const horariosGrid = horariosContainer?.querySelector('.horarios-grid');
+        // Buscar el contenedor de horarios con reintentos
+        let horariosContainer = null;
+        let horariosGrid = null;
+        intentos = 0;
+        
+        while ((!horariosContainer || !horariosGrid) && intentos < 5) {
+            horariosContainer = document.getElementById('horariosContainer');
+            horariosGrid = horariosContainer?.querySelector('.horarios-grid');
+            
+            if (!horariosContainer || !horariosGrid) {
+                intentos++;
+                console.log(`⏳ Esperando contenedor de horarios (intento ${intentos}/5)...`);
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
         
         if (!horariosGrid) {
-            console.log('⚠️ Grid de horarios no encontrado, no se puede actualizar');
+            console.log('⚠️ Grid de horarios no encontrado después de varios intentos');
             return;
         }
         
@@ -658,6 +686,7 @@ async function actualizarHorariosDisponibles() {
         
     } catch (error) {
         console.error('❌ Error al actualizar horarios:', error);
+        // No lanzar el error, solo loggearlo para evitar romper el flujo
     }
 }
 
@@ -841,12 +870,10 @@ function mostrarReservaConfirmada(reserva) {
                     console.log('📅 Fecha establecida automáticamente:', fechaFormateada);
                 }
                 
-                // Forzar actualización de horarios usando la nueva función
+                // Establecer fecha y recargar horarios usando el evento change (más confiable)
                 if (fechaInput.value) {
-                    console.log('📅 Forzando actualización de horarios para fecha:', fechaInput.value);
-                    await actualizarHorariosDisponibles();
-                    
-                    // También disparar el evento change como respaldo
+                    console.log('📅 Recargando horarios para fecha:', fechaInput.value);
+                    // Usar solo el evento change que ya funciona correctamente
                     fechaInput.dispatchEvent(new Event('change'));
                 } else {
                     console.log('⚠️ No se pudo establecer una fecha válida');
@@ -854,7 +881,7 @@ function mostrarReservaConfirmada(reserva) {
             } else {
                 console.log('⚠️ No se encontró el campo fecha después de restaurar el DOM');
             }
-        }, 150); // Aumentar delay para asegurar que el DOM esté completamente listo
+        }, 300); // Aumentar delay significativamente para asegurar que el DOM esté completamente listo
     });
 }
 
