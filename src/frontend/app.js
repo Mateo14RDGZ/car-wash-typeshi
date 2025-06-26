@@ -456,7 +456,13 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         return;
     }
 
-    const fecha = document.getElementById('fecha').value;    window.debugLog('DEBUG - Submit - Fecha seleccionada:', fecha);
+    const fechaInput = document.getElementById('fecha');
+    if (!fechaInput) {
+        mostrarError('Error: No se encontró el campo de fecha');
+        return;
+    }
+    const fecha = fechaInput.value;
+    window.debugLog('DEBUG - Submit - Fecha seleccionada:', fecha);
     window.debugLog('DEBUG - Submit - Horario seleccionado:', window.horarioSeleccionado);    
     // Crear objeto Date para validación
     const [horaInicio] = window.horarioSeleccionado.split(' - ');    const fechaHora = new Date(fecha + 'T' + horaInicio);
@@ -511,12 +517,24 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         if (chk && chk.checked) {
             total += parseInt(chk.getAttribute('data-precio'));
         }
-    });    const formData = {
-        clientName: document.getElementById('nombre').value,
-        clientPhone: document.getElementById('telefono').value,
+    });    // Obtener referencias a los elementos del formulario
+    const nombre = document.getElementById('nombre');
+    const telefono = document.getElementById('telefono');
+    const vehiculo = document.getElementById('vehiculo');
+    const patente = document.getElementById('patente');
+    
+    // Verificar que todos los elementos existen
+    if (!nombre || !telefono || !vehiculo || !patente) {
+        mostrarError('Error: Faltan campos en el formulario');
+        return;
+    }
+    
+    const formData = {
+        clientName: nombre.value,
+        clientPhone: telefono.value,
         date: fecha + 'T' + horaInicio,
-        vehicleType: document.getElementById('vehiculo').value,
-        vehiclePlate: document.getElementById('patente').value,
+        vehicleType: vehiculo.value,
+        vehiclePlate: patente.value,
         serviceType: window.servicioSeleccionado,
         price: total,
         extras: extrasSeleccionados
@@ -714,20 +732,25 @@ function mostrarReservaConfirmada(reserva) {
         // Resetear variables globales
         window.servicioSeleccionado = null;
         window.horarioSeleccionado = null;
-        // Limpiar campos
-        const form = document.getElementById('reservaForm');
-        if (form) form.reset();
-          // ACTUALIZAR HORARIOS DISPONIBLES
-        console.log('🔄 Actualizando horarios después de crear reserva...');
-        const fechaActual = document.getElementById('fecha').value;
-        if (fechaActual) {
-            // Disparar el evento change para recargar los horarios
+        
+        // Esperar a que el DOM se renderice completamente antes de acceder a los elementos
+        setTimeout(() => {
+            // Limpiar campos
+            const form = document.getElementById('reservaForm');
+            if (form) form.reset();
+            
+            // ACTUALIZAR HORARIOS DISPONIBLES
+            console.log('🔄 Actualizando horarios después de crear reserva...');
             const fechaInput = document.getElementById('fecha');
-            if (fechaInput) {
-                // Simular cambio para recargar horarios
+            if (fechaInput && fechaInput.value) {
+                const fechaActual = fechaInput.value;
+                console.log('📅 Fecha actual encontrada:', fechaActual);
+                // Disparar el evento change para recargar los horarios
                 fechaInput.dispatchEvent(new Event('change'));
+            } else {
+                console.log('⚠️ No se encontró el campo fecha o no tiene valor');
             }
-        }
+        }, 100); // Pequeño delay para asegurar que el DOM esté listo
     });
 }
 
@@ -838,9 +861,12 @@ async function cancelarReserva() {
     const modal = new bootstrap.Modal(document.getElementById('cancelarReservaModal'));
     modal.show();
     
-    // Limpiar campos al abrir
-    document.getElementById('telefonoCancelacion').value = '';
-    document.getElementById('fechaCancelacion').value = '';
+    // Limpiar campos al abrir si existen
+    const telefonoInput = document.getElementById('telefonoCancelacion');
+    const fechaInput = document.getElementById('fechaCancelacion');
+    
+    if (telefonoInput) telefonoInput.value = '';
+    if (fechaInput) fechaInput.value = '';
     
     // Resetear pasos
     document.getElementById('cancelarStep1').style.display = 'block';
@@ -859,10 +885,18 @@ if (typeof window.reservaEncontradaParaCancelar === 'undefined') {
     window.reservaEncontradaParaCancelar = null;
 }
 
-// Función para buscar reserva por teléfono y fecha
+//Función para buscar reserva por teléfono y fecha
 async function buscarReservaPorTelefono() {
-    const telefono = document.getElementById('telefonoCancelacion').value.trim();
-    const fecha = document.getElementById('fechaCancelacion').value;
+    const telefonoInput = document.getElementById('telefonoCancelacion');
+    const fechaInput = document.getElementById('fechaCancelacion');
+    
+    if (!telefonoInput || !fechaInput) {
+        mostrarError('Error: No se encontraron los campos de cancelación');
+        return;
+    }
+    
+    const telefono = telefonoInput.value.trim();
+    const fecha = fechaInput.value;
     
     console.log('🔍 Buscando reserva con teléfono:', telefono, 'y fecha:', fecha);
     
