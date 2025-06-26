@@ -368,20 +368,52 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
         
         existingBookings.forEach(booking => {
           const bookingStartTime = booking.time.split(' - ')[0];
-          console.log(`[API Bridge] Buscando slot que empiece con: "${bookingStartTime}"`);
+          console.log(`[API Bridge] Procesando reserva que empieza a: "${bookingStartTime}"`);
           
-          const slot = availableSlots.find(s => s.start === bookingStartTime);
+          // Buscar por coincidencia exacta primero
+          let slot = availableSlots.find(s => s.start === bookingStartTime);
+          
+          // Si no encuentra coincidencia exacta, buscar el slot que contenga esta hora
+          if (!slot) {
+            console.log(`[API Bridge] No hay slot que empiece exactamente a "${bookingStartTime}", buscando slot que lo contenga...`);
+            
+            slot = availableSlots.find(s => {
+              const slotStart = s.start;
+              const slotEnd = s.end;
+              
+              // Convertir a minutos para comparar fácilmente
+              const bookingMinutes = timeToMinutes(bookingStartTime);
+              const slotStartMinutes = timeToMinutes(slotStart);
+              const slotEndMinutes = timeToMinutes(slotEnd);
+              
+              // La reserva está dentro del rango del slot
+              const isWithinSlot = bookingMinutes >= slotStartMinutes && bookingMinutes < slotEndMinutes;
+              
+              if (isWithinSlot) {
+                console.log(`[API Bridge] 🎯 Reserva ${bookingStartTime} está dentro del slot ${s.time}`);
+              }
+              
+              return isWithinSlot;
+            });
+          }
+          
           if (slot) {
-            console.log(`[API Bridge] ✅ Marcando slot ${slot.time} como reservado`);
+            console.log(`[API Bridge] ✅ Marcando slot ${slot.time} como reservado (reserva a las ${bookingStartTime})`);
             slot.isBooked = true;
           } else {
-            console.log(`[API Bridge] ❌ No se encontró slot que empiece con "${bookingStartTime}"`);
-            console.log(`[API Bridge] Slots disponibles:`, availableSlots.map(s => `"${s.start}"`));
+            console.log(`[API Bridge] ❌ No se encontró ningún slot para la reserva a las "${bookingStartTime}"`);
+            console.log(`[API Bridge] Slots disponibles:`, availableSlots.map(s => `"${s.start}-${s.end}"`));
           }
         });
         
         console.log(`[API Bridge] Estados finales:`, availableSlots.map(s => `${s.time}: ${s.isBooked ? 'RESERVADO' : 'LIBRE'}`));
       }
+
+// Función helper para convertir tiempo a minutos
+function timeToMinutes(timeStr) {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+}
         // Devolver TODOS los slots (disponibles y reservados) para que el frontend pueda mostrarlos correctamente
       console.log(`[API Bridge] Horarios finales (todos):`, availableSlots.map(slot => `${slot.time} - ${slot.isBooked ? 'RESERVADO' : 'LIBRE'}`));
       
