@@ -1,3 +1,5 @@
+// Car Wash Reservation System - Frontend App
+// Versión actualizada: 2025-06-26 - Función actualizarHorariosDisponibles eliminada
 // Función para manejar errores de depuración (protegida contra redeclaración)
 if (typeof window.debugError === 'undefined') {
     window.debugError = function(...args) {

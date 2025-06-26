@@ -25,14 +25,14 @@
       // Forzar reload de todos los scripts con timestamp único
       const timestamp = Date.now();
       const uniqueId = Math.random().toString(36).substring(7);
-      console.log(`Sistema de carga único ID: ${uniqueId}`);
+      console.log(`Sistema de carga único ID: ${uniqueId} - Función actualizarHorariosDisponibles eliminada`);
 
       // Función para cargar scripts en orden y con anti-caché
       function loadScript(src, onLoad) {
         return new Promise((resolve, reject) => {
           const script = document.createElement("script");
-          // Timestamp doble para evitar caché agresivo
-          script.src = `${src}?t=${timestamp}&u=${uniqueId}`;
+          // Timestamp doble para evitar caché agresivo - v2.0
+          script.src = `${src}?t=${timestamp}&u=${uniqueId}&v=2.0`;
 
           script.onload = function () {
             console.log(`✅ Script cargado exitosamente: ${src}`);
