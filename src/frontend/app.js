@@ -290,12 +290,20 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             // Usar la función helper para realizar la petición
             console.log('📡 Ejecutando apiRequest...');
             const data = await apiRequest(endpoint);
-            console.log('📊 RESPUESTA RECIBIDA:', data);
+            console.log('📊 RESPUESTA RECIBIDA COMPLETA:', JSON.stringify(data, null, 2));
             window.debugLog('DEBUG - Datos recibidos del servidor:', data);
 
             // Verificar si los datos vienen de MySQL o generación local
             if (data && data.dataSource) {
-                console.log(`Origen de datos: ${data.dataSource}`);
+                console.log(`🏛️ Origen de datos: ${data.dataSource}`);
+            }
+            
+            // Log específico de cada slot recibido
+            if (data && data.data && Array.isArray(data.data)) {
+                console.log('🔍 ANÁLISIS DETALLADO DE SLOTS RECIBIDOS:');
+                data.data.forEach((slot, index) => {
+                    console.log(`  Slot ${index + 1}: ${slot.time} - isBooked: ${slot.isBooked} (${typeof slot.isBooked})`);
+                });
             }
             
             // Cuando lleguen los datos reales, actualizar los horarios
@@ -1085,6 +1093,17 @@ function procesarHorariosDisponibles(horarios) {
         datos: horarios
     });
     
+    // Log detallado de cada horario
+    horarios.forEach((slot, index) => {
+        console.log(`📋 Horario ${index + 1}:`, {
+            time: slot.time,
+            isBooked: slot.isBooked,
+            start: slot.start,
+            end: slot.end,
+            slot: slot
+        });
+    });
+    
     // Obtener el contenedor de horarios
     const horariosContainer = document.getElementById('horariosContainer');
     const horariosGrid = horariosContainer ? horariosContainer.querySelector('.horarios-grid') : null;
@@ -1120,9 +1139,11 @@ function procesarHorariosDisponibles(horarios) {
                 horarioBtn.disabled = true;
                 horarioBtn.innerHTML = `${slot.time} <i class="fas fa-lock ms-1"></i>`;
                 horarioBtn.title = 'Este horario ya está reservado';
+                console.log('🔒 HORARIO RESERVADO CREADO:', slot.time);
             } else {
                 // Horario disponible - normal
                 horarioBtn.className = 'btn btn-outline-primary m-1';
+                console.log('✅ HORARIO DISPONIBLE CREADO:', slot.time);
                 
                 // Evento para seleccionar horario solo si está disponible
                 horarioBtn.onclick = function() {
