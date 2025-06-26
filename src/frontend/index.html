@@ -25,7 +25,9 @@
       // Forzar reload de todos los scripts con timestamp único
       const timestamp = Date.now();
       const uniqueId = Math.random().toString(36).substring(7);
-      console.log(`Sistema de carga único ID: ${uniqueId} - Función actualizarHorariosDisponibles eliminada`);
+      console.log(
+        `Sistema de carga único ID: ${uniqueId} - Función actualizarHorariosDisponibles eliminada`
+      );
 
       // Función para cargar scripts en orden y con anti-caché
       function loadScript(src, onLoad) {

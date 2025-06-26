@@ -29,7 +29,8 @@ const SATURDAY_SLOTS = [
     { start: '11:30', end: '13:00' }
 ];
 
-function generateTimeSlots(date) {
+// Función para generar horarios base sin verificar reservas
+function generateBaseTimeSlots(date) {
     try {
         if (!date || typeof date !== 'string') {
             console.error('DEBUG - Fecha no proporcionada o no es string:', date);
@@ -50,34 +51,167 @@ function generateTimeSlots(date) {
             return [];
         }
 
-        let slots = [];
-
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-            slots = WEEKDAY_SLOTS.map(slot => ({
-                time: `${slot.start} - ${slot.end}`,
-                start: slot.start,
-                end: slot.end,
-                isBooked: false,
-                duration: SLOT_DURATION
-            }));
-        } else if (dayOfWeek === 6) {
-            slots = SATURDAY_SLOTS.map(slot => ({
-                time: `${slot.start} - ${slot.end}`,
-                start: slot.start,
-                end: slot.end,
-                isBooked: false,
-                duration: SLOT_DURATION
-            }));
-        }
+        const selectedSlots = dayOfWeek === 6 ? SATURDAY_SLOTS : WEEKDAY_SLOTS;
         
-        return slots;
+        return selectedSlots.map(slot => ({
+            start: slot.start,
+            end: slot.end,
+            time: `${slot.start} - ${slot.end}`,
+            date: date,
+            isBooked: false // Por defecto no reservado
+        }));
+        
     } catch (error) {
-        console.error('Error en generateTimeSlots:', error);
+        console.error('DEBUG - Error al generar horarios:', error);
         return [];
     }
 }
 
-module.exports = async (req, res) => {    // Configurar CORS
+// Función para verificar horarios ocupados en la base de datos
+async function checkBookedSlots(date) {
+    try {
+        // Importar dependencias de base de datos
+        const { Sequelize, DataTypes } = require('sequelize');
+        const sequelize = new Sequelize(
+            process.env.DB_NAME || 'car_wash_db',
+            process.env.DB_USER || 'root',
+            process.env.DB_PASS || '',
+            {
+                host: process.env.DB_HOST || 'localhost',
+                dialect: 'mysql',
+                logging: false,
+                pool: {
+                    max: 5,
+                    min: 0,
+                    acquire: 30000,
+                    idle: 10000
+                }
+            }
+        );
+
+        // Definir modelo de booking temporal
+        const Booking = sequelize.define('booking', {
+            id: {
+                type: DataTypes.INTEGER,
+                primaryKey: true,
+                autoIncrement: true
+            },
+            clientName: {
+                type: DataTypes.STRING,
+                allowNull: false
+            },
+            clientPhone: {
+                type: DataTypes.STRING,
+                allowNull: true
+            },
+            date: {
+                type: DataTypes.DATE,
+                allowNull: false
+            },
+            vehicleType: {
+                type: DataTypes.ENUM('auto', 'camioneta_caja', 'camioneta_sin_caja'),
+                allowNull: false
+            },
+            vehiclePlate: {
+                type: DataTypes.STRING,
+                allowNull: false
+            },
+            serviceType: {
+                type: DataTypes.ENUM('basico', 'premium', 'detailing'),
+                allowNull: false
+            },
+            status: {
+                type: DataTypes.ENUM('pending', 'confirmed', 'completed', 'cancelled'),
+                defaultValue: 'confirmed'
+            }
+        }, {
+            tableName: 'bookings',
+            timestamps: true
+        });
+
+        // Crear las fechas de inicio y fin del día
+        const startOfDay = new Date(date + 'T00:00:00');
+        const endOfDay = new Date(date + 'T23:59:59');
+
+        console.log('🔍 Consultando reservas para:', date, 'entre', startOfDay, 'y', endOfDay);
+
+        // Buscar reservas confirmadas para la fecha
+        const bookings = await Booking.findAll({
+            where: {
+                date: {
+                    [Sequelize.Op.between]: [startOfDay, endOfDay]
+                },
+                status: {
+                    [Sequelize.Op.in]: ['confirmed', 'pending', 'in_progress']
+                }
+            },
+            attributes: ['date', 'status']
+        });
+
+        console.log('📋 Reservas encontradas:', bookings.length);
+
+        // Extraer horarios ocupados
+        const bookedTimes = bookings.map(booking => {
+            const bookingDate = new Date(booking.date);
+            const hours = String(bookingDate.getHours()).padStart(2, '0');
+            const minutes = String(bookingDate.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        });
+
+        console.log('⏰ Horarios ocupados:', bookedTimes);
+
+        // Cerrar conexión
+        await sequelize.close();
+
+        return bookedTimes;
+
+    } catch (error) {
+        console.error('❌ Error al consultar base de datos:', error);
+        return []; // Si hay error, devolver array vacío (todos disponibles)
+    }
+}
+
+// Función principal para generar horarios con verificación de disponibilidad
+async function generateTimeSlotsWithAvailability(date) {
+    try {
+        // Generar horarios base
+        const baseSlots = generateBaseTimeSlots(date);
+        
+        if (baseSlots.length === 0) {
+            return [];
+        }
+
+        // Obtener horarios ocupados de la base de datos
+        const bookedTimes = await checkBookedSlots(date);
+
+        // Marcar horarios como ocupados
+        const slotsWithAvailability = baseSlots.map(slot => {
+            const slotStartTime = slot.start;
+            const isBooked = bookedTimes.some(bookedTime => {
+                // Verificar si el horario de inicio coincide con alguna reserva
+                return bookedTime === slotStartTime;
+            });
+
+            return {
+                ...slot,
+                isBooked: isBooked
+            };
+        });
+
+        console.log('✅ Horarios procesados:', slotsWithAvailability.length, 'total');
+        console.log('🔒 Horarios ocupados:', slotsWithAvailability.filter(s => s.isBooked).length);
+        console.log('🟢 Horarios disponibles:', slotsWithAvailability.filter(s => !s.isBooked).length);
+
+        return slotsWithAvailability;
+
+    } catch (error) {
+        console.error('❌ Error al generar horarios con disponibilidad:', error);
+        // Si hay error, devolver horarios base sin verificación
+        return generateBaseTimeSlots(date);
+    }
+}
+module.exports = async (req, res) => {
+    // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -97,7 +231,7 @@ module.exports = async (req, res) => {    // Configurar CORS
     try {
         const { date } = req.query;
         
-        console.log('Vercel - Solicitud de horarios para fecha:', date);
+        console.log('🚀 Vercel - Solicitud de horarios para fecha:', date);
         
         if (!date) {
             return res.status(400).json({
@@ -114,18 +248,24 @@ module.exports = async (req, res) => {    // Configurar CORS
             });
         }
         
-        // Generar horarios disponibles
-        const availableSlots = generateTimeSlots(date);
+        // Generar horarios disponibles con verificación de base de datos
+        const availableSlots = await generateTimeSlotsWithAvailability(date);
         
-        console.log('Vercel - Slots generados:', availableSlots.length);
+        console.log('✅ Vercel - Slots generados:', availableSlots.length);
+        console.log('📊 Vercel - Resumen:', {
+            total: availableSlots.length,
+            disponibles: availableSlots.filter(s => !s.isBooked).length,
+            ocupados: availableSlots.filter(s => s.isBooked).length
+        });
         
         return res.status(200).json({
             status: 'SUCCESS',
-            data: availableSlots || []
+            data: availableSlots || [],
+            dataSource: 'mysql_database'
         });
         
     } catch (error) {
-        console.error('Vercel - Error al obtener horarios:', error);
+        console.error('❌ Vercel - Error al obtener horarios:', error);
         
         return res.status(500).json({
             status: 'ERROR',
