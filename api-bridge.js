@@ -101,10 +101,16 @@ module.exports = async (req, res) => {
     console.log('[API Bridge] 🔍 Solicitud de búsqueda de reservas detectada');
     return await searchBookings(req, res);
   }
+
+  // Manejo especial para cancelación de reservas por teléfono/fecha
+  if (endpoint.includes('/bookings') && req.method === 'DELETE') {
+    console.log('[API Bridge] ❌ Solicitud de cancelación de reserva detectada (DELETE)');
+    return await cancelBookingByPhoneOrName(req, res);
+  }
   
-  // Manejo especial para cancelación de reservas
+  // Manejo especial para cancelación de reservas por ID
   if (endpoint.includes('/bookings/') && endpoint.includes('/cancel') && req.method === 'PUT') {
-    console.log('[API Bridge] ❌ Solicitud de cancelación de reserva detectada');
+    console.log('[API Bridge] ❌ Solicitud de cancelación de reserva detectada (PUT por ID)');
     return await cancelBooking(req, res, endpoint);
   }
   
@@ -764,6 +770,117 @@ async function cancelBooking(req, res, endpoint) {
         status: 'SUCCESS',
         data: {
           id: bookingId,
+          status: 'cancelled',
+          cancelledAt: new Date().toISOString()
+        },
+        message: 'Reserva cancelada (modo offline)',
+        source: 'fallback'
+      });
+    }
+    
+  } catch (error) {
+    console.error('[API Bridge] ❌ Error cancelando reserva:', error.message);
+    return res.status(500).json({
+      status: 'ERROR',
+      message: 'Error interno al cancelar la reserva',
+      error: error.message
+    });
+  }
+}
+
+// FUNCIÓN PARA CANCELAR RESERVAS POR TELÉFONO O NOMBRE
+async function cancelBookingByPhoneOrName(req, res) {
+  console.log('[API Bridge] ===== CANCELACIÓN DE RESERVA POR TELÉFONO/NOMBRE =====');
+  console.log('[API Bridge] Body:', req.body);
+  
+  const { clientName, clientPhone, phone, date, cancelReason } = req.body;
+  
+  // Determinar qué identificador usar (nombre o teléfono)
+  const identifier = clientName || clientPhone || phone;
+  const searchByPhone = !clientName && (clientPhone || phone);
+  
+  if (!identifier || !date) {
+    return res.status(400).json({
+      status: 'ERROR',
+      message: 'Se requiere el nombre del cliente o teléfono y la fecha de la reserva',
+      error: 'MISSING_PARAMETERS',
+      received: { clientName, clientPhone, phone, date }
+    });
+  }
+  
+  console.log(`[API Bridge] Buscando reserva por ${searchByPhone ? 'teléfono' : 'nombre'}: ${identifier}, fecha: ${date}`);
+  
+  try {
+    if (BookingModel) {
+      // Crear rango de fechas para el día completo
+      const startOfDay = new Date(`${date}T00:00:00`);
+      const endOfDay = new Date(`${date}T23:59:59.999Z`);
+      
+      // Crear condiciones de búsqueda dinámicas
+      const whereConditions = {
+        date: {
+          [require('sequelize').Op.between]: [startOfDay, endOfDay]
+        },
+        status: {
+          [require('sequelize').Op.ne]: 'cancelled'
+        }
+      };
+      
+      // Agregar condición de búsqueda por nombre o teléfono
+      if (searchByPhone) {
+        whereConditions.clientPhone = identifier;
+      } else {
+        whereConditions.clientName = identifier;
+      }
+      
+      // Buscar la reserva
+      const reserva = await BookingModel.findOne({
+        where: whereConditions
+      });
+      
+      if (!reserva) {
+        const searchType = searchByPhone ? 'teléfono' : 'nombre';
+        return res.status(404).json({
+          status: 'ERROR',
+          message: `No se encontró ninguna reserva con ese ${searchType} y fecha. Verifica los datos ingresados.`,
+          error: 'BOOKING_NOT_FOUND',
+          searchType: searchType,
+          searched: identifier
+        });
+      }
+      
+      // Actualizar el estado de la reserva
+      await reserva.update({
+        status: 'cancelled',
+        notes: (reserva.notes || '') + `\n[${new Date().toISOString()}] Cancelado por el cliente via web. Razón: ${cancelReason || 'No especificada'}`
+      });
+      
+      console.log('[API Bridge] ✅ Reserva cancelada exitosamente');
+      
+      return res.status(200).json({
+        status: 'SUCCESS',
+        data: {
+          id: reserva.id,
+          status: 'cancelled',
+          cancelledAt: new Date().toISOString(),
+          originalBooking: {
+            clientName: reserva.clientName,
+            clientPhone: reserva.clientPhone,
+            date: reserva.date,
+            serviceType: reserva.serviceType,
+            vehiclePlate: reserva.vehiclePlate
+          }
+        },
+        message: 'Reserva cancelada exitosamente',
+        source: 'mysql'
+      });
+      
+    } else {
+      // Fallback si no hay conexión a base de datos
+      console.log('[API Bridge] ⚠️ BookingModel no disponible, simulando cancelación');
+      return res.status(200).json({
+        status: 'SUCCESS',
+        data: {
           status: 'cancelled',
           cancelledAt: new Date().toISOString()
         },

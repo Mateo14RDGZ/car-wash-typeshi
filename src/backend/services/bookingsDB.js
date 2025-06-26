@@ -212,29 +212,39 @@ async function getBookingsByDate(date) {
 }
 
 // Función para cancelar una reserva
-async function cancelBooking(clientName, date) {
+async function cancelBooking(clientIdentifier, date, searchByPhone = false) {
     try {
-        // Buscar la reserva por nombre del cliente y fecha
+        // Buscar la reserva por nombre del cliente o teléfono y fecha
         const bookingDate = new Date(date);
         const startOfDay = new Date(bookingDate);
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(bookingDate);
         endOfDay.setHours(23, 59, 59, 999);
 
-        const booking = await Booking.findOne({
-            where: {
-                clientName: clientName,
-                date: {
-                    [Op.between]: [startOfDay, endOfDay]
-                },
-                status: {
-                    [Op.ne]: 'cancelled' // Solo buscar reservas que no estén ya canceladas
-                }
+        // Crear condiciones de búsqueda dinámicas
+        const whereConditions = {
+            date: {
+                [Op.between]: [startOfDay, endOfDay]
+            },
+            status: {
+                [Op.ne]: 'cancelled' // Solo buscar reservas que no estén ya canceladas
             }
+        };
+
+        // Agregar condición de búsqueda por nombre o teléfono
+        if (searchByPhone) {
+            whereConditions.clientPhone = clientIdentifier;
+        } else {
+            whereConditions.clientName = clientIdentifier;
+        }
+
+        const booking = await Booking.findOne({
+            where: whereConditions
         });
         
         if (!booking) {
-            throw new Error('No se encontró una reserva activa para el cliente especificado en la fecha indicada');
+            const searchType = searchByPhone ? 'teléfono' : 'nombre del cliente';
+            throw new Error(`No se encontró una reserva activa para el ${searchType} especificado en la fecha indicada`);
         }
 
         // Enviar correo de notificación de cancelación antes de cancelar
@@ -249,7 +259,8 @@ async function cancelBooking(clientName, date) {
         // Actualizar el estado de la reserva a cancelada
         await booking.update({ status: 'cancelled' });
         
-        console.log(`✅ Reserva cancelada exitosamente - ID: ${booking.id}, Cliente: ${clientName}`);
+        const searchType = searchByPhone ? 'teléfono' : 'cliente';
+        console.log(`✅ Reserva cancelada exitosamente - ID: ${booking.id}, ${searchType}: ${clientIdentifier}`);
         
         return { 
             message: 'Reserva cancelada exitosamente',

@@ -243,21 +243,30 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // Cancelar una reserva
-// Cancelar una reserva
 router.delete('/', async (req, res) => {
     try {
-        const { clientName, date } = req.body;
-        if (!clientName || !date) {
+        const { clientName, clientPhone, phone, date } = req.body;
+        
+        // Determinar qué identificador usar (nombre o teléfono)
+        const identifier = clientName || clientPhone || phone;
+        const searchByPhone = !clientName && (clientPhone || phone);
+        
+        if (!identifier || !date) {
             return res.status(400).json({
                 status: 'ERROR',
-                message: 'Se requiere el nombre del cliente y la fecha de la reserva'
+                message: 'Se requiere el nombre del cliente o teléfono y la fecha de la reserva',
+                received: { clientName, clientPhone, phone, date }
             });
         }
-        await bookingService.cancelBooking(clientName, date);
+        
+        console.log(`[Cancel Booking] Buscando reserva por ${searchByPhone ? 'teléfono' : 'nombre'}: ${identifier}, fecha: ${date}`);
+        
+        const result = await bookingService.cancelBooking(identifier, date, searchByPhone);
         
         res.json({
             status: 'SUCCESS',
-            message: 'Reserva cancelada exitosamente'
+            message: result.message,
+            data: result.booking
         });
     } catch (error) {
         console.error('Error al cancelar la reserva:', error);
