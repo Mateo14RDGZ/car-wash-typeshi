@@ -52,13 +52,27 @@ module.exports = async (req, res) => {
             }
             
             // Validar formato de fecha
-            const fechaReserva = new Date(date);
+            let fechaReserva = new Date(date);
             if (isNaN(fechaReserva.getTime())) {
                 return res.status(400).json({
                     status: 'ERROR',
                     message: 'Fecha inválida'
                 });
             }
+            // Forzar hora local (no UTC)
+            const [fechaStr, horaStr] = date.split('T');
+            if (fechaStr && horaStr) {
+                const [h, m] = horaStr.split(':');
+                fechaReserva = new Date(
+                    Number(fechaStr.split('-')[0]),
+                    Number(fechaStr.split('-')[1]) - 1,
+                    Number(fechaStr.split('-')[2]),
+                    Number(h),
+                    Number(m),
+                    0, 0
+                );
+            }
+            console.log('📝 Guardando reserva con fecha/hora local:', fechaReserva.toString(), fechaReserva.toISOString());
             
             // Verificar que la fecha no sea en el pasado
             const hoy = new Date();

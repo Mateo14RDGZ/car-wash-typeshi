@@ -88,6 +88,9 @@ async function checkBookedSlots(date) {
             },
             attributes: ['date', 'status']
         });
+        bookings.forEach(b => {
+            console.log('⏰ Reserva encontrada:', b.date, '| Local:', new Date(b.date).toString(), '| ISO:', new Date(b.date).toISOString());
+        });
 
         console.log('📋 Reservas encontradas:', bookings.length);
 
