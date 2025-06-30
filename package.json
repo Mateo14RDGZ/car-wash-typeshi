@@ -6,8 +6,8 @@
     "scripts": {
         "start": "node src/backend/server.js",
         "start:db": "node src/backend/serverDB.js",
-        "build": "echo \"Build completado para Vercel\"",
-        "vercel-build": "echo \"Vercel build completado exitosamente\"",
+        "build": "node copy-frontend-to-public.js",
+        "vercel-build": "node copy-frontend-to-public.js",
         "dev": "nodemon src/backend/server.js",
         "dev:db": "nodemon src/backend/serverDB.js",
         "frontend": "node serve-frontend.js",
