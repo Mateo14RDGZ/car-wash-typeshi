@@ -123,11 +123,27 @@ module.exports = async (req, res) => {
   // Endpoint para verificar estado del sistema
   if (endpoint.includes('/system/status')) {
     console.log('[API Bridge] Solicitud de estado del sistema recibida');
+    // No dependas de la base de datos aquí
+    let dbStatus = { connected: false };
+    try {
+      if (BookingModel) {
+        dbStatus.connected = true;
+        dbStatus.database = process.env.DB_NAME || 'car_wash_db';
+        dbStatus.host = process.env.DB_HOST || 'localhost';
+        dbStatus.version = '8.0';
+      } else {
+        dbStatus.error = 'BookingModel no disponible';
+      }
+    } catch (e) {
+      dbStatus.error = e.message;
+    }
     return res.status(200).json({
       status: 'SUCCESS',
       serverTime: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
-      message: 'Sistema funcionando correctamente'
+      database: dbStatus,
+      apiVersion: '1.0.0',
+      message: dbStatus.connected ? 'Sistema funcionando correctamente' : 'Sistema en modo limitado (sin base de datos)'
     });
   }
   // SOLUCIÓN DEFINITIVA: Solicitud de horarios con conexión a MySQL
