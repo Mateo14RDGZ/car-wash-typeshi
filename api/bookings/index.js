@@ -4,6 +4,8 @@ const { Op } = require('sequelize');
 const Booking = require('../../src/database/models/BookingSimple');
 
 module.exports = async (req, res) => {
+    console.log('>>> [API BOOKINGS INDEX] Handler ejecutado');
+    
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

@@ -154,6 +154,7 @@ async function generateTimeSlotsWithAvailability(date) {
     }
 }
 module.exports = async (req, res) => {
+    console.log('>>> [API BOOKINGS AVAILABLE-SLOTS] Handler ejecutado');
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
