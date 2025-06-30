@@ -4,8 +4,8 @@
  */
 
 // Importar handlers directos
-const availableSlotsHandler = require('./api/bookings/available-slots');
-const bookingsHandler = require('./api/bookings/index');
+const availableSlotsHandler = require('./bookings/available-slots');
+const bookingsHandler = require('./bookings/index');
 
 // Función principal del API Bridge para Vercel
 module.exports = async (req, res) => {
