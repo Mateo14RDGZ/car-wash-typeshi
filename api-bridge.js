@@ -328,21 +328,30 @@ async function processAvailableSlotsWithDB(req, res, dateStr) {
           
           // Convertir a formato compatible con el sistema de horarios
           existingBookings = dbBookings.map(booking => {
+            // SOLUCIÓN SIMPLE: Usar toLocaleString para obtener la hora local
             const bookingDate = new Date(booking.date);
-            const hours = bookingDate.getHours().toString().padStart(2, '0');
-            const minutes = bookingDate.getMinutes().toString().padStart(2, '0');
-            const startTime = `${hours}:${minutes}`;
+            const localTime = bookingDate.toLocaleString('es-AR', { 
+              timeZone: 'America/Argentina/Buenos_Aires',
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: false 
+            });
+            
+            console.log(`[API Bridge] 🕐 Conversión: ${booking.clientName} - DB=${booking.date.toISOString()} → Local=${localTime}`);
             
             // Calcular hora de fin (90 minutos después)
             const endDate = new Date(bookingDate.getTime() + 90 * 60000);
-            const endHours = endDate.getHours().toString().padStart(2, '0');
-            const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
-            const endTime = `${endHours}:${endMinutes}`;
+            const endLocalTime = endDate.toLocaleString('es-AR', { 
+              timeZone: 'America/Argentina/Buenos_Aires',
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: false 
+            });
             
             return {
               id: booking.id,
-              time: `${startTime} - ${endTime}`,
-              startTime: startTime,
+              time: `${localTime} - ${endLocalTime}`,
+              startTime: localTime,
               clientName: booking.clientName,
               vehiclePlate: booking.vehiclePlate,
               serviceType: booking.serviceType
