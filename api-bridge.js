@@ -27,6 +27,10 @@ try {
   console.warn('[API Bridge] ⚠️ No se pudo cargar BookingSimple, usando modo fallback:', error.message);
 }
 
+// Handlers directos para bookings y available-slots
+const bookingsHandler = require('./api/bookings/index');
+const availableSlotsHandler = require('./api/bookings/available-slots');
+
 // Opciones de configuración
 const CONFIG = {
   // Timeout en milisegundos
@@ -146,6 +150,16 @@ module.exports = async (req, res) => {
       return processAvailableSlots(req, res, date);
     }
   } 
+  // Routing directo para /bookings/available-slots
+  if (endpoint === '/bookings/available-slots') {
+    console.log('[API Bridge] Routing directo a available-slots handler');
+    return availableSlotsHandler(req, res);
+  }
+  // Routing directo para /bookings (GET y POST)
+  if (endpoint === '/bookings') {
+    console.log('[API Bridge] Routing directo a bookings handler');
+    return bookingsHandler(req, res);
+  }
   // Para otras solicitudes (no son horarios)
   else {
     try {
