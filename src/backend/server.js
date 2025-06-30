@@ -14,17 +14,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Rutas
 app.use('/api/bookings', bookingsRouter);
-app.all('/api-bridge', (req, res) => {
-    // Permitir tanto GET como POST y otros métodos
-    // api-bridge.js exporta una función async
+
+// Acepta todas las variantes de /api-bridge
+app.all(['/api-bridge', '/api-bridge/', '/api-bridge/*'], (req, res) => {
     Promise.resolve(apiBridgeHandler(req, res)).catch(err => {
         console.error('Error en api-bridge:', err);
-        res.status(500).json({ status: 'ERROR', message: err.message });
-    });
-});
-app.all('/api-bridge/*', (req, res) => {
-    Promise.resolve(apiBridgeHandler(req, res)).catch(err => {
-        console.error('Error en api-bridge/*:', err);
         res.status(500).json({ status: 'ERROR', message: err.message });
     });
 });
