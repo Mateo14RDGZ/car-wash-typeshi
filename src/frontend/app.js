@@ -465,39 +465,41 @@ window.seleccionarHorario = function(hora, elemento) {
     }, 500);
 }
 
-// Variable global para prevenir doble-submit
-let isSubmitting = false;
+// Variable global para prevenir doble-submit (protegida contra redeclaración)
+if (typeof window.isSubmitting === 'undefined') {
+    window.isSubmitting = false;
+}
 
 // Actualizar el manejo del formulario
 document.getElementById('reservaForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     // Prevenir doble-submit
-    if (isSubmitting) {
+    if (window.isSubmitting) {
         console.log('⚠️ Reserva ya en proceso, ignorando submit duplicado');
         return;
     }
     
-    isSubmitting = true;
+    window.isSubmitting = true;
     console.log('🚀 Iniciando proceso de reserva...');
     
     try {
         if (!window.servicioSeleccionado) {
             mostrarError('Por favor, selecciona un servicio antes de continuar');
-            isSubmitting = false;  // Liberar la variable en caso de error
+            window.isSubmitting = false;  // Liberar la variable en caso de error
             return;
         }
 
         if (!window.horarioSeleccionado) {
             mostrarError('Por favor, selecciona un horario');
-            isSubmitting = false;  // Liberar la variable en caso de error
+            window.isSubmitting = false;  // Liberar la variable en caso de error
             return;
         }
 
         const fechaInput = document.getElementById('fecha');
         if (!fechaInput) {
             mostrarError('Error: No se encontró el campo de fecha');
-            isSubmitting = false;
+            window.isSubmitting = false;
             return;
         }
     const fecha = fechaInput.value;
@@ -515,14 +517,14 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         // Validar que no sea domingo
         if (dia === 0) {
             mostrarError('Lo sentimos, no atendemos los domingos');
-            isSubmitting = false;
+            window.isSubmitting = false;
             return;
         }
 
         // Validar que sea un día válido (lunes a sábado)
         if (dia < 1 || dia > 6) {
             mostrarError('Por favor, selecciona un día válido (lunes a sábado)');
-            isSubmitting = false;
+            window.isSubmitting = false;
             return;
         }
 
@@ -567,7 +569,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         // Verificar que todos los elementos existen
         if (!nombre || !telefono || !vehiculo || !patente) {
             mostrarError('Error: Faltan campos en el formulario');
-            isSubmitting = false;
+            window.isSubmitting = false;
             return;
         }
     
@@ -582,7 +584,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         extras: extrasSeleccionados
     };        // Validación de campos
         if (!validarFormulario(formData)) {
-            isSubmitting = false;
+            window.isSubmitting = false;
             return;
         }
         
@@ -621,7 +623,7 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         mostrarError('No se pudo procesar la reserva. Por favor, verifica tu conexión a internet e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.');
     } finally {
         // Liberar la variable para permitir futuras reservas
-        isSubmitting = false;
+        window.isSubmitting = false;
         console.log('🔓 Proceso de reserva completado, sistema listo para nueva reserva');
     }
 });
