@@ -268,10 +268,13 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
             </div>
         `;
         horariosContainer.style.display = 'block';        // Realizar la petición al backend utilizando el helper
-        const endpoint = '/bookings/available-slots?date=' + fechaFormateada;
+        // IMPORTANTE: Agregar timestamp para evitar caché y asegurar datos frescos
+        const timestamp = new Date().getTime();
+        const endpoint = `/bookings/available-slots?date=${fechaFormateada}&_t=${timestamp}`;
         console.log('🚀 INICIANDO PETICIÓN DE HORARIOS:', {
             endpoint: endpoint,
             fechaFormateada: fechaFormateada,
+            timestamp: timestamp,
             apiRequestDisponible: typeof apiRequest !== 'undefined'
         });
         
@@ -579,7 +582,12 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         console.log('📋 data.data:', data.data);
         console.log('📋 Estructura completa de data:', Object.keys(data || {}));
         
-        // Si tiene éxito, mostrar confirmación
+        // Si tiene éxito, mostrar confirmación Y actualizar horarios
+        console.log('✅ Reserva creada exitosamente, actualizando horarios disponibles...');
+        
+        // IMPORTANTE: Actualizar los horarios disponibles inmediatamente
+        await actualizarHorariosDisponiblesDespuesDeReserva();
+        
         mostrarReservaConfirmada(data.data);
         
     } catch (error) {
@@ -588,7 +596,49 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     }
 });
 
-
+// Función para actualizar horarios disponibles después de crear una reserva
+async function actualizarHorariosDisponiblesDespuesDeReserva() {
+    console.log('🔄 Actualizando horarios disponibles después de crear reserva...');
+    
+    try {
+        const fechaInput = document.getElementById('fecha');
+        if (!fechaInput || !fechaInput.value) {
+            console.log('⚠️ No hay fecha seleccionada para actualizar');
+            return;
+        }
+        
+        const fechaFormateada = fechaInput.value;
+        console.log('📅 Actualizando horarios para fecha:', fechaFormateada);
+        
+        // Realizar la petición actualizada de horarios
+        // IMPORTANTE: Agregar timestamp para evitar caché
+        const timestamp = new Date().getTime();
+        const endpoint = `/bookings/available-slots?date=${fechaFormateada}&_t=${timestamp}`;
+        console.log('🚀 Solicitando horarios actualizados con timestamp:', timestamp);
+        
+        const data = await apiRequest(endpoint);
+        console.log('📊 HORARIOS ACTUALIZADOS RECIBIDOS:', JSON.stringify(data, null, 2));
+        
+        // Verificar si los datos son válidos
+        if (data && data.data && Array.isArray(data.data)) {
+            console.log('✅ Datos válidos recibidos, procesando horarios...');
+            
+            // Procesar y mostrar los horarios actualizados
+            procesarHorariosDisponibles(data.data);
+            
+            // Mensaje de éxito
+            console.log('✅ Horarios actualizados correctamente - El horario reservado ya no debería aparecer como disponible');
+            
+        } else {
+            console.error('❌ Datos de horarios inválidos recibidos');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error actualizando horarios:', error);
+        // No mostrar error al usuario ya que la reserva se creó exitosamente
+        // Solo registrar en consola para debugging
+    }
+}
 
 // Esta función se ha eliminado debido a que la aplicación ahora requiere conexión a internet
 // para funcionar correctamente y guardar las reservas directamente en la base de datos MySQL
@@ -744,11 +794,50 @@ function mostrarReservaConfirmada(reserva) {
             </div>
         </div>
     `;      // Añadir listeners a los botones
-    document.getElementById('nuevaReservaBtn').addEventListener('click', () => {
-        console.log('🔄 Recargando página para hacer otra reserva...');
-        // En lugar de intentar restaurar el DOM, simplemente recargar la página
-        // Esto es más seguro y asegura que todos los elementos y eventos estén correctos
-        window.location.reload();
+    document.getElementById('nuevaReservaBtn').addEventListener('click', async () => {
+        console.log('🔄 Preparando nueva reserva...');
+        
+        // Opción 1: Recargar página (más seguro)
+        if (confirm('¿Quieres hacer otra reserva? Esto recargará la página para mostrar horarios actualizados.')) {
+            window.location.reload();
+        }
+        
+        // Opción 2: Restaurar formulario y actualizar horarios (más fluido)
+        // Descomentar las líneas siguientes si prefieres no recargar la página:
+        /*
+        try {
+            // Restaurar el contenido original del formulario
+            const container = document.getElementById('reservar');
+            const originalContent = container.dataset.originalContent;
+            
+            if (originalContent) {
+                container.innerHTML = originalContent;
+                
+                // Restablecer variables globales
+                window.servicioSeleccionado = null;
+                window.horarioSeleccionado = null;
+                
+                // Actualizar horarios si hay una fecha seleccionada
+                const fechaInput = document.getElementById('fecha');
+                if (fechaInput && fechaInput.value) {
+                    console.log('🔄 Actualizando horarios para nueva reserva...');
+                    await actualizarHorariosDisponiblesDespuesDeReserva();
+                }
+                
+                // Scroll al inicio del formulario
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                console.log('✅ Formulario restaurado y listo para nueva reserva');
+            } else {
+                // Fallback: recargar página si no se puede restaurar
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('❌ Error restaurando formulario:', error);
+            // Fallback: recargar página
+            window.location.reload();
+        }
+        */
     });
 }
 
@@ -1134,15 +1223,18 @@ function procesarHorariosDisponibles(horarios) {
             horarioBtn.value = slot.time;
             
             if (isReserved) {
-                // Horario reservado - mostrar pero deshabilitar
-                horarioBtn.className = 'btn btn-outline-secondary m-1';
+                // Horario reservado - mostrar claramente como NO DISPONIBLE
+                horarioBtn.className = 'btn btn-danger m-1';
                 horarioBtn.disabled = true;
-                horarioBtn.innerHTML = `${slot.time} <i class="fas fa-lock ms-1"></i>`;
-                horarioBtn.title = 'Este horario ya está reservado';
-                console.log('🔒 HORARIO RESERVADO CREADO:', slot.time);
+                horarioBtn.innerHTML = `${slot.time} <i class="fas fa-times-circle ms-1"></i>`;
+                horarioBtn.title = 'Este horario ya está reservado - NO DISPONIBLE';
+                horarioBtn.style.opacity = '0.7';
+                horarioBtn.style.cursor = 'not-allowed';
+                console.log('🔒 HORARIO RESERVADO CREADO (NO DISPONIBLE):', slot.time);
             } else {
-                // Horario disponible - normal
-                horarioBtn.className = 'btn btn-outline-primary m-1';
+                // Horario disponible - resaltar que está DISPONIBLE
+                horarioBtn.className = 'btn btn-success m-1';
+                horarioBtn.style.fontWeight = 'bold';
                 console.log('✅ HORARIO DISPONIBLE CREADO:', slot.time);
                 
                 // Evento para seleccionar horario solo si está disponible
@@ -1150,12 +1242,13 @@ function procesarHorariosDisponibles(horarios) {
                     // Remover selección anterior
                     document.querySelectorAll('.horarios-grid .btn:not(:disabled)').forEach(btn => {
                         btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-outline-primary');
+                        btn.classList.add('btn-success');
                     });
                     
-                    // Marcar como seleccionado
-                    this.classList.remove('btn-outline-primary');
+                    // Marcar como seleccionado con color distintivo
+                    this.classList.remove('btn-success');
                     this.classList.add('btn-primary');
+                    this.style.transform = 'scale(1.05)';
                     
                     // Guardar horario seleccionado
                     window.horarioSeleccionado = slot.time;
@@ -1177,19 +1270,37 @@ function procesarHorariosDisponibles(horarios) {
         }
     });
     
-    // Mostrar mensaje de éxito en el indicador de carga
+    // Mostrar mensaje de éxito con detalles de disponibilidad
     const infoText = document.getElementById('carga-info');
     if (infoText) {
-        infoText.innerHTML = '<span class="badge bg-success text-white">' +
-            '<i class="fas fa-check-circle me-1"></i> ' + horarios.length + ' horarios cargados desde MySQL</span>';
+        const horariosDisponibles = horarios.filter(slot => !slot.isBooked).length;
+        const horariosReservados = horarios.filter(slot => slot.isBooked).length;
         
-        // Desvanecer después de 3 segundos
+        let mensaje = `<span class="badge bg-success text-white">
+            <i class="fas fa-check-circle me-1"></i> ${horarios.length} horarios cargados desde MySQL
+        </span>`;
+        
+        if (horariosReservados > 0) {
+            mensaje += ` <span class="badge bg-warning text-dark ms-2">
+                <i class="fas fa-exclamation-triangle me-1"></i> ${horariosReservados} ya reservados
+            </span>`;
+        }
+        
+        if (horariosDisponibles > 0) {
+            mensaje += ` <span class="badge bg-info text-white ms-2">
+                <i class="fas fa-calendar-check me-1"></i> ${horariosDisponibles} disponibles
+            </span>`;
+        }
+        
+        infoText.innerHTML = mensaje;
+        
+        // Desvanecer después de 5 segundos (más tiempo para leer la info)
         setTimeout(() => {
             infoText.style.opacity = '0';
             setTimeout(() => {
                 infoText.style.display = 'none';
             }, 500);
-        }, 3000);
+        }, 5000);
     }
     
     console.log('✅ Horarios procesados y mostrados correctamente');
