@@ -61,7 +61,8 @@ module.exports = async (req, res) => {
     return res.status(500).json({
       status: 'ERROR',
       message: 'Error interno en API Bridge',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      error: err && (err.message || String(err)),
+      stack: err && err.stack
     });
   }
 };
