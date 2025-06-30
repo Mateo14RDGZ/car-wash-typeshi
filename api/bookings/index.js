@@ -121,6 +121,7 @@ module.exports = async (req, res) => {
                 notes: notes || '',
                 status: 'confirmed'
             });
+            console.log('✅ Reserva guardada en la base de datos:', nuevaReserva.toJSON());
             
             return res.status(201).json({
                 status: 'SUCCESS',

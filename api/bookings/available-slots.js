@@ -86,10 +86,12 @@ async function checkBookedSlots(date) {
                 date: { [Op.between]: [startOfDay, endOfDay] },
                 status: { [Op.in]: ['confirmed', 'pending', 'in_progress'] }
             },
-            attributes: ['date', 'status']
+            attributes: ['date', 'status', 'clientName', 'serviceType', 'vehiclePlate']
         });
+        console.log('🟠 Todas las reservas encontradas para el día:');
         bookings.forEach(b => {
-            console.log('⏰ Reserva encontrada:', b.date, '| Local:', new Date(b.date).toString(), '| ISO:', new Date(b.date).toISOString());
+            const d = new Date(b.date);
+            console.log(`  - ${b.clientName} | ${b.serviceType} | ${b.vehiclePlate} | Local: ${d.toString()} | ISO: ${d.toISOString()}`);
         });
 
         console.log('📋 Reservas encontradas:', bookings.length);
