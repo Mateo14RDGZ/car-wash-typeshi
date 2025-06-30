@@ -296,7 +296,8 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
         window.debugLog('DEBUG - Datos recibidos del servidor:', data);
 
         // Solo aceptar datos si vienen de la base de datos (no generados ni fallback)
-        if (data && data.data && Array.isArray(data.data) && (!data.generated && !data.emergency)) {
+        if (data && data.data && Array.isArray(data.data)) {
+            console.log('✅ DATOS VÁLIDOS RECIBIDOS - Procesando horarios');
             window.debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
             procesarHorariosDisponibles(data.data);
         } else {

@@ -15,13 +15,20 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Rutas
 app.use('/api/bookings', bookingsRouter);
 
-// Acepta todas las variantes de /api-bridge y /api/api-bridge (con o sin slash, query o subruta)
-app.all(/^\/(api\/)?api-bridge(\/.*)?$/, (req, res) => {
+// Handler para todas las variantes de api-bridge
+const handleApiBridge = (req, res) => {
+    console.log('Backend Express: Recibida petición api-bridge:', req.url);
     Promise.resolve(apiBridgeHandler(req, res)).catch(err => {
         console.error('Error en api-bridge:', err);
         res.status(500).json({ status: 'ERROR', message: err.message });
     });
-});
+};
+
+// Acepta todas las variantes posibles de api-bridge
+app.all('/api-bridge', handleApiBridge);
+app.all('/api-bridge/*', handleApiBridge);
+app.all('/api/api-bridge', handleApiBridge);
+app.all('/api/api-bridge/*', handleApiBridge);
 
 // Ruta de prueba
 app.get('/test', (req, res) => {
