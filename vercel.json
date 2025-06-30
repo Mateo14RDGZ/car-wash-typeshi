@@ -1,9 +1,12 @@
 {
   "version": 2,
+  "functions": {
+    "api-bridge.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "routes": [
-    { "src": "/api/api-bridge(.*)", "dest": "/src/backend/server.js" },
-    { "src": "/api-bridge(.*)", "dest": "/src/backend/server.js" },
-    { "src": "/api/(.*)", "dest": "/src/backend/server.js" },
+    { "src": "/api-bridge", "dest": "/api-bridge.js" },
     { "src": "/(.*)", "dest": "/src/frontend/$1" }
   ],
   "env": {

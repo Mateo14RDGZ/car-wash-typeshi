@@ -74,11 +74,11 @@ const Booking = require('../../src/database/models/BookingSimple');
 // Función para verificar horarios ocupados en la base de datos
 async function checkBookedSlots(date) {
     try {
-        // Crear las fechas de inicio y fin del día
+        // Crear las fechas de inicio y fin del día en la zona horaria local
         const startOfDay = new Date(date + 'T00:00:00');
         const endOfDay = new Date(date + 'T23:59:59');
 
-        console.log('🔍 Consultando reservas para:', date, 'entre', startOfDay, 'y', endOfDay);
+        console.log('🔍 Consultando reservas para:', date, 'entre', startOfDay.toISOString(), 'y', endOfDay.toISOString());
 
         // Buscar reservas confirmadas para la fecha
         const bookings = await Booking.findAll({

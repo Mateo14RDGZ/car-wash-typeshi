@@ -184,16 +184,32 @@ function agregarListenersExtras() {
 // Validación de fecha y obtención de horarios disponibles
 document.getElementById('fecha')?.addEventListener('change', async function () {
     try {
-        // Asegurarse de que la fecha se maneje en la zona horaria local
-        const fechaStr = this.value + 'T00:00:00';
-        const fecha = new Date(fechaStr);
+        // Validar formato de fecha y crear fecha en zona horaria local
+        if (!this.value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            mostrarError('Formato de fecha inválido');
+            this.value = '';
+            return;
+        }
+
+        // Crear fecha usando componentes locales para evitar problemas de timezone
+        const [year, month, day] = this.value.split('-').map(Number);
+        const fecha = new Date(year, month - 1, day); // month es 0-indexado
         const ahora = new Date();
+        // Resetear la hora de 'ahora' para comparar solo fechas
+        ahora.setHours(0, 0, 0, 0);
 
         window.debugLog('DEBUG - Fecha seleccionada:', fecha.toLocaleDateString());
         window.debugLog('DEBUG - Valor del input:', this.value);
         window.debugLog('DEBUG - Día de la semana:', fecha.getDay());
 
-        // Validar que la fecha sea futura
+        // Validar que la fecha sea válida
+        if (isNaN(fecha.getTime())) {
+            mostrarError('Fecha no válida');
+            this.value = '';
+            return;
+        }
+
+        // Validar que la fecha sea futura o hoy
         if (fecha < ahora) {
             window.debugLog('DEBUG - Fecha rechazada: es pasada');
             mostrarError('Por favor, selecciona una fecha futura');
@@ -220,8 +236,8 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
         
         console.log('✅ Contenedor de horarios encontrado:', horariosContainer);
 
-        // Formatear la fecha para la API
-        const fechaFormateada = fecha.toISOString().split('T')[0];
+        // Formatear la fecha para la API (usar directamente el valor del input)
+        const fechaFormateada = this.value; // Ya está en formato YYYY-MM-DD
         
         // Crear un array de horarios predefinidos para mostrar mientras carga
         const horariosRespaldo = dia === 6 ? [

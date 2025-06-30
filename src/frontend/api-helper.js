@@ -66,10 +66,9 @@ async function apiRequest(endpoint, options = {}) {
         console.log(`🛠️[${callId}] Convertido a endpoint relativo: ${endpoint}`);
     }
     
-    // SOLUCIÓN DEFINITIVA - Única URL permitida: api-bridge con ID único
-    const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2);
-    const url = `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&method=${options.method || 'GET'}&_=${uniqueId}`;
-    console.log(`✅[${callId}] URL única: ${url}`);
+    // SOLUCIÓN PARA VERCEL: Usar rutas absolutas relativas que funcionen en producción
+    const url = `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&_=${uniqueId}`;
+    console.log(`✅[${callId}] URL Vercel: ${url}`);
     // Opciones optimizadas para web
     const fetchOptions = {
         method: options.method || 'GET',
