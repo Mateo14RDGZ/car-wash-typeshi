@@ -335,4 +335,48 @@ footer {
     color: #6c757d;
     cursor: not-allowed;
     opacity: 0.7;
-} 
+}
+
+/* Moderniza los botones de slots de horarios */
+.horario-slot-btn {
+    border: none;
+    border-radius: 18px;
+    padding: 1rem 2.2rem;
+    margin: 0.5rem 0.7rem 0.5rem 0;
+    font-size: 1.15rem;
+    background: #f4f6fa;
+    color: #222;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: all 0.18s cubic-bezier(.4,0,.2,1);
+    outline: none;
+    cursor: pointer;
+    min-width: 120px;
+    display: inline-block;
+}
+.horario-slot-btn.available:hover:not(.selected) {
+    background: #e0f7fa;
+    color: #00796b;
+    box-shadow: 0 4px 16px rgba(0,150,136,0.08);
+    transform: translateY(-2px) scale(1.04);
+}
+.horario-slot-btn.selected {
+    background: #00796b;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 6px 24px rgba(0,150,136,0.13);
+    transform: scale(1.08);
+}
+.horario-slot-btn.reserved {
+    background: #f8d7da;
+    color: #b71c1c;
+    opacity: 0.6;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+@media (max-width: 600px) {
+    .horario-slot-btn {
+        font-size: 1rem;
+        padding: 0.7rem 1.2rem;
+        min-width: 90px;
+    }
+}
