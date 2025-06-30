@@ -1,7 +1,6 @@
 // API Route para Vercel - Crear Reservas
 
-// Almacenamiento temporal en memoria para reservas (en producción usarías una BD)
-let reservas = [];
+const Booking = require('../../src/database/models/BookingSimple');
 
 module.exports = async (req, res) => {
     // Configurar CORS
@@ -18,21 +17,17 @@ module.exports = async (req, res) => {
         if (req.method === 'GET') {
             // Obtener todas las reservas o filtrar por fecha
             const { date } = req.query;
-            
-            let reservasFiltradas = reservas;
+            let where = {};
             if (date) {
-                const fechaBuscada = new Date(date + 'T00:00:00');
-                reservasFiltradas = reservas.filter(reserva => {
-                    const fechaReserva = new Date(reserva.date);
-                    return fechaReserva.toDateString() === fechaBuscada.toDateString();
-                });
+                const startOfDay = new Date(date + 'T00:00:00');
+                const endOfDay = new Date(date + 'T23:59:59');
+                where.date = { $between: [startOfDay, endOfDay] };
             }
-            
+            const reservasFiltradas = await Booking.findAll({ where });
             return res.status(200).json({
                 status: 'SUCCESS',
                 data: reservasFiltradas
             });
-            
         } else if (req.method === 'POST') {
             // Crear nueva reserva
             const {
@@ -43,6 +38,7 @@ module.exports = async (req, res) => {
                 vehiclePlate,
                 serviceType,
                 price,
+                extras,
                 notes
             } = req.body;
             
@@ -74,19 +70,22 @@ module.exports = async (req, res) => {
             }
             
             // Verificar disponibilidad del horario
-            const fechaStr = fechaReserva.toISOString().split('T')[0];
+            const startOfDay = new Date(fechaReserva.toISOString().split('T')[0] + 'T00:00:00');
+            const endOfDay = new Date(fechaReserva.toISOString().split('T')[0] + 'T23:59:59');
             const horaReserva = fechaReserva.getHours().toString().padStart(2, '0') + ':' + 
                               fechaReserva.getMinutes().toString().padStart(2, '0');
-            
-            // Verificar si ya existe una reserva para esa fecha y hora
-            const reservaExistente = reservas.find(r => {
-                const fechaExistente = new Date(r.date);
-                const horaExistente = fechaExistente.getHours().toString().padStart(2, '0') + ':' + 
-                                    fechaExistente.getMinutes().toString().padStart(2, '0');
-                return fechaExistente.toDateString() === fechaReserva.toDateString() && 
-                       horaExistente === horaReserva;
+            const reservaExistente = await Booking.findOne({
+                where: {
+                    date: { $between: [startOfDay, endOfDay] },
+                    status: { $in: ['confirmed', 'pending', 'in_progress'] },
+                    [Booking.sequelize.Op.and]: [
+                        Booking.sequelize.where(
+                            Booking.sequelize.fn('TIME', Booking.sequelize.col('date')),
+                            horaReserva
+                        )
+                    ]
+                }
             });
-            
             if (reservaExistente) {
                 return res.status(400).json({
                     status: 'ERROR',
@@ -94,44 +93,38 @@ module.exports = async (req, res) => {
                 });
             }
             
-            // Crear la nueva reserva
-            const nuevaReserva = {
-                id: Date.now().toString(),
+            // Crear la nueva reserva en la base de datos
+            const nuevaReserva = await Booking.create({
                 clientName,
                 clientPhone: clientPhone || '',
-                date: fechaReserva.toISOString(),
+                date: fechaReserva,
                 vehicleType,
                 vehiclePlate: vehiclePlate || '',
                 serviceType,
                 price: price || 0,
+                extras: extras || [],
                 notes: notes || '',
-                status: 'confirmed',
-                createdAt: new Date().toISOString()
-            };
-            
-            reservas.push(nuevaReserva);
-            
-            console.log('Vercel - Nueva reserva creada:', nuevaReserva.id);
+                status: 'confirmed'
+            });
             
             return res.status(201).json({
                 status: 'SUCCESS',
                 message: 'Reserva creada exitosamente',
                 data: nuevaReserva
             });
-            
         } else {
             return res.status(405).json({
                 status: 'ERROR',
                 message: 'Método no permitido'
             });
         }
-        
     } catch (error) {
         console.error('Vercel - Error en API de reservas:', error);
         
         return res.status(500).json({
             status: 'ERROR',
-            message: 'Error interno del servidor',            error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
         });
     }
 };

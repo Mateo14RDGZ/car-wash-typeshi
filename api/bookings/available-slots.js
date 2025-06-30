@@ -67,68 +67,12 @@ function generateBaseTimeSlots(date) {
     }
 }
 
+// Importar modelo Booking real
+const Booking = require('../../src/database/models/BookingSimple');
+
 // Función para verificar horarios ocupados en la base de datos
 async function checkBookedSlots(date) {
     try {
-        // Importar dependencias de base de datos
-        const { Sequelize, DataTypes } = require('sequelize');
-        const sequelize = new Sequelize(
-            process.env.DB_NAME || 'car_wash_db',
-            process.env.DB_USER || 'root',
-            process.env.DB_PASS || '',
-            {
-                host: process.env.DB_HOST || 'localhost',
-                dialect: 'mysql',
-                logging: false,
-                pool: {
-                    max: 5,
-                    min: 0,
-                    acquire: 30000,
-                    idle: 10000
-                }
-            }
-        );
-
-        // Definir modelo de booking temporal
-        const Booking = sequelize.define('booking', {
-            id: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                autoIncrement: true
-            },
-            clientName: {
-                type: DataTypes.STRING,
-                allowNull: false
-            },
-            clientPhone: {
-                type: DataTypes.STRING,
-                allowNull: true
-            },
-            date: {
-                type: DataTypes.DATE,
-                allowNull: false
-            },
-            vehicleType: {
-                type: DataTypes.ENUM('auto', 'camioneta_caja', 'camioneta_sin_caja'),
-                allowNull: false
-            },
-            vehiclePlate: {
-                type: DataTypes.STRING,
-                allowNull: false
-            },
-            serviceType: {
-                type: DataTypes.ENUM('basico', 'premium', 'detailing'),
-                allowNull: false
-            },
-            status: {
-                type: DataTypes.ENUM('pending', 'confirmed', 'completed', 'cancelled'),
-                defaultValue: 'confirmed'
-            }
-        }, {
-            tableName: 'bookings',
-            timestamps: true
-        });
-
         // Crear las fechas de inicio y fin del día
         const startOfDay = new Date(date + 'T00:00:00');
         const endOfDay = new Date(date + 'T23:59:59');
@@ -138,12 +82,8 @@ async function checkBookedSlots(date) {
         // Buscar reservas confirmadas para la fecha
         const bookings = await Booking.findAll({
             where: {
-                date: {
-                    [Sequelize.Op.between]: [startOfDay, endOfDay]
-                },
-                status: {
-                    [Sequelize.Op.in]: ['confirmed', 'pending', 'in_progress']
-                }
+                date: { $between: [startOfDay, endOfDay] },
+                status: { $in: ['confirmed', 'pending', 'in_progress'] }
             },
             attributes: ['date', 'status']
         });
@@ -159,9 +99,6 @@ async function checkBookedSlots(date) {
         });
 
         console.log('⏰ Horarios ocupados:', bookedTimes);
-
-        // Cerrar conexión
-        await sequelize.close();
 
         return bookedTimes;
 
