@@ -1,12 +1,7 @@
 {
   "version": 2,
-  "functions": {
-    "api-bridge.js": {
-      "runtime": "@vercel/node"
-    }
-  },
   "routes": [
-    { "src": "/api-bridge", "dest": "/api-bridge.js" },
+    { "src": "/api-bridge", "dest": "/api/api-bridge.js" },
     { "src": "/(.*)", "dest": "/src/frontend/$1" }
   ],
   "env": {
