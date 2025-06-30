@@ -1,8 +1,9 @@
 {
   "version": 2,
   "routes": [
-    { "src": "/api/(.*)", "dest": "/src/backend/server.js" },
+    { "src": "/api/api-bridge(.*)", "dest": "/src/backend/server.js" },
     { "src": "/api-bridge(.*)", "dest": "/src/backend/server.js" },
+    { "src": "/api/(.*)", "dest": "/src/backend/server.js" },
     { "src": "/(.*)", "dest": "/src/frontend/$1" }
   ],
   "env": {

@@ -15,8 +15,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Rutas
 app.use('/api/bookings', bookingsRouter);
 
-// Acepta todas las variantes de /api-bridge (con o sin slash, query o subruta)
-app.all(/^\/api-bridge(\/.*)?$/, (req, res) => {
+// Acepta todas las variantes de /api-bridge y /api/api-bridge (con o sin slash, query o subruta)
+app.all(/^\/(api\/)?api-bridge(\/.*)?$/, (req, res) => {
     Promise.resolve(apiBridgeHandler(req, res)).catch(err => {
         console.error('Error en api-bridge:', err);
         res.status(500).json({ status: 'ERROR', message: err.message });
