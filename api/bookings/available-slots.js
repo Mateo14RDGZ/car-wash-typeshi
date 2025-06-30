@@ -155,66 +155,64 @@ async function generateTimeSlotsWithAvailability(date) {
 }
 module.exports = async (req, res) => {
     console.log('>>> [API BOOKINGS AVAILABLE-SLOTS] Handler ejecutado');
-    // Configurar CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    // Manejar preflight OPTIONS
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-    
-    if (req.method !== 'GET') {
-        return res.status(405).json({
-            status: 'ERROR',
-            message: 'Método no permitido'
-        });
-    }
-    
     try {
+        // Configurar CORS
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        
+        // Manejar preflight OPTIONS
+        if (req.method === 'OPTIONS') {
+            return res.status(200).end();
+        }
+        
+        if (req.method !== 'GET') {
+            return res.status(405).json({
+                status: 'ERROR',
+                message: 'Método no permitido'
+            });
+        }
+        
         const { date } = req.query;
-        
         console.log('🚀 Vercel - Solicitud de horarios para fecha:', date);
-        
         if (!date) {
             return res.status(400).json({
                 status: 'ERROR',
                 message: 'Se requiere una fecha'
             });
         }
-        
-        // Validar formato de fecha
         if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) {
             return res.status(400).json({
                 status: 'ERROR',
                 message: 'Formato de fecha inválido. Debe ser YYYY-MM-DD'
             });
         }
-        
         // Generar horarios disponibles con verificación de base de datos
-        const availableSlots = await generateTimeSlotsWithAvailability(date);
-        
+        let availableSlots = [];
+        try {
+            availableSlots = await generateTimeSlotsWithAvailability(date);
+        } catch (dbError) {
+            console.error('❌ Error al consultar la base de datos:', dbError);
+            return res.status(500).json({
+                status: 'ERROR',
+                message: 'Error al consultar la base de datos',
+                error: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+            });
+        }
         console.log('✅ Vercel - Slots generados:', availableSlots.length);
-        console.log('📊 Vercel - Resumen:', {
-            total: availableSlots.length,
-            disponibles: availableSlots.filter(s => !s.isBooked).length,
-            ocupados: availableSlots.filter(s => s.isBooked).length
-        });
-        
         return res.status(200).json({
             status: 'SUCCESS',
             data: availableSlots || [],
-            dataSource: 'mysql_database'
+            dataSource: 'mysql_database',
+            message: 'Horarios cargados correctamente',
+            generated: true
         });
-        
     } catch (error) {
-        console.error('❌ Vercel - Error al obtener horarios:', error);
-        
+        console.error('❌ Vercel - Error general en handler available-slots:', error);
         return res.status(500).json({
             status: 'ERROR',
-            message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+            message: 'Error interno en handler available-slots',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
