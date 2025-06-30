@@ -22,6 +22,12 @@ app.all('/api-bridge', (req, res) => {
         res.status(500).json({ status: 'ERROR', message: err.message });
     });
 });
+app.all('/api-bridge/*', (req, res) => {
+    Promise.resolve(apiBridgeHandler(req, res)).catch(err => {
+        console.error('Error en api-bridge/*:', err);
+        res.status(500).json({ status: 'ERROR', message: err.message });
+    });
+});
 
 // Ruta de prueba
 app.get('/test', (req, res) => {
