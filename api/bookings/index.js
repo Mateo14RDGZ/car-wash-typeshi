@@ -1,5 +1,6 @@
 // API Route para Vercel - Crear Reservas
 
+const { Op } = require('sequelize');
 const Booking = require('../../src/database/models/BookingSimple');
 
 module.exports = async (req, res) => {
@@ -21,7 +22,7 @@ module.exports = async (req, res) => {
             if (date) {
                 const startOfDay = new Date(date + 'T00:00:00');
                 const endOfDay = new Date(date + 'T23:59:59');
-                where.date = { $between: [startOfDay, endOfDay] };
+                where.date = { [Op.between]: [startOfDay, endOfDay] };
             }
             const reservasFiltradas = await Booking.findAll({ where });
             return res.status(200).json({
@@ -76,8 +77,8 @@ module.exports = async (req, res) => {
                               fechaReserva.getMinutes().toString().padStart(2, '0');
             const reservaExistente = await Booking.findOne({
                 where: {
-                    date: { $between: [startOfDay, endOfDay] },
-                    status: { $in: ['confirmed', 'pending', 'in_progress'] },
+                    date: { [Op.between]: [startOfDay, endOfDay] },
+                    status: { [Op.in]: ['confirmed', 'pending', 'in_progress'] },
                     [Booking.sequelize.Op.and]: [
                         Booking.sequelize.where(
                             Booking.sequelize.fn('TIME', Booking.sequelize.col('date')),

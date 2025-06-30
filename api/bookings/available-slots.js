@@ -68,6 +68,7 @@ function generateBaseTimeSlots(date) {
 }
 
 // Importar modelo Booking real
+const { Op } = require('sequelize');
 const Booking = require('../../src/database/models/BookingSimple');
 
 // Función para verificar horarios ocupados en la base de datos
@@ -82,8 +83,8 @@ async function checkBookedSlots(date) {
         // Buscar reservas confirmadas para la fecha
         const bookings = await Booking.findAll({
             where: {
-                date: { $between: [startOfDay, endOfDay] },
-                status: { $in: ['confirmed', 'pending', 'in_progress'] }
+                date: { [Op.between]: [startOfDay, endOfDay] },
+                status: { [Op.in]: ['confirmed', 'pending', 'in_progress'] }
             },
             attributes: ['date', 'status']
         });
