@@ -1,18 +1,15 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api-bridge.js", "use": "@vercel/node" },
-    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "src/backend/server.js", "use": "@vercel/node" },
     { "src": "src/frontend/**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api-bridge", "dest": "/api-bridge.js" },
-    { "src": "/api-bridge(.*)", "dest": "/api-bridge.js$1" },
-    { "src": "/api/bookings/available-slots(.*)", "dest": "/api/bookings/available-slots.js$1" },
-    { "src": "/", "dest": "/src/frontend/index.html" },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/api/(.*)", "dest": "/src/backend/server.js" },
+    { "src": "/api-bridge(.*)", "dest": "/src/backend/server.js" },
     { "src": "/(.*)", "dest": "/src/frontend/$1" }
-  ],  "env": {
+  ],
+  "env": {
     "NODE_ENV": "production",
     "DB_HOST": "us-east.connect.psdb.cloud",
     "DB_NAME": "car_wash_db",
