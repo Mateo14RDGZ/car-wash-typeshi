@@ -1183,44 +1183,36 @@ function procesarHorariosDisponibles(horarios) {
     
     // Limpiar contenido anterior
     horariosGrid.innerHTML = '';
-    
-    // Verificar si hay horarios disponibles
-    if (horarios.length === 0) {
+    // Filtrar para mostrar solo los NO reservados
+    const horariosDisponibles = horarios.filter(slot => !slot.isBooked);
+    if (horariosDisponibles.length === 0) {
         horariosGrid.innerHTML = '<div class="alert alert-info">No hay horarios disponibles para esta fecha</div>';
         return;
     }
-    // MODERNO Y MINIMALISTA: Renderizar slots con nuevo estilo
-    horarios.forEach(slot => {
+    // Renderizar solo los horarios disponibles
+    horariosDisponibles.forEach(slot => {
         if (slot && slot.time) {
-            const isReserved = slot.isBooked === true;
             const horarioBtn = document.createElement('button');
             horarioBtn.type = 'button';
             horarioBtn.textContent = slot.time;
             horarioBtn.value = slot.time;
-            horarioBtn.className = 'horario-slot-btn';
-            if (isReserved) {
-                horarioBtn.classList.add('reserved');
-                horarioBtn.disabled = true;
-                horarioBtn.title = 'Este horario ya está reservado';
-            } else {
-                horarioBtn.classList.add('available');
-                horarioBtn.onclick = function() {
-                    document.querySelectorAll('.horarios-grid .horario-slot-btn.available').forEach(btn => {
-                        btn.classList.remove('selected');
-                    });
-                    this.classList.add('selected');
-                    window.horarioSeleccionado = slot.time;
-                    let horarioInput = document.getElementById('horarioSeleccionado');
-                    if (!horarioInput) {
-                        horarioInput = document.createElement('input');
-                        horarioInput.type = 'hidden';
-                        horarioInput.name = 'horario';
-                        horarioInput.id = 'horarioSeleccionado';
-                        document.getElementById('reservaForm').appendChild(horarioInput);
-                    }
-                    horarioInput.value = slot.time;
-                };
-            }
+            horarioBtn.className = 'horario-slot-btn available';
+            horarioBtn.onclick = function() {
+                document.querySelectorAll('.horarios-grid .horario-slot-btn.available').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                window.horarioSeleccionado = slot.time;
+                let horarioInput = document.getElementById('horarioSeleccionado');
+                if (!horarioInput) {
+                    horarioInput = document.createElement('input');
+                    horarioInput.type = 'hidden';
+                    horarioInput.name = 'horario';
+                    horarioInput.id = 'horarioSeleccionado';
+                    document.getElementById('reservaForm').appendChild(horarioInput);
+                }
+                horarioInput.value = slot.time;
+            };
             horariosGrid.appendChild(horarioBtn);
         }
     });
