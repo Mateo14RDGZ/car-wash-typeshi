@@ -1186,53 +1186,30 @@ function procesarHorariosDisponibles(horarios) {
     
     // Verificar si hay horarios disponibles
     if (horarios.length === 0) {
-        console.log('⚠️ No hay horarios disponibles');
         horariosGrid.innerHTML = '<div class="alert alert-info">No hay horarios disponibles para esta fecha</div>';
         return;
     }
-      // Crear botones para cada horario (disponibles y reservados)
+    // MODERNO Y MINIMALISTA: Renderizar slots con nuevo estilo
     horarios.forEach(slot => {
         if (slot && slot.time) {
             const isReserved = slot.isBooked === true;
-            console.log(`${isReserved ? '🔒' : '✅'} Creando botón para horario: ${slot.time} - ${isReserved ? 'RESERVADO' : 'DISPONIBLE'}`);
-            
             const horarioBtn = document.createElement('button');
             horarioBtn.type = 'button';
             horarioBtn.textContent = slot.time;
             horarioBtn.value = slot.time;
-            
+            horarioBtn.className = 'horario-slot-btn';
             if (isReserved) {
-                // Horario reservado - mostrar claramente como NO DISPONIBLE
-                horarioBtn.className = 'btn btn-danger m-1';
+                horarioBtn.classList.add('reserved');
                 horarioBtn.disabled = true;
-                horarioBtn.innerHTML = `${slot.time} <i class="fas fa-times-circle ms-1"></i>`;
-                horarioBtn.title = 'Este horario ya está reservado - NO DISPONIBLE';
-                horarioBtn.style.opacity = '0.7';
-                horarioBtn.style.cursor = 'not-allowed';
-                console.log('🔒 HORARIO RESERVADO CREADO (NO DISPONIBLE):', slot.time);
+                horarioBtn.title = 'Este horario ya está reservado';
             } else {
-                // Horario disponible - resaltar que está DISPONIBLE
-                horarioBtn.className = 'btn btn-success m-1';
-                horarioBtn.style.fontWeight = 'bold';
-                console.log('✅ HORARIO DISPONIBLE CREADO:', slot.time);
-                
-                // Evento para seleccionar horario solo si está disponible
+                horarioBtn.classList.add('available');
                 horarioBtn.onclick = function() {
-                    // Remover selección anterior
-                    document.querySelectorAll('.horarios-grid .btn:not(:disabled)').forEach(btn => {
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-success');
+                    document.querySelectorAll('.horarios-grid .horario-slot-btn.available').forEach(btn => {
+                        btn.classList.remove('selected');
                     });
-                    
-                    // Marcar como seleccionado con color distintivo
-                    this.classList.remove('btn-success');
-                    this.classList.add('btn-primary');
-                    this.style.transform = 'scale(1.05)';
-                    
-                    // Guardar horario seleccionado
+                    this.classList.add('selected');
                     window.horarioSeleccionado = slot.time;
-                    console.log('⭐ Horario seleccionado:', slot.time);
-                      // Crear/actualizar campo oculto para el formulario
                     let horarioInput = document.getElementById('horarioSeleccionado');
                     if (!horarioInput) {
                         horarioInput = document.createElement('input');
@@ -1244,43 +1221,17 @@ function procesarHorariosDisponibles(horarios) {
                     horarioInput.value = slot.time;
                 };
             }
-            
             horariosGrid.appendChild(horarioBtn);
         }
     });
-    
-    // Mostrar mensaje de éxito con detalles de disponibilidad
+    // OCULTAR MENSAJES SUPERIORES
+    const header = horariosContainer.querySelector('.horarios-header');
+    const info = horariosContainer.querySelector('.horarios-info');
+    if (header) header.style.display = 'none';
+    if (info) info.style.display = 'none';
+    // También ocultar el mensaje de carga si existe
     const infoText = document.getElementById('carga-info');
-    if (infoText) {
-        const horariosDisponibles = horarios.filter(slot => !slot.isBooked).length;
-        const horariosReservados = horarios.filter(slot => slot.isBooked).length;
-        
-        let mensaje = `<span class="badge bg-success text-white">
-            <i class="fas fa-check-circle me-1"></i> ${horarios.length} horarios cargados desde MySQL
-        </span>`;
-        
-        if (horariosReservados > 0) {
-            mensaje += ` <span class="badge bg-warning text-dark ms-2">
-                <i class="fas fa-exclamation-triangle me-1"></i> ${horariosReservados} ya reservados
-            </span>`;
-        }
-        
-        if (horariosDisponibles > 0) {
-            mensaje += ` <span class="badge bg-info text-white ms-2">
-                <i class="fas fa-calendar-check me-1"></i> ${horariosDisponibles} disponibles
-            </span>`;
-        }
-        
-        infoText.innerHTML = mensaje;
-        
-        // Desvanecer después de 5 segundos (más tiempo para leer la info)
-        setTimeout(() => {
-            infoText.style.opacity = '0';
-            setTimeout(() => {
-                infoText.style.display = 'none';
-            }, 500);
-        }, 5000);
-    }
+    if (infoText) infoText.style.display = 'none';
     
     console.log('✅ Horarios procesados y mostrados correctamente');
 }
@@ -1374,3 +1325,55 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1000);
 });
+
+// ESTILOS MODERNOS PARA LOS SLOTS (inserta en el head si no existe)
+(function(){
+    if (!document.getElementById('modern-horarios-style')) {
+        const style = document.createElement('style');
+        style.id = 'modern-horarios-style';
+        style.innerHTML = `
+        .horario-slot-btn {
+            border: none;
+            border-radius: 18px;
+            padding: 1rem 2.2rem;
+            margin: 0.5rem 0.7rem 0.5rem 0;
+            font-size: 1.15rem;
+            background: #f4f6fa;
+            color: #222;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.18s cubic-bezier(.4,0,.2,1);
+            outline: none;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        .horario-slot-btn.available:hover:not(.selected) {
+            background: #e0f7fa;
+            color: #00796b;
+            box-shadow: 0 4px 16px rgba(0,150,136,0.08);
+            transform: translateY(-2px) scale(1.04);
+        }
+        .horario-slot-btn.selected {
+            background: #00796b;
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 6px 24px rgba(0,150,136,0.13);
+            transform: scale(1.08);
+        }
+        .horario-slot-btn.reserved {
+            background: #f8d7da;
+            color: #b71c1c;
+            opacity: 0.6;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+        @media (max-width: 600px) {
+            .horario-slot-btn {
+                font-size: 1rem;
+                padding: 0.7rem 1.2rem;
+                min-width: 90px;
+            }
+        }
+        `;
+        document.head.appendChild(style);
+    }
+})();
