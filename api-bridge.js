@@ -166,9 +166,19 @@ module.exports = async (req, res) => {
       return processAvailableSlots(req, res, date);
     }
   } 
-  // Routing directo para /bookings/available-slots
-  if (endpoint === '/bookings/available-slots') {
+  // Routing directo para /bookings/available-slots (con o sin query)
+  if (endpoint.startsWith('/bookings/available-slots')) {
     console.log('[API Bridge] Routing directo a available-slots handler');
+    // Pasar la query date correctamente
+    // Extraer solo la parte de la query después de ?
+    const urlParts = endpoint.split('?');
+    req.query = req.query || {};
+    if (urlParts[1]) {
+      urlParts[1].split('&').forEach(pair => {
+        const [key, value] = pair.split('=');
+        if (key && value) req.query[key] = decodeURIComponent(value);
+      });
+    }
     return availableSlotsHandler(req, res);
   }
   // Routing directo para /bookings (GET y POST)
