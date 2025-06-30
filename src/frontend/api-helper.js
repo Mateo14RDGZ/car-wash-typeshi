@@ -67,6 +67,7 @@ async function apiRequest(endpoint, options = {}) {
     }
     
     // SOLUCIÓN PARA VERCEL: Usar rutas absolutas relativas que funcionen en producción
+    const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2);
     const url = `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&_=${uniqueId}`;
     console.log(`✅[${callId}] URL Vercel: ${url}`);
     // Opciones optimizadas para web
