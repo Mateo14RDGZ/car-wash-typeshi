@@ -465,25 +465,41 @@ window.seleccionarHorario = function(hora, elemento) {
     }, 500);
 }
 
+// Variable global para prevenir doble-submit
+let isSubmitting = false;
+
 // Actualizar el manejo del formulario
 document.getElementById('reservaForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    if (!window.servicioSeleccionado) {
-        mostrarError('Por favor, selecciona un servicio antes de continuar');
+    
+    // Prevenir doble-submit
+    if (isSubmitting) {
+        console.log('⚠️ Reserva ya en proceso, ignorando submit duplicado');
         return;
     }
+    
+    isSubmitting = true;
+    console.log('🚀 Iniciando proceso de reserva...');
+    
+    try {
+        if (!window.servicioSeleccionado) {
+            mostrarError('Por favor, selecciona un servicio antes de continuar');
+            isSubmitting = false;  // Liberar la variable en caso de error
+            return;
+        }
 
-    if (!window.horarioSeleccionado) {
-        mostrarError('Por favor, selecciona un horario');
-        return;
-    }
+        if (!window.horarioSeleccionado) {
+            mostrarError('Por favor, selecciona un horario');
+            isSubmitting = false;  // Liberar la variable en caso de error
+            return;
+        }
 
-    const fechaInput = document.getElementById('fecha');
-    if (!fechaInput) {
-        mostrarError('Error: No se encontró el campo de fecha');
-        return;
-    }
+        const fechaInput = document.getElementById('fecha');
+        if (!fechaInput) {
+            mostrarError('Error: No se encontró el campo de fecha');
+            isSubmitting = false;
+            return;
+        }
     const fecha = fechaInput.value;
     window.debugLog('DEBUG - Submit - Fecha seleccionada:', fecha);
     window.debugLog('DEBUG - Submit - Horario seleccionado:', window.horarioSeleccionado);    
@@ -496,17 +512,19 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     // Obtener el día de la semana (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
     const dia = fechaHora.getDay();
 
-    // Validar que no sea domingo
-    if (dia === 0) {
-        mostrarError('Lo sentimos, no atendemos los domingos');
-        return;
-    }
+        // Validar que no sea domingo
+        if (dia === 0) {
+            mostrarError('Lo sentimos, no atendemos los domingos');
+            isSubmitting = false;
+            return;
+        }
 
-    // Validar que sea un día válido (lunes a sábado)
-    if (dia < 1 || dia > 6) {
-        mostrarError('Por favor, selecciona un día válido (lunes a sábado)');
-        return;
-    }
+        // Validar que sea un día válido (lunes a sábado)
+        if (dia < 1 || dia > 6) {
+            mostrarError('Por favor, selecciona un día válido (lunes a sábado)');
+            isSubmitting = false;
+            return;
+        }
 
     // Capturar extras seleccionados
     let extrasSeleccionados = [];
@@ -546,11 +564,12 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
     const vehiculo = document.getElementById('vehiculo');
     const patente = document.getElementById('patente');
     
-    // Verificar que todos los elementos existen
-    if (!nombre || !telefono || !vehiculo || !patente) {
-        mostrarError('Error: Faltan campos en el formulario');
-        return;
-    }
+        // Verificar que todos los elementos existen
+        if (!nombre || !telefono || !vehiculo || !patente) {
+            mostrarError('Error: Faltan campos en el formulario');
+            isSubmitting = false;
+            return;
+        }
     
     const formData = {
         clientName: nombre.value,
@@ -561,15 +580,15 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         serviceType: window.servicioSeleccionado,
         price: total,
         extras: extrasSeleccionados
-    };// Validación de campos
-    if (!validarFormulario(formData)) {
-        return;
-    }
-    
-    console.log('📤 DATOS ENVIADOS AL SERVIDOR:', formData);
-    console.log('📤 JSON stringified:', JSON.stringify(formData));
+    };        // Validación de campos
+        if (!validarFormulario(formData)) {
+            isSubmitting = false;
+            return;
+        }
+        
+        console.log('📤 DATOS ENVIADOS AL SERVIDOR:', formData);
+        console.log('📤 JSON stringified:', JSON.stringify(formData));
 
-    try {
         // Enviar la reserva al servidor
         const data = await apiRequest('/bookings', {
             method: 'POST',
@@ -586,13 +605,24 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         console.log('✅ Reserva creada exitosamente, actualizando horarios disponibles...');
         
         // IMPORTANTE: Actualizar los horarios disponibles inmediatamente
-        await actualizarHorariosDisponiblesDespuesDeReserva();
+        try {
+            console.log('🔄 EJECUTANDO actualizarHorariosDisponiblesDespuesDeReserva...');
+            await actualizarHorariosDisponiblesDespuesDeReserva();
+            console.log('✅ Horarios actualizados correctamente después de la reserva');
+        } catch (updateError) {
+            console.error('❌ Error actualizando horarios:', updateError);
+        }
         
+        console.log('🎯 Mostrando confirmación de reserva...');
         mostrarReservaConfirmada(data.data);
         
     } catch (error) {
         window.debugError('Error al enviar la reserva:', error);
         mostrarError('No se pudo procesar la reserva. Por favor, verifica tu conexión a internet e intenta nuevamente. Si el problema persiste, comunícate con nosotros al 098 385 709.');
+    } finally {
+        // Liberar la variable para permitir futuras reservas
+        isSubmitting = false;
+        console.log('🔓 Proceso de reserva completado, sistema listo para nueva reserva');
     }
 });
 
@@ -601,6 +631,10 @@ async function actualizarHorariosDisponiblesDespuesDeReserva() {
     console.log('🔄 Actualizando horarios disponibles después de crear reserva...');
     
     try {
+        // IMPORTANTE: Esperar un momento para que la BD se actualice
+        console.log('⏳ Esperando 1 segundo para que la base de datos se actualice...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const fechaInput = document.getElementById('fecha');
         if (!fechaInput || !fechaInput.value) {
             console.log('⚠️ No hay fecha seleccionada para actualizar');
@@ -613,7 +647,7 @@ async function actualizarHorariosDisponiblesDespuesDeReserva() {
         // Realizar la petición actualizada de horarios
         // IMPORTANTE: Agregar timestamp para evitar caché
         const timestamp = new Date().getTime();
-        const endpoint = `/bookings/available-slots?date=${fechaFormateada}&_t=${timestamp}`;
+        const endpoint = `/bookings/available-slots?date=${fechaFormateada}&_t=${timestamp}&refresh=true`;
         console.log('🚀 Solicitando horarios actualizados con timestamp:', timestamp);
         
         const data = await apiRequest(endpoint);
