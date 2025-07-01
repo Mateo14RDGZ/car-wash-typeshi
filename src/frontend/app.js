@@ -650,9 +650,18 @@ function validarFormulario(formData) {
 // Función para mostrar la confirmación de reserva
 function mostrarReservaConfirmada(reserva) {
     console.log('🎯 MOSTRAR RESERVA CONFIRMADA - Datos recibidos:', reserva);
-    console.log('🔍 Tipo de datos:', typeof reserva);
-    console.log('🔍 Estructura de reserva:', Object.keys(reserva || {}));
-    
+    // Normalizar campos por si vienen en minúsculas o con snake_case
+    const r = {
+        clientName: reserva.clientName || reserva.clientname || '',
+        clientPhone: reserva.clientPhone || reserva.clientphone || '',
+        date: reserva.date,
+        vehicleType: reserva.vehicleType || reserva.vehicletype || '',
+        vehiclePlate: reserva.vehiclePlate || reserva.vehicleplate || '',
+        serviceType: reserva.serviceType || reserva.servicetype || '',
+        price: reserva.price,
+        extras: reserva.extras || [],
+        id: reserva.id || reserva.ID || reserva.Id || ''
+    };
     // Crear los elementos para la confirmación
     const container = document.getElementById('reservar');
     const originalContent = container.innerHTML;
@@ -660,7 +669,7 @@ function mostrarReservaConfirmada(reserva) {
     // Guardar el contenido original
     container.dataset.originalContent = originalContent;
     
-    const date = new Date(reserva.date);
+    const date = new Date(r.date);
     const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     const fechaFormateada = date.toLocaleDateString('es-ES', opciones);
     
@@ -690,17 +699,15 @@ function mostrarReservaConfirmada(reserva) {
                         <div class="card-body p-5">
                             <div class="confirmation-details">
                                 <h5 class="mb-4">Detalles de tu reserva</h5>
-                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-user"></i>
                                     </div>
                                     <div>
                                         <small class="text-muted d-block">A nombre de</small>
-                                        <strong>${reserva.clientName}</strong>
+                                        <strong>${r.clientName}</strong>
                                     </div>
                                 </div>
-                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-calendar-check"></i>
@@ -710,54 +717,50 @@ function mostrarReservaConfirmada(reserva) {
                                         <strong>${fechaFormateada}</strong>
                                     </div>
                                 </div>
-                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-shower"></i>
                                     </div>
                                     <div>
                                         <small class="text-muted d-block">Servicio</small>
-                                        <strong>${serviciosNombres[reserva.serviceType] || reserva.serviceType}</strong>
-                                        ${reserva.extras && reserva.extras.length > 0 ? 
+                                        <strong>${serviciosNombres[r.serviceType] || r.serviceType}</strong>
+                                        ${r.extras && r.extras.length > 0 ? 
                                         `<div class="mt-2">
                                             <small class="text-muted">Extras:</small>
                                             <ul class="mb-0 ps-3">
-                                                ${reserva.extras.map(extra => `<li>${extra}</li>`).join('')}
+                                                ${r.extras.map(extra => `<li>${extra}</li>`).join('')}
                                             </ul>
                                         </div>` : ''}
                                     </div>
                                 </div>
-                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-car"></i>
                                     </div>
                                     <div>
                                         <small class="text-muted d-block">Vehículo</small>
-                                        <strong>${vehiculosNombres[reserva.vehicleType] || reserva.vehicleType}</strong>
+                                        <strong>${vehiculosNombres[r.vehicleType] || r.vehicleType}</strong>
                                         <div class="mt-1">
-                                            <span class="badge bg-secondary">Patente: ${reserva.vehiclePlate}</span>
+                                            <span class="badge bg-secondary">Patente: ${r.vehiclePlate}</span>
                                         </div>
                                     </div>
                                 </div>
-                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-tag"></i>
                                     </div>
                                     <div>
                                         <small class="text-muted d-block">Precio total</small>
-                                        <strong class="text-success">$${reserva.price}</strong>
+                                        <strong class="text-success">$${r.price}</strong>
                                     </div>
                                 </div>
-                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-hashtag"></i>
                                     </div>
                                     <div>
                                         <small class="text-muted d-block">Código de reserva</small>
-                                        <strong>${reserva.id}</strong>
+                                        <strong>${r.id}</strong>
                                     </div>
                                 </div>
                             </div>
