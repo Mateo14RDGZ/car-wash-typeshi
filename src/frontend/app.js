@@ -691,7 +691,7 @@ function mostrarReservaConfirmada(reserva) {
         console.log('🔍 Valores del objeto:', Object.values(reserva));
     }
     
-    // Intentar normalizar los datos usando la función auxiliar
+    // Intentar normalizar los datos usando la función auxiliar mejorada
     let reservaNormalizada = null;
     
     if (typeof reserva === 'string') {
@@ -703,9 +703,25 @@ function mostrarReservaConfirmada(reserva) {
             console.error('❌ Error al parsear JSON string:', error);
             reservaNormalizada = null;
         }
-    } else {
-        // Intentar normalizar usando la función auxiliar
+    } else if (reserva && typeof reserva === 'object') {
+        // Primero intentar normalizar objetos con claves numéricas
         reservaNormalizada = normalizarObjetoConClavesNumericas(reserva);
+        
+        // Si la normalización no cambió nada (devolvió el mismo objeto), verificar si es válido
+        if (reservaNormalizada === reserva) {
+            // Verificar si tiene propiedades válidas de reserva
+            const tienePropiedadesValidas = reserva.clientName || reserva.clientname || reserva.client_name ||
+                                          reserva.clientPhone || reserva.clientphone || reserva.client_phone ||
+                                          reserva.date || reserva.serviceType || reserva.servicetype;
+            
+            if (!tienePropiedadesValidas) {
+                console.log('⚠️ El objeto no tiene propiedades válidas de reserva');
+                reservaNormalizada = null;
+            }
+        }
+    } else {
+        console.log('⚠️ Datos de reserva no válidos - tipo:', typeof reserva);
+        reservaNormalizada = null;
     }
     
     // Si no se pudo normalizar o está vacío, usar datos del formulario
@@ -716,6 +732,36 @@ function mostrarReservaConfirmada(reserva) {
     
     // Usar los datos normalizados
     reserva = reservaNormalizada;
+    
+    // Validar que los datos esenciales estén presentes
+    const datosEsenciales = [
+        reserva.clientName || reserva.clientname || reserva.client_name,
+        reserva.clientPhone || reserva.clientphone || reserva.client_phone,
+        reserva.date,
+        reserva.serviceType || reserva.servicetype || reserva.service_type
+    ];
+    
+    if (datosEsenciales.some(dato => !dato || dato.trim() === '')) {
+        console.log('⚠️ Faltan datos esenciales, usando datos del formulario como respaldo');
+        const datosFormulario = obtenerDatosDelFormulario();
+        
+        // Combinar datos: usar los del backend si están disponibles, sino los del formulario
+        reserva = {
+            ...datosFormulario,
+            ...reserva,
+            // Asegurar que se use el mejor valor disponible para cada campo
+            clientName: reserva.clientName || reserva.clientname || reserva.client_name || datosFormulario.clientName,
+            clientPhone: reserva.clientPhone || reserva.clientphone || reserva.client_phone || datosFormulario.clientPhone,
+            date: reserva.date || datosFormulario.date,
+            serviceType: reserva.serviceType || reserva.servicetype || reserva.service_type || datosFormulario.serviceType,
+            vehicleType: reserva.vehicleType || reserva.vehicletype || reserva.vehicle_type || datosFormulario.vehicleType,
+            vehiclePlate: reserva.vehiclePlate || reserva.vehicleplate || reserva.vehicle_plate || datosFormulario.vehiclePlate,
+            price: reserva.price || datosFormulario.price,
+            extras: reserva.extras || datosFormulario.extras || []
+        };
+        
+        console.log('🔄 Datos combinados (backend + formulario):', reserva);
+    }
     
     // Normalizar campos SIN valores por defecto - si no existen, no mostrar
     const r = {
@@ -731,6 +777,16 @@ function mostrarReservaConfirmada(reserva) {
         status: reserva.status,
         notes: reserva.notes || ''
     };
+    
+    // Validación final: asegurar que los datos críticos estén presentes
+    if (!r.clientName || !r.clientPhone || !r.date || !r.serviceType) {
+        console.error('❌ ERROR CRÍTICO: Faltan datos esenciales para mostrar la reserva');
+        console.error('❌ Datos disponibles:', r);
+        
+        // Mostrar un mensaje de error en lugar del modal
+        mostrarError('Error al mostrar la confirmación de reserva. Por favor, contacta al soporte técnico.');
+        return;
+    }
     
     console.log('📋 Datos normalizados para mostrar:', r);
     // Crear los elementos para la confirmación
@@ -1556,7 +1612,7 @@ function normalizarObjetoConClavesNumericas(obj) {
     
     const claves = Object.keys(obj);
     
-    // Verificar si todas las claves son numéricas
+    // Verificar si todas las claves son numéricas (caso común de string serializado)
     if (claves.length > 0 && claves.every(key => !isNaN(key))) {
         console.log('🔄 DETECTADO: Objeto con claves numéricas - Reconstruyendo string...');
         try {
@@ -1572,6 +1628,36 @@ function normalizarObjetoConClavesNumericas(obj) {
         } catch (error) {
             console.error('❌ Error al reconstruir y parsear string:', error);
             return null;
+        }
+    }
+    
+    // Detectar casos mixtos: algunas claves numéricas y otras no
+    const clavesNumericas = claves.filter(key => !isNaN(key));
+    const clavesNoNumericas = claves.filter(key => isNaN(key));
+    
+    if (clavesNumericas.length > 0 && clavesNoNumericas.length === 0) {
+        // Todas las claves son numéricas, ya se procesó arriba
+        return obj;
+    } else if (clavesNumericas.length > 0 && clavesNoNumericas.length > 0) {
+        // Caso mixto: puede ser un objeto con datos válidos y también claves numéricas
+        console.log('🔄 DETECTADO: Objeto mixto con claves numéricas y normales');
+        console.log('🔍 Claves numéricas:', clavesNumericas);
+        console.log('🔍 Claves normales:', clavesNoNumericas);
+        
+        // Si hay pocas claves no numéricas, pueden ser metadatos. Revisar si las claves numéricas forman un JSON
+        if (clavesNumericas.length > 10 && clavesNoNumericas.length < 5) {
+            try {
+                const clavesOrdenadas = clavesNumericas.map(k => parseInt(k)).sort((a, b) => a - b);
+                const stringReconstruido = clavesOrdenadas.map(key => obj[key.toString()]).join('');
+                console.log('📝 Intentando reconstruir string mixto:', stringReconstruido);
+                
+                const objetoParseado = JSON.parse(stringReconstruido);
+                console.log('✅ JSON parseado desde objeto mixto:', objetoParseado);
+                return objetoParseado;
+            } catch (error) {
+                console.log('ℹ️ No se pudo parsear como JSON, usando objeto original');
+                return obj;
+            }
         }
     }
     
