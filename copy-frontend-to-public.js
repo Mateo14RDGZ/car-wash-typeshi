@@ -1,6 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 
+console.log('🚀 Iniciando proceso de build para Vercel...');
+
+// Verificar Node.js
+console.log('📋 Información del entorno:');
+console.log(`   - Node.js: ${process.version}`);
+console.log(`   - Platform: ${process.platform}`);
+console.log(`   - Arch: ${process.arch}`);
+
 // Función para copiar archivos recursivamente
 function copyRecursiveSync(src, dest) {
     const exists = fs.existsSync(src);
@@ -21,6 +29,11 @@ function copyRecursiveSync(src, dest) {
             );
         });
     } else {
+        // Crear directorio padre si no existe
+        const parentDir = path.dirname(dest);
+        if (!fs.existsSync(parentDir)) {
+            fs.mkdirSync(parentDir, { recursive: true });
+        }
         // Copiar archivo individual
         fs.copyFileSync(src, dest);
     }
@@ -55,10 +68,15 @@ try {
     const files = fs.readdirSync(publicDest);
     console.log('📄 Archivos en public/:');
     files.forEach(file => {
-        console.log(`   - ${file}`);
+        const filePath = path.join(publicDest, file);
+        const stats = fs.statSync(filePath);
+        console.log(`   - ${file} (${stats.size} bytes)`);
     });
+    
+    console.log('🎯 Build completado exitosamente');
     
 } catch (error) {
     console.error('❌ Error al copiar archivos del frontend:', error.message);
+    console.error('📋 Stack trace:', error.stack);
     process.exit(1);
 }
