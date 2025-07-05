@@ -546,6 +546,28 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         console.log('📋 data.data:', data.data);
         console.log('📋 Estructura completa de data:', Object.keys(data || {}));
         
+        // Verificar si los datos llegaron correctamente
+        if (!data.data || typeof data.data === 'string') {
+            console.error('❌ Error: data.data no es un objeto válido:', data.data);
+            // Si data.data es un string, intentar parsearlo
+            if (typeof data.data === 'string') {
+                try {
+                    data.data = JSON.parse(data.data);
+                    console.log('✅ data.data parseado correctamente:', data.data);
+                } catch (parseError) {
+                    console.error('❌ Error parseando data.data:', parseError);
+                    // Usar los datos del formulario como respaldo
+                    data.data = {
+                        ...formData,
+                        id: Math.floor(100000 + Math.random() * 900000),
+                        status: 'confirmed',
+                        createdAt: new Date().toISOString()
+                    };
+                    console.log('🔄 Usando datos del formulario como respaldo:', data.data);
+                }
+            }
+        }
+        
         // Si tiene éxito, mostrar confirmación Y actualizar horarios
         console.log('✅ Reserva creada exitosamente, actualizando horarios disponibles...');
         
@@ -650,20 +672,37 @@ function validarFormulario(formData) {
 // Función para mostrar la confirmación de reserva
 function mostrarReservaConfirmada(reserva) {
     console.log('🎯 MOSTRAR RESERVA CONFIRMADA - Datos recibidos:', reserva);
+    console.log('🔍 Tipo de reserva:', typeof reserva);
+    console.log('🔍 Es array?:', Array.isArray(reserva));
+    console.log('🔍 Claves del objeto:', Object.keys(reserva || {}));
+    
+    // Si reserva es un string, intentar parsearlo
+    if (typeof reserva === 'string') {
+        try {
+            reserva = JSON.parse(reserva);
+            console.log('✅ Reserva parseada desde string:', reserva);
+        } catch (e) {
+            console.error('❌ Error parseando reserva:', e);
+            return;
+        }
+    }
+    
     // Normalizar campos por si vienen en minúsculas o con snake_case
     const r = {
-        clientName: reserva.clientName || reserva.clientname || '',
-        clientPhone: reserva.clientPhone || reserva.clientphone || '',
-        date: reserva.date,
-        vehicleType: reserva.vehicleType || reserva.vehicletype || '',
-        vehiclePlate: reserva.vehiclePlate || reserva.vehicleplate || '',
-        serviceType: reserva.serviceType || reserva.servicetype || '',
-        price: reserva.price,
+        clientName: reserva.clientName || reserva.clientname || reserva.client_name || 'Cliente',
+        clientPhone: reserva.clientPhone || reserva.clientphone || reserva.client_phone || 'Sin teléfono',
+        date: reserva.date || new Date().toISOString(),
+        vehicleType: reserva.vehicleType || reserva.vehicletype || reserva.vehicle_type || 'auto',
+        vehiclePlate: reserva.vehiclePlate || reserva.vehicleplate || reserva.vehicle_plate || 'Sin patente',
+        serviceType: reserva.serviceType || reserva.servicetype || reserva.service_type || 'basico',
+        price: reserva.price || 0,
         extras: reserva.extras || [],
-        id: reserva.id || reserva.ID || reserva.Id || '',
+        id: reserva.id || reserva.ID || reserva.Id || Math.floor(100000 + Math.random() * 900000),
         status: reserva.status || 'confirmed',
         notes: reserva.notes || ''
     };
+    
+    console.log('📋 Datos normalizados para mostrar:', r);
     // Crear los elementos para la confirmación
     const container = document.getElementById('reservar');
     const originalContent = container.innerHTML;

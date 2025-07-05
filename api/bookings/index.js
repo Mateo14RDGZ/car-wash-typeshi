@@ -111,6 +111,19 @@ module.exports = async (req, res) => {
             }
             
             // Crear la nueva reserva en la base de datos
+            console.log('📝 Creando reserva en MySQL con datos:', {
+                clientName,
+                clientPhone: clientPhone || '',
+                date: fechaReserva,
+                vehicleType,
+                vehiclePlate: vehiclePlate || '',
+                serviceType,
+                price: price || 0,
+                extras: extras || [],
+                notes: notes || '',
+                status: 'confirmed'
+            });
+            
             const nuevaReserva = await Booking.create({
                 clientName,
                 clientPhone: clientPhone || '',
@@ -123,12 +136,15 @@ module.exports = async (req, res) => {
                 notes: notes || '',
                 status: 'confirmed'
             });
-            console.log('✅ Reserva guardada en la base de datos:', nuevaReserva.toJSON());
+            
+            console.log('✅ Reserva guardada en MySQL:', nuevaReserva.toJSON());
+            const reservaData = nuevaReserva.toJSON();
             
             return res.status(201).json({
                 status: 'SUCCESS',
-                message: 'Reserva creada exitosamente',
-                data: nuevaReserva
+                message: 'Reserva creada exitosamente y guardada en MySQL',
+                data: reservaData,
+                saved_to_database: true
             });
         } else {
             return res.status(405).json({
