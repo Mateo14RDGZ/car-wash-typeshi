@@ -6,9 +6,8 @@
     "scripts": {
         "start": "node src/backend/server.js",
         "start:db": "node src/backend/serverDB.js",
-        "build": "node copy-frontend-to-public.js",
-        "vercel-build": "node verify-dependencies.js && node copy-frontend-to-public.js",
-        "postinstall": "npm ls mysql2 || npm install mysql2@^3.14.1",
+        "build": "node simple-build.js",
+        "vercel-build": "node simple-build.js",
         "dev": "nodemon src/backend/server.js",
         "dev:db": "nodemon src/backend/serverDB.js",
         "frontend": "node serve-frontend.js",

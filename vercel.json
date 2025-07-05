@@ -2,23 +2,15 @@
     "version": 2,
     "functions": {
         "api/**/*.js": {
-            "runtime": "nodejs18.x",
-            "maxDuration": 30,
-            "includeFiles": "node_modules/mysql2/**"
+            "runtime": "nodejs18.x"
         }
     },
     "builds": [
         {
             "src": "package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "public"
-            }
+            "use": "@vercel/static-build"
         }
     ],
-    "installCommand": "npm ci && npm install mysql2@^3.14.1 --save",
-    "buildCommand": "npm run vercel-build",
-    "outputDirectory": "public",
     "rewrites": [
         {
             "source": "/",
