@@ -773,8 +773,8 @@ function mostrarReservaConfirmada(reserva) {
         serviceType: reserva.serviceType || reserva.servicetype || reserva.service_type,
         price: reserva.price,
         extras: reserva.extras || [],
-        id: reserva.id || reserva.ID || reserva.Id,
-        status: reserva.status,
+        id: reserva.id || reserva.ID || reserva.Id || generarCodigoReserva(),
+        status: reserva.status || 'confirmed',
         notes: reserva.notes || ''
     };
     
