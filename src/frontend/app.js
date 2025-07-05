@@ -581,7 +581,15 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         }
         
         console.log('🎯 Mostrando confirmación de reserva...');
-        mostrarReservaConfirmada(data.data);
+        console.log('🔍 Datos a enviar al modal:', data.data);
+        console.log('🔍 Tipo de data.data:', typeof data.data);
+        console.log('🔍 Claves de data.data:', Object.keys(data.data || {}));
+        
+        // Aplicar normalización antes de enviar al modal
+        const datosNormalizados = normalizarObjetoConClavesNumericas(data.data);
+        console.log('🔄 Datos normalizados:', datosNormalizados);
+        
+        mostrarReservaConfirmada(datosNormalizados);
         
     } catch (error) {
         window.debugError('Error al enviar la reserva:', error);
@@ -676,23 +684,38 @@ function mostrarReservaConfirmada(reserva) {
     console.log('🔍 Es array?:', Array.isArray(reserva));
     console.log('🔍 Claves del objeto:', Object.keys(reserva || {}));
     
-    // Si reserva es un string, intentar parsearlo
-    if (typeof reserva === 'string') {
-        try {
-            reserva = JSON.parse(reserva);
-            console.log('✅ Reserva parseada desde string:', reserva);
-        } catch (e) {
-            console.error('❌ Error parseando reserva:', e);
-            // Si no se puede parsear, usar datos del formulario actual
-            reserva = obtenerDatosDelFormulario();
-        }
+    // Log adicional para detectar mejor el problema
+    if (reserva && typeof reserva === 'object') {
+        const claves = Object.keys(reserva);
+        console.log('🔍 Detalle de claves:', claves.map(k => ({ key: k, type: typeof k, isNumeric: !isNaN(k) })));
+        console.log('🔍 Valores del objeto:', Object.values(reserva));
     }
     
-    // Si reserva está vacía o no tiene datos válidos, usar datos del formulario
-    if (!reserva || typeof reserva !== 'object' || Object.keys(reserva).length === 0) {
-        console.log('⚠️ Datos de reserva inválidos, usando datos del formulario');
-        reserva = obtenerDatosDelFormulario();
+    // Intentar normalizar los datos usando la función auxiliar
+    let reservaNormalizada = null;
+    
+    if (typeof reserva === 'string') {
+        // Es un string JSON
+        try {
+            reservaNormalizada = JSON.parse(reserva);
+            console.log('✅ JSON parseado desde string:', reservaNormalizada);
+        } catch (error) {
+            console.error('❌ Error al parsear JSON string:', error);
+            reservaNormalizada = null;
+        }
+    } else {
+        // Intentar normalizar usando la función auxiliar
+        reservaNormalizada = normalizarObjetoConClavesNumericas(reserva);
     }
+    
+    // Si no se pudo normalizar o está vacío, usar datos del formulario
+    if (!reservaNormalizada || typeof reservaNormalizada !== 'object' || Object.keys(reservaNormalizada).length === 0) {
+        console.log('⚠️ Datos de reserva inválidos, usando datos del formulario');
+        reservaNormalizada = obtenerDatosDelFormulario();
+    }
+    
+    // Usar los datos normalizados
+    reserva = reservaNormalizada;
     
     // Normalizar campos SIN valores por defecto - si no existen, no mostrar
     const r = {
@@ -1523,4 +1546,35 @@ function obtenerDatosDelFormulario() {
         id: Math.floor(100000 + Math.random() * 900000),
         status: 'confirmed'
     };
+}
+
+// Función auxiliar para normalizar objetos con claves numéricas
+function normalizarObjetoConClavesNumericas(obj) {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+        return obj;
+    }
+    
+    const claves = Object.keys(obj);
+    
+    // Verificar si todas las claves son numéricas
+    if (claves.length > 0 && claves.every(key => !isNaN(key))) {
+        console.log('🔄 DETECTADO: Objeto con claves numéricas - Reconstruyendo string...');
+        try {
+            // Ordenar las claves numéricamente para asegurar el orden correcto
+            const clavesOrdenadas = claves.map(k => parseInt(k)).sort((a, b) => a - b);
+            const stringReconstruido = clavesOrdenadas.map(key => obj[key.toString()]).join('');
+            console.log('📝 String reconstruido:', stringReconstruido);
+            
+            // Intentar parsear el string como JSON
+            const objetoParseado = JSON.parse(stringReconstruido);
+            console.log('✅ JSON parseado correctamente:', objetoParseado);
+            return objetoParseado;
+        } catch (error) {
+            console.error('❌ Error al reconstruir y parsear string:', error);
+            return null;
+        }
+    }
+    
+    // Si no es un objeto con claves numéricas, devolver tal como está
+    return obj;
 }
