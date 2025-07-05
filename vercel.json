@@ -1,15 +1,32 @@
 {
-  "version": 2,
-  "routes": [
-    { "src": "/api-bridge", "dest": "/api/api-bridge.js" },
-    { "src": "/(.*)", "dest": "/src/frontend/$1" }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "DB_HOST": "us-east.connect.psdb.cloud",
-    "DB_NAME": "car_wash_db",
-    "DB_USER": "dbuser",
-    "DB_PASS": "dbpassword",
-    "DB_PORT": "3306"
-  }
+    "version": 2,
+    "functions": {
+        "api/**/*.js": {
+            "runtime": "nodejs18.x",
+            "maxDuration": 30
+        }
+    },
+    "builds": [
+        {
+            "src": "package.json",
+            "use": "@vercel/static-build"
+        }
+    ],
+    "installCommand": "npm install --include=dev && npm install mysql2 --save",
+    "buildCommand": "npm run vercel-build",
+    "outputDirectory": "public",
+    "rewrites": [
+        {
+            "source": "/",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/$1"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/$1"
+        }
+    ]
 }
