@@ -660,7 +660,9 @@ function mostrarReservaConfirmada(reserva) {
         serviceType: reserva.serviceType || reserva.servicetype || '',
         price: reserva.price,
         extras: reserva.extras || [],
-        id: reserva.id || reserva.ID || reserva.Id || ''
+        id: reserva.id || reserva.ID || reserva.Id || '',
+        status: reserva.status || 'confirmed',
+        notes: reserva.notes || ''
     };
     // Crear los elementos para la confirmación
     const container = document.getElementById('reservar');
@@ -698,46 +700,60 @@ function mostrarReservaConfirmada(reserva) {
                         </div>
                         <div class="card-body p-5">
                             <div class="confirmation-details">
-                                <h5 class="mb-4">Detalles de tu reserva</h5>
+                                <h5 class="mb-4 text-center">Detalles de tu reserva</h5>
+                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-user"></i>
                                     </div>
-                                    <div>
-                                        <small class="text-muted d-block">A nombre de</small>
+                                    <div class="flex-grow-1">
+                                        <small class="text-muted d-block">Cliente</small>
                                         <strong>${r.clientName}</strong>
                                     </div>
                                 </div>
+                                
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-phone"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <small class="text-muted d-block">Teléfono</small>
+                                        <strong>${r.clientPhone}</strong>
+                                    </div>
+                                </div>
+                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-calendar-check"></i>
                                     </div>
-                                    <div>
+                                    <div class="flex-grow-1">
                                         <small class="text-muted d-block">Fecha y hora</small>
                                         <strong>${fechaFormateada}</strong>
                                     </div>
                                 </div>
+                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-shower"></i>
                                     </div>
-                                    <div>
+                                    <div class="flex-grow-1">
                                         <small class="text-muted d-block">Servicio</small>
                                         <strong>${serviciosNombres[r.serviceType] || r.serviceType}</strong>
                                         ${r.extras && r.extras.length > 0 ? 
                                         `<div class="mt-2">
-                                            <small class="text-muted">Extras:</small>
+                                            <small class="text-muted">Extras incluidos:</small>
                                             <ul class="mb-0 ps-3">
                                                 ${r.extras.map(extra => `<li>${extra}</li>`).join('')}
                                             </ul>
                                         </div>` : ''}
                                     </div>
                                 </div>
+                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-car"></i>
                                     </div>
-                                    <div>
+                                    <div class="flex-grow-1">
                                         <small class="text-muted d-block">Vehículo</small>
                                         <strong>${vehiculosNombres[r.vehicleType] || r.vehicleType}</strong>
                                         <div class="mt-1">
@@ -745,29 +761,63 @@ function mostrarReservaConfirmada(reserva) {
                                         </div>
                                     </div>
                                 </div>
+                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
-                                        <i class="fas fa-tag"></i>
+                                        <i class="fas fa-dollar-sign"></i>
                                     </div>
-                                    <div>
+                                    <div class="flex-grow-1">
                                         <small class="text-muted d-block">Precio total</small>
-                                        <strong class="text-success">$${r.price}</strong>
+                                        <strong class="text-success fs-5">$${r.price}</strong>
                                     </div>
                                 </div>
+                                
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
                                         <i class="fas fa-hashtag"></i>
                                     </div>
-                                    <div>
+                                    <div class="flex-grow-1">
                                         <small class="text-muted d-block">Código de reserva</small>
-                                        <strong>${r.id}</strong>
+                                        <strong class="text-primary">#${r.id}</strong>
                                     </div>
                                 </div>
+                                
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <small class="text-muted d-block">Estado</small>
+                                        <span class="badge bg-success">${r.status === 'confirmed' ? 'Confirmada' : r.status}</span>
+                                    </div>
+                                </div>
+                                
+                                ${r.notes ? `
+                                <div class="mb-4 d-flex align-items-center">
+                                    <div class="icon-box me-3">
+                                        <i class="fas fa-sticky-note"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <small class="text-muted d-block">Notas</small>
+                                        <span>${r.notes}</span>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                <div class="alert alert-info mb-4">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Importante:</strong> Por favor, llega 5 minutos antes de tu cita. 
+                                    Si necesitas cancelar o modificar tu reserva, contacta al 
+                                    <strong>098 385 709</strong> con al menos 2 horas de anticipación.
+                                </div>
                             </div>
-                              <hr>
+                            <hr>
                             <div class="text-center pt-2">
-                                <button class="btn btn-primary" id="nuevaReservaBtn">
+                                <button class="btn btn-primary me-2" id="nuevaReservaBtn">
                                     <i class="fas fa-calendar-plus me-2"></i>Hacer otra reserva
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="window.print()">
+                                    <i class="fas fa-print me-2"></i>Imprimir comprobante
                                 </button>
                             </div>
                         </div>
