@@ -9,14 +9,9 @@
     "builds": [
         {
             "src": "package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "public"
-            }
+            "use": "@vercel/static-build"
         }
     ],
-    "buildCommand": "npm run vercel-build",
-    "outputDirectory": "public",
     "rewrites": [
         {
             "source": "/",
