@@ -739,7 +739,8 @@ function mostrarReservaConfirmada(reserva) {
                         </div>
                         <div class="card-body p-5">
                             <div class="confirmation-details">
-                                <h5 class="mb-4 text-center">Detalles de tu reserva</h5>
+                                <h5 class="mb-2 text-center">¡Tu reserva ha sido confirmada!</h5>
+                                <p class="text-center text-muted mb-4">Aquí están los detalles de tu cita:</p>
                                 
                                 <div class="mb-4 d-flex align-items-center">
                                     <div class="icon-box me-3">
@@ -852,11 +853,8 @@ function mostrarReservaConfirmada(reserva) {
                             </div>
                             <hr>
                             <div class="text-center pt-2">
-                                <button class="btn btn-primary me-2" id="nuevaReservaBtn">
+                                <button class="btn btn-primary" id="nuevaReservaBtn">
                                     <i class="fas fa-calendar-plus me-2"></i>Hacer otra reserva
-                                </button>
-                                <button class="btn btn-outline-secondary" onclick="window.print()">
-                                    <i class="fas fa-print me-2"></i>Imprimir comprobante
                                 </button>
                             </div>
                         </div>
