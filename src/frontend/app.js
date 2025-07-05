@@ -683,22 +683,29 @@ function mostrarReservaConfirmada(reserva) {
             console.log('✅ Reserva parseada desde string:', reserva);
         } catch (e) {
             console.error('❌ Error parseando reserva:', e);
-            return;
+            // Si no se puede parsear, usar datos del formulario actual
+            reserva = obtenerDatosDelFormulario();
         }
     }
     
-    // Normalizar campos por si vienen en minúsculas o con snake_case
+    // Si reserva está vacía o no tiene datos válidos, usar datos del formulario
+    if (!reserva || typeof reserva !== 'object' || Object.keys(reserva).length === 0) {
+        console.log('⚠️ Datos de reserva inválidos, usando datos del formulario');
+        reserva = obtenerDatosDelFormulario();
+    }
+    
+    // Normalizar campos SIN valores por defecto - si no existen, no mostrar
     const r = {
-        clientName: reserva.clientName || reserva.clientname || reserva.client_name || 'Cliente',
-        clientPhone: reserva.clientPhone || reserva.clientphone || reserva.client_phone || 'Sin teléfono',
-        date: reserva.date || new Date().toISOString(),
-        vehicleType: reserva.vehicleType || reserva.vehicletype || reserva.vehicle_type || 'auto',
-        vehiclePlate: reserva.vehiclePlate || reserva.vehicleplate || reserva.vehicle_plate || 'Sin patente',
-        serviceType: reserva.serviceType || reserva.servicetype || reserva.service_type || 'basico',
-        price: reserva.price || 0,
+        clientName: reserva.clientName || reserva.clientname || reserva.client_name,
+        clientPhone: reserva.clientPhone || reserva.clientphone || reserva.client_phone,
+        date: reserva.date,
+        vehicleType: reserva.vehicleType || reserva.vehicletype || reserva.vehicle_type,
+        vehiclePlate: reserva.vehiclePlate || reserva.vehicleplate || reserva.vehicle_plate,
+        serviceType: reserva.serviceType || reserva.servicetype || reserva.service_type,
+        price: reserva.price,
         extras: reserva.extras || [],
-        id: reserva.id || reserva.ID || reserva.Id || Math.floor(100000 + Math.random() * 900000),
-        status: reserva.status || 'confirmed',
+        id: reserva.id || reserva.ID || reserva.Id,
+        status: reserva.status,
         notes: reserva.notes || ''
     };
     
@@ -1459,3 +1466,61 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(style);
     }
 })();
+
+// Función para obtener los datos actuales del formulario
+function obtenerDatosDelFormulario() {
+    const nombre = document.getElementById('nombre');
+    const telefono = document.getElementById('telefono');
+    const fecha = document.getElementById('fecha');
+    const vehiculo = document.getElementById('vehiculo');
+    const patente = document.getElementById('patente');
+    
+    // Obtener extras seleccionados
+    let extrasSeleccionados = [];
+    if (window.servicioSeleccionado === 'basico') {
+        if (document.getElementById('extra-aroma-basico')?.checked) extrasSeleccionados.push('Aromatización');
+        if (document.getElementById('extra-encerado-basico')?.checked) extrasSeleccionados.push('Encerado');
+        if (document.getElementById('extra-tapizado-basico')?.checked) extrasSeleccionados.push('Limpieza de tapizados');
+        if (document.getElementById('extra-opticas-basico')?.checked) extrasSeleccionados.push('Pulido de ópticas');
+    } else if (window.servicioSeleccionado === 'premium') {
+        if (document.getElementById('extra-tapizado-premium')?.checked) extrasSeleccionados.push('Limpieza de tapizados');
+        if (document.getElementById('extra-opticas-premium')?.checked) extrasSeleccionados.push('Pulido de ópticas');
+    }
+    
+    // Calcular precio total
+    let total = window.precios[window.servicioSeleccionado] || 0;
+    let extrasChecks = [];
+    if (window.servicioSeleccionado === 'basico') {
+        extrasChecks = [
+            document.getElementById('extra-aroma-basico'),
+            document.getElementById('extra-encerado-basico'),
+            document.getElementById('extra-tapizado-basico'),
+            document.getElementById('extra-opticas-basico')
+        ];
+    } else if (window.servicioSeleccionado === 'premium') {
+        extrasChecks = [
+            document.getElementById('extra-tapizado-premium'),
+            document.getElementById('extra-opticas-premium')
+        ];
+    }
+    extrasChecks.forEach(chk => {
+        if (chk && chk.checked) {
+            total += parseInt(chk.getAttribute('data-precio') || 0);
+        }
+    });
+    
+    const [horaInicio] = (window.horarioSeleccionado || '').split(' - ');
+    
+    return {
+        clientName: nombre?.value || '',
+        clientPhone: telefono?.value || '',
+        date: fecha?.value && horaInicio ? `${fecha.value}T${horaInicio}` : '',
+        vehicleType: vehiculo?.value || '',
+        vehiclePlate: patente?.value || '',
+        serviceType: window.servicioSeleccionado || '',
+        price: total,
+        extras: extrasSeleccionados,
+        id: Math.floor(100000 + Math.random() * 900000),
+        status: 'confirmed'
+    };
+}
