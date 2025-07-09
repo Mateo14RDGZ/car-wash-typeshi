@@ -1,0 +1,25 @@
+/* Estilos adicionales para la gestión de horarios */
+.horario-loading {
+  opacity: 0.7;
+  cursor: progress;
+}
+.horario-no-disponible {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f8f9fa;
+  text-decoration: line-through;
+  pointer-events: none;
+}
+.horario-slot {
+  transition: all 0.3s ease-in-out;
+}
+.horario-slot:not(.horario-no-disponible):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.horarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}

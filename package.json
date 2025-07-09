@@ -6,8 +6,8 @@
     "scripts": {
         "start": "node src/backend/server.js",
         "start:db": "node src/backend/serverDB.js",
-        "build": "node simple-build.js",
-        "vercel-build": "node simple-build.js",
+        "build": "echo 'No build needed - static files in root'",
+        "vercel-build": "echo 'No build needed - static files in root'",
         "dev": "nodemon src/backend/server.js",
         "dev:db": "nodemon src/backend/serverDB.js",
         "frontend": "node serve-frontend.js",

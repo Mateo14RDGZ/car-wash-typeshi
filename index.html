@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Evitar cache agresivo -->
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Extreme Wash - Sistema de Reservas</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <!-- SOLUCIÓN DEFINITIVA - SISTEMA ÚNICO DE CARGA DE SCRIPTS -->
+    <script>
+      // Forzar reload de todos los scripts con timestamp único
+      const timestamp = Date.now();
+      const uniqueId = Math.random().toString(36).substring(7);
+      console.log(
+        `Sistema de carga único ID: ${uniqueId} - Función actualizarHorariosDisponibles eliminada`
+      );
+
+      // Función para cargar scripts en orden y con anti-caché
+      function loadScript(src, onLoad) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          // Timestamp doble para evitar caché agresivo - v2.0
+          script.src = `${src}?t=${timestamp}&u=${uniqueId}&v=2.0`;
+
+          script.onload = function () {
+            console.log(`✅ Script cargado exitosamente: ${src}`);
+            if (onLoad) onLoad();
+            resolve();
+          };
+
+          script.onerror = function (e) {
+            console.error(`❌ Error al cargar ${src}:`, e);
+            // Reintentar automáticamente
+            setTimeout(() => {
+              console.log(`🔄 Reintentando carga de ${src}...`);
+              document.head.removeChild(script);
+              loadScript(src, onLoad).then(resolve).catch(reject);
+            }, 1500);
+          };
+
+          document.head.appendChild(script);
+        });
+      }
+
+      // Sistema secuencial de carga - un script a la vez en orden específico
+      // IMPORTANTE: api-helper.js primero (único sistema), NO cargar api-client.js
+      async function loadAllScripts() {
+        try {
+          // 1. Primero api-helper.js (implementación única)
+          await loadScript("api-helper.js");
+
+          // 2. Luego el sistema de horarios robusto
+          await loadScript("horarios-helper.js");
+
+          // 3. El manejador de fechas mejorado
+          await loadScript("fecha-handler.js");
+
+          // 4. Luego timeSlots-client.js
+          await loadScript("timeSlots-client.js");
+
+          // 5. Finalmente app.js
+          await loadScript("app.js");
+
+          console.log("✅✅✅ TODOS LOS SCRIPTS CARGADOS CORRECTAMENTE");
+        } catch (error) {
+          console.error("❌❌❌ ERROR EN SISTEMA DE CARGA:", error);
+        }
+      }
+
+      // Iniciar carga secuencial
+      loadAllScripts();
+    </script>
+    <style>
+      .precio-servicio {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .precio-servicio .badge {
+        background: #0d6efd !important;
+        color: #fff !important;
+        font-size: 1.05rem;
+        padding: 0.45em 1em;
+        font-weight: 600;
+        border-radius: 1.2em;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08);
+        margin-bottom: 2px;
+      }
+      .form-check-label {
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Hero Section -->
+    <header class="hero-section text-center py-5">
+      <div class="container">
+        <div class="hero-content">
+          <h1 class="main-title display-2 fw-bold text-uppercase mb-4">
+            <span class="text-highlight">Extreme</span>
+            <span class="text-white">Wash</span>
+          </h1>
+          <p class="lead text-white mb-4 fs-3">
+            Tu auto merece brillar como nuevo
+          </p>
+          <div class="hero-features text-white mb-4">
+            <div class="row justify-content-center">
+              <div class="col-md-4">
+                <div class="feature-item">
+                  <i class="fas fa-clock fa-2x mb-2"></i>
+                  <p>Servicio Rápido</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="feature-item">
+                  <i class="fas fa-star fa-2x mb-2"></i>
+                  <p>Calidad Premium</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="feature-item">
+                  <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                  <p>Garantía Total</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <a
+            href="#reservar"
+            class="btn btn-light btn-lg px-5 py-3 rounded-pill"
+          >
+            <i class="fas fa-calendar-plus"></i> Reservar Ahora
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Servicios -->
+    <section id="servicios" class="py-5">
+      <div class="container">
+        <h2 class="text-center mb-4">
+          <i class="fas fa-hand-sparkles"></i> Nuestros Servicios
+        </h2>
+        <div class="row">
+          <!-- Servicio Básico -->
+          <div class="col-md-4 mb-4">
+            <div class="card h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-car fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Lavado Básico</h5>
+                <div class="precio-servicio mb-2">
+                  <span class="badge bg-success fs-5">$600</span>
+                </div>
+                <p class="card-text">
+                  <i class="fas fa-check text-success"></i> Lavado exterior<br />
+                  <i class="fas fa-check text-success"></i> Limpieza interior<br />
+                  <i class="fas fa-check text-success"></i> Secado a mano
+                </p>
+                <button
+                  class="btn btn-primary w-100 mb-2"
+                  onclick="seleccionarServicio('basico')"
+                >
+                  <i class="fas fa-shopping-cart"></i> Seleccionar
+                </button>
+                <button
+                  class="btn btn-outline-secondary w-100 mb-2"
+                  type="button"
+                  onclick="mostrarExtras('basico', this)"
+                >
+                  <i class="fas fa-plus"></i> Agregar extras
+                </button>
+                <div
+                  class="extras-container"
+                  id="extras-basico"
+                  style="display: none"
+                >
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Aromatización"
+                      id="extra-aroma-basico"
+                      data-precio="150"
+                    />
+                    <label class="form-check-label" for="extra-aroma-basico"
+                      >Aromatización ($150)</label
+                    >
+                  </div>
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Encerado"
+                      id="extra-encerado-basico"
+                      data-precio="350"
+                    />
+                    <label class="form-check-label" for="extra-encerado-basico"
+                      >Encerado ($350)</label
+                    >
+                  </div>
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Limpieza de tapizados"
+                      id="extra-tapizado-basico"
+                      data-precio="1500"
+                    />
+                    <label class="form-check-label" for="extra-tapizado-basico"
+                      >Limpieza de tapizados ($1500)</label
+                    >
+                  </div>
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Pulido de ópticas"
+                      id="extra-opticas-basico"
+                      data-precio="1250"
+                    />
+                    <label class="form-check-label" for="extra-opticas-basico"
+                      >Pulido de ópticas ($1250)</label
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Servicio Premium -->
+          <div class="col-md-4 mb-4">
+            <div class="card h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-car-side fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Lavado Premium</h5>
+                <div class="precio-servicio mb-2">
+                  <span class="badge bg-success fs-5">$1100</span>
+                </div>
+                <p class="card-text">
+                  <i class="fas fa-check text-success"></i> Todo lo del
+                  básico<br />
+                  <i class="fas fa-check text-success"></i> Aromatización<br />
+                  <i class="fas fa-check text-success"></i> Encerado
+                </p>
+                <button
+                  class="btn btn-primary w-100 mb-2"
+                  onclick="seleccionarServicio('premium')"
+                >
+                  <i class="fas fa-shopping-cart"></i> Seleccionar
+                </button>
+                <button
+                  class="btn btn-outline-secondary w-100 mb-2"
+                  type="button"
+                  onclick="mostrarExtras('premium', this)"
+                >
+                  <i class="fas fa-plus"></i> Agregar extras
+                </button>
+                <div
+                  class="extras-container"
+                  id="extras-premium"
+                  style="display: none"
+                >
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Limpieza de tapizados"
+                      id="extra-tapizado-premium"
+                      data-precio="1500"
+                    />
+                    <label class="form-check-label" for="extra-tapizado-premium"
+                      >Limpieza de tapizados ($1500)</label
+                    >
+                  </div>
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      value="Pulido de ópticas"
+                      id="extra-opticas-premium"
+                      data-precio="1250"
+                    />
+                    <label class="form-check-label" for="extra-opticas-premium"
+                      >Pulido de ópticas ($1250)</label
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Servicio Detailing -->
+          <div class="col-md-4 mb-4">
+            <div class="card h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-tools fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Detailing Completo</h5>
+                <div class="precio-servicio mb-2">
+                  <span class="badge bg-success fs-5">$3850</span>
+                </div>
+                <p class="card-text">
+                  <i class="fas fa-check text-success"></i> Todo lo del
+                  premium<br />
+                  <i class="fas fa-check text-success"></i> Limpieza de
+                  tapizados<br />
+                  <i class="fas fa-check text-success"></i> Pulido de ópticas
+                </p>
+                <button
+                  class="btn btn-primary w-100"
+                  onclick="seleccionarServicio('detailing')"
+                >
+                  <i class="fas fa-shopping-cart"></i> Seleccionar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formulario de Reserva -->
+    <section id="reservar" class="py-5 bg-light">
+      <div class="container">
+        <h2 class="text-center mb-4">
+          <i class="fas fa-calendar-check"></i> Reservar Turno
+        </h2>
+        <div class="row justify-content-center">
+          <div class="col-md-8">
+            <!-- Reemplaza tu formulario por este bloque -->
+            <form id="reservaForm" class="card p-4 shadow">
+              <div class="mb-3">
+                <label for="nombre" class="form-label"
+                  ><i class="fas fa-user"></i> Nombre completo</label
+                >
+                <input type="text" class="form-control" id="nombre" required />
+              </div>
+              <div class="mb-3">
+                <label for="telefono" class="form-label"
+                  ><i class="fas fa-phone"></i> Teléfono</label
+                >
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="telefono"
+                  placeholder="Ej: 555-123-4567"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="fecha" class="form-label"
+                  ><i class="fas fa-calendar"></i> Fecha</label
+                >
+                <input
+                  type="date"
+                  id="fecha"
+                  name="fecha"
+                  class="form-control"
+                  min="2025-06-13"
+                  style="max-width: 220px; padding: 10px; font-size: 16px"
+                  required
+                />
+                <small class="text-muted d-block mt-1">
+                  <i class="fas fa-info-circle"></i> Selecciona la fecha para
+                  ver los horarios disponibles
+                </small>
+              </div>
+
+              <!-- Indicador de estado de carga de horarios -->
+              <div id="carga-info" style="margin-bottom: 10px"></div>
+
+              <div id="horariosContainer" class="mb-4" style="display: none">
+                <!-- Eliminamos el label y dejamos solo la grilla -->
+                <div
+                  class="horarios-grid"
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(
+                      auto-fill,
+                      minmax(120px, 1fr)
+                    );
+                    gap: 10px;
+                    margin-top: 10px;
+                  "
+                >
+                  <!-- Los horarios se cargarán dinámicamente aquí -->
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="vehiculo" class="form-label"
+                  ><i class="fas fa-car"></i> Tipo de vehículo</label
+                >
+                <select class="form-select" id="vehiculo" required>
+                  <option value="">Seleccionar...</option>
+                  <option value="auto">Auto</option>
+                  <option value="camioneta_caja">Camioneta con caja</option>
+                  <option value="camioneta_sin_caja">Camioneta sin caja</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="patente" class="form-label"
+                  ><i class="fas fa-id-card"></i> Patente</label
+                >
+                <input type="text" class="form-control" id="patente" required />
+              </div>
+              <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="fas fa-check-circle"></i> Confirmar Reserva
+              </button>
+              <button
+                type="button"
+                class="btn btn-danger btn-lg w-100 mt-3"
+                onclick="cancelarReserva()"
+              >
+                <i class="fas fa-times-circle"></i> Cancelar Reserva
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container my-3">
+      <div class="text-center text-secondary small" style="font-size: 0.98em">
+        Si tiene algún pedido especial, comunicarse con el número de WhatsApp de
+        abajo
+      </div>
+    </div>
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4">
+            <h5><i class="fas fa-address-card"></i> Contacto</h5>
+            <p>
+              <a
+                href="https://wa.me/598098385709"
+                class="text-white text-decoration-none"
+                target="_blank"
+              >
+                <i class="fab fa-whatsapp text-success"></i> 098 385 709 </a
+              ><br />
+              <a
+                href="https://www.google.com/maps/place/RV+Autom%C3%B3viles/@-33.5338118,-56.8898191,17z/data=!3m1!4b1!4m6!3m5!1s0x95a6a1003eb37273:0x9bdd3ed1eace09d2!8m2!3d-33.5338118!4d-56.8898191!16s%2Fg%2F11xfzdhwwc"
+                class="text-white text-decoration-none"
+                target="_blank"
+              >
+                <i class="fas fa-map-marker-alt"></i> Dr Cipriano Goñi 59
+              </a>
+            </p>
+          </div>
+          <div class="col-md-4">
+            <h5><i class="fas fa-clock"></i> Horarios de Atención</h5>
+            <p>
+              <i class="fas fa-calendar-week"></i> Lunes a viernes: 8:30 -
+              18:00<br />
+              <i class="fas fa-calendar-day"></i> Sábados: 8:30 - 12:30<br />
+              <i class="fas fa-calendar-xmark"></i> Domingos: Cerrado
+            </p>
+          </div>
+          <div class="col-md-4">
+            <h5><i class="fas fa-hashtag"></i> Síguenos</h5>
+            <div class="social-links">
+              <a
+                href="https://www.instagram.com/rv__automoviles/"
+                class="text-white me-3"
+                target="_blank"
+                ><i class="fab fa-instagram fa-2x"></i
+              ></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="timeSlots-client.js"></script>
+    <script src="app.js"></script>
+
+    <!-- Respaldo de horarios embebido en el HTML como último recurso -->
+    <script type="application/json" id="embedded-slots-fallback">
+      {
+        "status": "SUCCESS",
+        "data": [
+          {
+            "time": "08:30 - 10:00",
+            "start": "08:30",
+            "end": "10:00",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          },
+          {
+            "time": "10:00 - 11:30",
+            "start": "10:00",
+            "end": "11:30",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          },
+          {
+            "time": "11:30 - 13:00",
+            "start": "11:30",
+            "end": "13:00",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          },
+          {
+            "time": "14:00 - 15:30",
+            "start": "14:00",
+            "end": "15:30",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          },
+          {
+            "time": "15:30 - 17:00",
+            "start": "15:30",
+            "end": "17:00",
+            "duration": 90,
+            "isBooked": false,
+            "available": true
+          }
+        ],
+        "message": "Horarios disponibles (respuesta de emergencia embebida)",
+        "source": "embedded-html",
+        "emergency": true
+      }
+    </script>
+  </body>
+</html>
