@@ -22,12 +22,7 @@ simple-build.js
 verify-dependencies.js
 deploy-check.js
 test-*.js
-vercel-diagnostic.jst
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+vercel-diagnostic.js
 src/backend/
 .vscode/
 .idea/
@@ -48,8 +43,8 @@ src/
 .vscode/
 .idea/
 *.log
-_.tmp
-_.swp
+*.tmp
+\_.swp
 \_.swo
 README.md
 CLEANUP_LIST.md
