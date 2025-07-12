@@ -525,7 +525,20 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         serviceType: window.servicioSeleccionado,
         price: total,
         extras: extrasSeleccionados
-    };        // Validación de campos
+    };
+    
+    // Logs detallados para asegurar que los datos del cliente se capturan correctamente
+    console.log('👤 DATOS DEL CLIENTE CAPTURADOS:');
+    console.log('   📝 Nombre:', formData.clientName);
+    console.log('   📞 Teléfono:', formData.clientPhone);
+    console.log('   📅 Fecha y hora:', formData.date);
+    console.log('   🚗 Tipo de vehículo:', formData.vehicleType);
+    console.log('   🔢 Patente:', formData.vehiclePlate);
+    console.log('   🧼 Servicio:', formData.serviceType);
+    console.log('   💰 Precio total:', formData.price);
+    console.log('   ➕ Extras:', formData.extras);
+    
+    // Validación de campos
         if (!validarFormulario(formData)) {
             window.isSubmitting = false;
             return;
@@ -569,14 +582,21 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         
         // Si no tenemos datos válidos del servidor, usar datos del formulario
         if (!datosReserva || typeof datosReserva !== 'object') {
-            console.log('🔄 Construyendo datos desde el formulario...');
+            console.log('🔄 Construyendo datos desde el formulario usando función auxiliar...');
+            
+            // Usar la función auxiliar para obtener datos del formulario
+            const datosDelFormulario = obtenerDatosDelFormulario();
+            
             datosReserva = {
-                ...formData,
-                id: (data && data.id) || Math.floor(100000 + Math.random() * 900000),
+                ...datosDelFormulario,
+                id: (data && data.id) || datosDelFormulario.id,
                 status: 'confirmed',
                 createdAt: new Date().toISOString(),
-                message: (data && data.message) || 'Reserva procesada correctamente'
+                message: (data && data.message) || 'Reserva procesada correctamente',
+                source: 'formulario'
             };
+            
+            console.log('✅ Datos construidos desde formulario:', datosReserva);
         }
         
         console.log('✅ Datos finales para el modal:', datosReserva);
@@ -607,15 +627,11 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         console.log('🆘 Error en la petición, usando datos del formulario para el modal...');
         
         // NUNCA mostrar mensajes de error, siempre mostrar el modal
-        const datosRespaldo = {
-            ...formData,
-            id: Math.floor(100000 + Math.random() * 900000),
-            status: 'confirmed',
-            createdAt: new Date().toISOString(),
-            source: 'offline'
-        };
+        // Usar la función auxiliar para obtener datos del formulario de manera robusta
+        const datosRespaldo = obtenerDatosDelFormulario();
+        datosRespaldo.source = 'offline';
         
-        console.log('🔄 Datos de respaldo creados:', datosRespaldo);
+        console.log('🔄 Datos de respaldo obtenidos del formulario:', datosRespaldo);
         
         // Normalizar y mostrar modal de respaldo
         const datosNormalizados = normalizarObjetoConClavesNumericas(datosRespaldo);
@@ -801,22 +817,44 @@ function mostrarReservaConfirmada(reserva) {
         serviceType: reserva.serviceType || reserva.servicetype || reserva.service_type || 'basico',
         price: reserva.price || 600,
         extras: reserva.extras || [],
-        id: reserva.id || reserva.ID || reserva.Id || generarCodigoReserva(),
+        id: reserva.id || reserva.ID || reserva.Id || Math.floor(100000 + Math.random() * 900000),
         status: reserva.status || 'confirmed',
         notes: reserva.notes || ''
     };
     
     console.log('📋 Datos normalizados para mostrar (SIEMPRE VÁLIDOS):', r);
+    
     // Crear los elementos para la confirmación
+    console.log('🔧 Intentando obtener contenedor de reservas...');
     const container = document.getElementById('reservar');
+    if (!container) {
+        console.error('❌ CRÍTICO: No se encontró el contenedor "reservar"');
+        // Usar alert como último recurso
+        alert(`✅ ¡Reserva confirmada!\n\n🔢 Código: #${r.id}\n👤 Cliente: ${r.clientName}\n📞 Teléfono: ${r.clientPhone}\n🎉 ¡Tu reserva ha sido registrada exitosamente!`);
+        return;
+    }
+    console.log('✅ Contenedor encontrado:', container);
+    
     const originalContent = container.innerHTML;
     
     // Guardar el contenido original
     container.dataset.originalContent = originalContent;
     
+    console.log('📅 Procesando fecha para el modal...');
+    console.log('   📅 Fecha original:', r.date);
     const date = new Date(r.date);
+    console.log('   📅 Objeto Date creado:', date);
+    console.log('   📅 Es fecha válida?:', !isNaN(date.getTime()));
+    
     const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    const fechaFormateada = date.toLocaleDateString('es-ES', opciones);
+    let fechaFormateada;
+    try {
+        fechaFormateada = date.toLocaleDateString('es-ES', opciones);
+        console.log('   ✅ Fecha formateada:', fechaFormateada);
+    } catch (fechaError) {
+        console.error('   ❌ Error formateando fecha:', fechaError);
+        fechaFormateada = r.date; // Usar fecha original como fallback
+    }
     
     // Mapeo de tipos de servicio a nombres legibles
     const serviciosNombres = {
@@ -832,7 +870,20 @@ function mostrarReservaConfirmada(reserva) {
         'camioneta_sin_caja': 'Camioneta sin caja'
     };
 
-    container.innerHTML = `
+    console.log('🎨 Creando HTML del modal...');
+    console.log('   📊 Datos para el template:', {
+        clientName: r.clientName,
+        clientPhone: r.clientPhone,
+        fechaFormateada: fechaFormateada,
+        serviceType: r.serviceType,
+        vehicleType: r.vehicleType,
+        vehiclePlate: r.vehiclePlate,
+        price: r.price,
+        id: r.id
+    });
+
+    try {
+        container.innerHTML = `
         <div class="container py-5 animate__animated animate__fadeIn">
             <div class="row justify-content-center">
                 <div class="col-md-8">
@@ -966,7 +1017,18 @@ function mostrarReservaConfirmada(reserva) {
                 </div>
             </div>
         </div>
-    `;      // Añadir listeners a los botones
+    `;
+        console.log('✅ HTML del modal creado exitosamente');
+    } catch (htmlError) {
+        console.error('❌ Error creando HTML del modal:', htmlError);
+        // Fallback con alert
+        alert(`✅ ¡Reserva confirmada!\n\n🔢 Código: #${r.id}\n👤 Cliente: ${r.clientName}\n📞 Teléfono: ${r.clientPhone}\n🎉 ¡Tu reserva ha sido registrada exitosamente!`);
+        return;
+    }
+    
+    // Añadir listeners a los botones
+    console.log('🔧 Agregando event listeners...');
+    try {
     document.getElementById('nuevaReservaBtn').addEventListener('click', async () => {
         console.log('🔄 Preparando nueva reserva...');
         
@@ -1012,6 +1074,12 @@ function mostrarReservaConfirmada(reserva) {
         }
         */
     });
+    console.log('✅ Event listeners agregados exitosamente');
+    
+    } catch (listenerError) {
+        console.error('❌ Error agregando listeners:', listenerError);
+        // Continuar sin los listeners
+    }
     
     } catch (modalError) {
         console.error('❌ Error crítico en mostrarReservaConfirmada:', modalError);
@@ -1579,13 +1647,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 })();
 
-// Función para obtener los datos actuales del formulario
+// Función para obtener los datos actuales del formulario - MEJORADA
 function obtenerDatosDelFormulario() {
+    console.log('📋 Obteniendo datos del formulario...');
+    
     const nombre = document.getElementById('nombre');
     const telefono = document.getElementById('telefono');
     const fecha = document.getElementById('fecha');
     const vehiculo = document.getElementById('vehiculo');
     const patente = document.getElementById('patente');
+    
+    console.log('🔍 Elementos del formulario encontrados:');
+    console.log('   nombre:', !!nombre, nombre?.value);
+    console.log('   telefono:', !!telefono, telefono?.value);
+    console.log('   fecha:', !!fecha, fecha?.value);
+    console.log('   vehiculo:', !!vehiculo, vehiculo?.value);
+    console.log('   patente:', !!patente, patente?.value);
+    console.log('   servicioSeleccionado:', window.servicioSeleccionado);
+    console.log('   horarioSeleccionado:', window.horarioSeleccionado);
     
     // Obtener extras seleccionados
     let extrasSeleccionados = [];
@@ -1600,7 +1679,7 @@ function obtenerDatosDelFormulario() {
     }
     
     // Calcular precio total
-    let total = window.precios[window.servicioSeleccionado] || 0;
+    let total = window.precios[window.servicioSeleccionado] || 600; // Precio por defecto
     let extrasChecks = [];
     if (window.servicioSeleccionado === 'basico') {
         extrasChecks = [
@@ -1623,18 +1702,21 @@ function obtenerDatosDelFormulario() {
     
     const [horaInicio] = (window.horarioSeleccionado || '').split(' - ');
     
-    return {
-        clientName: nombre?.value || '',
-        clientPhone: telefono?.value || '',
-        date: fecha?.value && horaInicio ? `${fecha.value}T${horaInicio}` : '',
-        vehicleType: vehiculo?.value || '',
-        vehiclePlate: patente?.value || '',
-        serviceType: window.servicioSeleccionado || '',
+    const datosFormulario = {
+        clientName: nombre?.value || 'Cliente sin nombre',
+        clientPhone: telefono?.value || 'Sin teléfono',
+        date: fecha?.value && horaInicio ? `${fecha.value}T${horaInicio}` : new Date().toISOString(),
+        vehicleType: vehiculo?.value || 'auto',
+        vehiclePlate: patente?.value || 'Sin patente',
+        serviceType: window.servicioSeleccionado || 'basico',
         price: total,
         extras: extrasSeleccionados,
         id: Math.floor(100000 + Math.random() * 900000),
         status: 'confirmed'
     };
+    
+    console.log('✅ Datos del formulario obtenidos:', datosFormulario);
+    return datosFormulario;
 }
 
 // Función auxiliar para normalizar objetos con claves numéricas

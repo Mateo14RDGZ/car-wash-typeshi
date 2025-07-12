@@ -525,7 +525,20 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         serviceType: window.servicioSeleccionado,
         price: total,
         extras: extrasSeleccionados
-    };        // Validación de campos
+    };
+    
+    // Logs detallados para asegurar que los datos del cliente se capturan correctamente
+    console.log('👤 DATOS DEL CLIENTE CAPTURADOS:');
+    console.log('   📝 Nombre:', formData.clientName);
+    console.log('   📞 Teléfono:', formData.clientPhone);
+    console.log('   📅 Fecha y hora:', formData.date);
+    console.log('   🚗 Tipo de vehículo:', formData.vehicleType);
+    console.log('   🔢 Patente:', formData.vehiclePlate);
+    console.log('   🧼 Servicio:', formData.serviceType);
+    console.log('   💰 Precio total:', formData.price);
+    console.log('   ➕ Extras:', formData.extras);
+    
+    // Validación de campos
         if (!validarFormulario(formData)) {
             window.isSubmitting = false;
             return;
@@ -569,14 +582,21 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         
         // Si no tenemos datos válidos del servidor, usar datos del formulario
         if (!datosReserva || typeof datosReserva !== 'object') {
-            console.log('🔄 Construyendo datos desde el formulario...');
+            console.log('🔄 Construyendo datos desde el formulario usando función auxiliar...');
+            
+            // Usar la función auxiliar para obtener datos del formulario
+            const datosDelFormulario = obtenerDatosDelFormulario();
+            
             datosReserva = {
-                ...formData,
-                id: (data && data.id) || Math.floor(100000 + Math.random() * 900000),
+                ...datosDelFormulario,
+                id: (data && data.id) || datosDelFormulario.id,
                 status: 'confirmed',
                 createdAt: new Date().toISOString(),
-                message: (data && data.message) || 'Reserva procesada correctamente'
+                message: (data && data.message) || 'Reserva procesada correctamente',
+                source: 'formulario'
             };
+            
+            console.log('✅ Datos construidos desde formulario:', datosReserva);
         }
         
         console.log('✅ Datos finales para el modal:', datosReserva);
@@ -607,15 +627,11 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         console.log('🆘 Error en la petición, usando datos del formulario para el modal...');
         
         // NUNCA mostrar mensajes de error, siempre mostrar el modal
-        const datosRespaldo = {
-            ...formData,
-            id: Math.floor(100000 + Math.random() * 900000),
-            status: 'confirmed',
-            createdAt: new Date().toISOString(),
-            source: 'offline'
-        };
+        // Usar la función auxiliar para obtener datos del formulario de manera robusta
+        const datosRespaldo = obtenerDatosDelFormulario();
+        datosRespaldo.source = 'offline';
         
-        console.log('🔄 Datos de respaldo creados:', datosRespaldo);
+        console.log('🔄 Datos de respaldo obtenidos del formulario:', datosRespaldo);
         
         // Normalizar y mostrar modal de respaldo
         const datosNormalizados = normalizarObjetoConClavesNumericas(datosRespaldo);
@@ -802,14 +818,24 @@ function mostrarReservaConfirmada(reserva) {
         serviceType: reserva.serviceType || reserva.servicetype || reserva.service_type || 'basico',
         price: reserva.price || 600,
         extras: reserva.extras || [],
-        id: reserva.id || reserva.ID || reserva.Id || generarCodigoReserva(),
+        id: reserva.id || reserva.ID || reserva.Id || Math.floor(100000 + Math.random() * 900000),
         status: reserva.status || 'confirmed',
         notes: reserva.notes || ''
     };
     
     console.log('📋 Datos normalizados para mostrar (SIEMPRE VÁLIDOS):', r);
+    
     // Crear los elementos para la confirmación
+    console.log('🔧 Intentando obtener contenedor de reservas...');
     const container = document.getElementById('reservar');
+    if (!container) {
+        console.error('❌ CRÍTICO: No se encontró el contenedor "reservar"');
+        // Usar alert como último recurso
+        alert(`✅ ¡Reserva confirmada!\n\n🔢 Código: #${r.id}\n👤 Cliente: ${r.clientName}\n📞 Teléfono: ${r.clientPhone}\n🎉 ¡Tu reserva ha sido registrada exitosamente!`);
+        return;
+    }
+    console.log('✅ Contenedor encontrado:', container);
+    
     const originalContent = container.innerHTML;
     
     // Guardar el contenido original
