@@ -40,7 +40,7 @@ if (typeof window !== 'undefined') { // Verificar que estamos en el navegador (n
     // Establecer conexión de prueba al servidor para verificar acceso a la BD
     console.log('🔌 Verificando conexión con la base de datos MySQL...');
     setTimeout(() => {
-        fetch('/api-bridge?endpoint=/system/status&_=' + Date.now())
+        fetch('/api/api-bridge?endpoint=/system/status&_=' + Date.now())
             .then(res => {
                 if (res.ok) {
                     console.log('✅ Conexión con el servidor establecida correctamente');
@@ -66,9 +66,9 @@ async function apiRequest(endpoint, options = {}) {
         console.log(`🛠️[${callId}] Convertido a endpoint relativo: ${endpoint}`);
     }
     
-    // SOLUCIÓN PARA VERCEL: Usar rutas absolutas relativas que funcionen en producción
+    // SOLUCIÓN PARA VERCEL: Usar rutas correctas para funciones serverless
     const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2);
-    const url = `/api-bridge?endpoint=${encodeURIComponent(endpoint)}&_=${uniqueId}`;
+    const url = `/api/api-bridge?endpoint=${encodeURIComponent(endpoint)}&_=${uniqueId}`;
     console.log(`✅[${callId}] URL Vercel: ${url}`);
     // Opciones optimizadas para web
     const fetchOptions = {
@@ -140,12 +140,15 @@ async function apiRequest(endpoint, options = {}) {
             }
         } else {
             console.error(`❌[${callId}] Error HTTP: ${response.status}`);
+            console.error(`❌[${callId}] URL que falló: ${response.url}`);
+            console.error(`❌[${callId}] Método: ${options.method || 'GET'}`);
             // Intentar obtener detalles del error
             try {
                 const errorData = await response.json();
                 console.log(`📋[${callId}] Detalles del error:`, errorData);
                 throw new Error(errorData.message || `Error del servidor (${response.status})`);
             } catch (e) {
+                console.error(`❌[${callId}] No se pudo parsear respuesta de error:`, e.message);
                 throw new Error(`Error de comunicación (${response.status})`);
             }
         }      } catch (error) {        // SISTEMA DE RECUPERACIÓN DE MÁXIMA SEGURIDAD

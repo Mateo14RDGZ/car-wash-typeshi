@@ -589,7 +589,13 @@ document.getElementById('reservaForm')?.addEventListener('submit', async (e) => 
         const datosNormalizados = normalizarObjetoConClavesNumericas(data.data);
         console.log('🔄 Datos normalizados:', datosNormalizados);
         
-        mostrarReservaConfirmada(datosNormalizados);
+        try {
+            mostrarReservaConfirmada(datosNormalizados);
+        } catch (modalError) {
+            console.error('❌ Error al mostrar modal de confirmación:', modalError);
+            // Mostrar mensaje básico si el modal falla
+            alert(`✅ Reserva creada exitosamente!\n\nCliente: ${datosNormalizados.clientName}\nFecha: ${datosNormalizados.date}\nVehículo: ${datosNormalizados.vehiclePlate}`);
+        }
         
     } catch (error) {
         window.debugError('Error al enviar la reserva:', error);
@@ -904,7 +910,8 @@ function mostrarReservaConfirmada(reserva) {
                                     </div>
                                     <div class="flex-grow-1">
                                         <small class="text-muted d-block">Código de reserva</small>
-                                        <strong class="text-primary">#${r.id}</strong>
+                                        <strong class="text-primary">#${r.id || 'TEMP-' + Date.now().toString().slice(-6)}</strong>
+                                        ${!r.id ? '<div class="text-warning small mt-1"><i class="fas fa-exclamation-triangle"></i> Código temporal - La reserva se procesará en breve</div>' : ''}
                                     </div>
                                 </div>
                                 
