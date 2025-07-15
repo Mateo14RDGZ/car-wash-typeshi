@@ -1,3 +1,33 @@
 {
-    "version": 2
+    "version": 2,
+    "builds": [
+        {
+            "src": "package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "public"
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/public/$1"
+        }
+    ],
+    "functions": {
+        "api/api-bridge.js": {
+            "maxDuration": 30
+        },
+        "api/bookings/index.js": {
+            "maxDuration": 30
+        },
+        "api/bookings/available-slots.js": {
+            "maxDuration": 30
+        }
+    }
 }

@@ -4,10 +4,10 @@
     "description": "Sistema de reservas para lavado de autos",
     "main": "src/backend/server.js",
     "scripts": {
+        "build": "node build-for-vercel.js",
+        "vercel-build": "node build-for-vercel.js",
         "start": "node src/backend/server.js",
         "start:db": "node src/backend/serverDB.js",
-        "build": "echo 'No build needed - static files in root'",
-        "vercel-build": "echo 'No build needed - static files in root'",
         "dev": "nodemon src/backend/server.js",
         "dev:db": "nodemon src/backend/serverDB.js",
         "frontend": "node serve-frontend.js",
@@ -31,7 +31,7 @@
         "sequelize": "^6.37.7"
     },
     "engines": {
-        "node": ">=18.x",
+        "node": "18.x",
         "npm": ">=8.0.0"
     },
     "devDependencies": {
