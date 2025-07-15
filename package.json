@@ -2,7 +2,7 @@
     "name": "car-wash-booking",
     "version": "1.0.0",
     "description": "Sistema de reservas para lavado de autos",
-    "main": "api/api-bridge-production.js",
+    "main": "api/api-bridge.js",
     "scripts": {
         "build": "node build-production.js",
         "vercel-build": "node build-production.js",

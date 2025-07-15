@@ -16,10 +16,6 @@
     ],
     "routes": [
         {
-            "src": "/api/api-bridge",
-            "dest": "/api/api-bridge.js"
-        },
-        {
             "src": "/api/(.*)",
             "dest": "/api/api-bridge.js"
         },
@@ -30,8 +26,7 @@
     ],
     "functions": {
         "api/api-bridge.js": {
-            "maxDuration": 30,
-            "memory": 512
+            "maxDuration": 30
         }
     },
     "env": {
