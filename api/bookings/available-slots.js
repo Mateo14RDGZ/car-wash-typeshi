@@ -1,4 +1,8 @@
 // API Route para Vercel - Horarios Disponibles
+// 🔥 VERSIÓN DEFINITIVA - SOLO BASE DE DATOS MYSQL
+
+const { Op } = require('sequelize');
+const { Booking } = require('../../src/database/init');
 
 // Configuración de horarios
 const BUSINESS_HOURS = {
@@ -10,8 +14,6 @@ const BUSINESS_HOURS = {
     6: { open: '08:30', close: '13:00' }, // Sábado
     0: null // Domingo cerrado
 };
-
-const SLOT_DURATION = 90;
 
 // Horarios específicos para días de semana
 const WEEKDAY_SLOTS = [
@@ -29,161 +31,146 @@ const SATURDAY_SLOTS = [
     { start: '11:30', end: '13:00' }
 ];
 
-// Función para generar horarios base sin verificar reservas
+// Función para generar horarios base
 function generateBaseTimeSlots(date) {
-    try {
-        if (!date || typeof date !== 'string') {
-            console.error('DEBUG - Fecha no proporcionada o no es string:', date);
-            return [];
-        }
-        
-        const inputDate = new Date(date + 'T00:00:00');
-        
-        if (isNaN(inputDate.getTime())) {
-            console.error('DEBUG - Fecha inválida recibida:', date);
-            return [];
-        }
-
-        const dayOfWeek = inputDate.getDay();
-        
-        if (!BUSINESS_HOURS.hasOwnProperty(dayOfWeek) || !BUSINESS_HOURS[dayOfWeek]) {
-            console.log('DEBUG - No hay horarios de atención para el día:', dayOfWeek);
-            return [];
-        }
-
-        const selectedSlots = dayOfWeek === 6 ? SATURDAY_SLOTS : WEEKDAY_SLOTS;
-        
-        return selectedSlots.map(slot => ({
-            start: slot.start,
-            end: slot.end,
-            time: `${slot.start} - ${slot.end}`,
-            date: date,
-            isBooked: false // Por defecto no reservado
-        }));
-        
-    } catch (error) {
-        console.error('DEBUG - Error al generar horarios:', error);
+    console.log('📋 Generando horarios base para:', date);
+    
+    if (!date || typeof date !== 'string') {
+        console.error('❌ Fecha inválida:', date);
         return [];
     }
+    
+    const inputDate = new Date(date + 'T00:00:00');
+    
+    if (isNaN(inputDate.getTime())) {
+        console.error('❌ Fecha no válida:', date);
+        return [];
+    }
+
+    const dayOfWeek = inputDate.getDay();
+    console.log('📅 Día de la semana:', dayOfWeek);
+    
+    if (!BUSINESS_HOURS.hasOwnProperty(dayOfWeek) || !BUSINESS_HOURS[dayOfWeek]) {
+        console.log('⚠️ No hay horarios de atención para el día:', dayOfWeek);
+        return [];
+    }
+
+    const selectedSlots = dayOfWeek === 6 ? SATURDAY_SLOTS : WEEKDAY_SLOTS;
+    console.log('🕒 Horarios seleccionados:', selectedSlots.length);
+    
+    return selectedSlots.map(slot => ({
+        start: slot.start,
+        end: slot.end,
+        time: `${slot.start} - ${slot.end}`,
+        date: date,
+        duration: 90,
+        isBooked: false // Por defecto no reservado
+    }));
 }
 
-// Importar modelo Booking real
-const { Op } = require('sequelize');
-const { Booking } = require('../../src/database/init');
-
-// Función para verificar horarios ocupados en la base de datos
-async function checkBookedSlots(date) {
-    console.log(' Verificando horarios ocupados para:', date);
+// Función para obtener horarios ocupados de la base de datos
+async function getBookedSlots(date) {
+    console.log('🔍 Consultando horarios ocupados en MySQL para:', date);
     
     try {
-        
-        // Crear las fechas de inicio y fin del día en la zona horaria local
         const startOfDay = new Date(date + 'T00:00:00');
         const endOfDay = new Date(date + 'T23:59:59');
 
-        console.log('� Rango de consulta:');
-        console.log('  - Inicio:', startOfDay.toISOString(), '(Local:', startOfDay.toString(), ')');
-        console.log('  - Fin:', endOfDay.toISOString(), '(Local:', endOfDay.toString(), ')');
+        console.log('📅 Rango de consulta:');
+        console.log('  - Inicio:', startOfDay.toISOString());
+        console.log('  - Fin:', endOfDay.toISOString());
 
-        // Buscar reservas confirmadas para la fecha
         const bookings = await Booking.findAll({
             where: {
                 date: { [Op.between]: [startOfDay, endOfDay] },
                 status: { [Op.in]: ['confirmed', 'pending', 'in_progress'] }
             },
-            attributes: ['date', 'status', 'clientName', 'serviceType', 'vehiclePlate'],
-            raw: true // Para obtener objetos planos
+            attributes: ['date', 'status', 'clientName', 'serviceType'],
+            raw: true
         });
         
-        console.log('� Reservas encontradas:', bookings.length);
+        console.log('📊 Reservas encontradas:', bookings.length);
         
         if (bookings.length === 0) {
-            console.log('✅ No hay reservas para esta fecha - todos los horarios están disponibles');
+            console.log('✅ No hay reservas - todos los horarios están disponibles');
             return [];
         }
 
-        // Procesar cada reserva con logging detallado
-        const bookedTimes = bookings.map((booking, index) => {
+        const bookedTimes = bookings.map(booking => {
             const bookingDate = new Date(booking.date);
             const hours = String(bookingDate.getHours()).padStart(2, '0');
             const minutes = String(bookingDate.getMinutes()).padStart(2, '0');
             const formattedTime = `${hours}:${minutes}`;
             
-            console.log(`📍 Reserva ${index + 1}:`);
-            console.log(`   Cliente: ${booking.clientName}`);
-            console.log(`   Servicio: ${booking.serviceType}`);
-            console.log(`   Fecha DB: ${booking.date}`);
-            console.log(`   Fecha parseada: ${bookingDate.toISOString()}`);
-            console.log(`   Fecha local: ${bookingDate.toString()}`);
-            console.log(`   Hora formateada: ${formattedTime}`);
-            console.log(`   Status: ${booking.status}`);
+            console.log(`📍 Reserva: ${booking.clientName} - ${formattedTime} - ${booking.serviceType}`);
             
             return formattedTime;
         });
 
-        console.log('⏰ Horarios ocupados (lista final):', bookedTimes);
-        
+        console.log('⏰ Horarios ocupados:', bookedTimes);
         return bookedTimes;
 
     } catch (error) {
-        console.error('❌ Error al consultar base de datos:', error);
-        console.error('❌ Stack:', error.stack);
-        return []; // Si hay error, devolver array vacío (todos disponibles)
+        console.error('❌ Error al consultar base de datos MySQL:', error);
+        throw error; // Re-lanzar error para que el handler principal lo maneje
     }
 }
 
-// Función principal para generar horarios con verificación de disponibilidad
-async function generateTimeSlotsWithAvailability(date) {
+// Función principal para generar horarios con disponibilidad
+async function generateAvailableSlots(date) {
+    console.log('🚀 Generando horarios disponibles para:', date);
+    
     try {
         // Generar horarios base
         const baseSlots = generateBaseTimeSlots(date);
         
         if (baseSlots.length === 0) {
+            console.log('⚠️ No hay horarios base para esta fecha');
             return [];
         }
 
-        // Obtener horarios ocupados de la base de datos
-        const bookedTimes = await checkBookedSlots(date);
-
+        // Obtener horarios ocupados
+        const bookedTimes = await getBookedSlots(date);
+        
         // Marcar horarios como ocupados
         const slotsWithAvailability = baseSlots.map(slot => {
-            const slotStartTime = slot.start;
-            const isBooked = bookedTimes.some(bookedTime => {
-                // Verificar si el horario de inicio coincide con alguna reserva
-                const matches = bookedTime === slotStartTime;
-                console.log(`🔍 Comparando slot ${slotStartTime} con reserva ${bookedTime}: ${matches ? 'OCUPADO' : 'LIBRE'}`);
-                return matches;
-            });
-
-            console.log(`📍 Slot ${slot.time} (${slotStartTime}): ${isBooked ? '🔒 OCUPADO' : '🟢 DISPONIBLE'}`);
-
+            const isBooked = bookedTimes.includes(slot.start);
+            
+            console.log(`📍 ${slot.time}: ${isBooked ? '🔒 OCUPADO' : '🟢 DISPONIBLE'}`);
+            
             return {
                 ...slot,
                 isBooked: isBooked
             };
         });
 
-        console.log('✅ Horarios procesados:', slotsWithAvailability.length, 'total');
-        console.log('🔒 Horarios ocupados:', slotsWithAvailability.filter(s => s.isBooked).length);
-        console.log('🟢 Horarios disponibles:', slotsWithAvailability.filter(s => !s.isBooked).length);
+        const totalSlots = slotsWithAvailability.length;
+        const bookedSlots = slotsWithAvailability.filter(s => s.isBooked).length;
+        const availableSlots = totalSlots - bookedSlots;
+
+        console.log('📊 RESUMEN:');
+        console.log(`  📋 Total: ${totalSlots}`);
+        console.log(`  🔒 Ocupados: ${bookedSlots}`);
+        console.log(`  🟢 Disponibles: ${availableSlots}`);
 
         return slotsWithAvailability;
 
     } catch (error) {
-        console.error('❌ Error al generar horarios con disponibilidad:', error);
-        // Si hay error, devolver horarios base sin verificación
-        return generateBaseTimeSlots(date);
+        console.error('❌ Error al generar horarios:', error);
+        throw error;
     }
 }
+
+// Handler principal de la API
 module.exports = async (req, res) => {
-    console.log('>>> [API BOOKINGS AVAILABLE-SLOTS] Handler ejecutado');
+    console.log('>>> [API AVAILABLE-SLOTS] Iniciando - SOLO MYSQL');
+    
     try {
         // Configurar CORS
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         
-        // Manejar preflight OPTIONS
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
         }
@@ -196,45 +183,42 @@ module.exports = async (req, res) => {
         }
         
         const { date } = req.query;
-        console.log('🚀 Vercel - Solicitud de horarios para fecha:', date);
+        
         if (!date) {
             return res.status(400).json({
                 status: 'ERROR',
-                message: 'Se requiere una fecha'
+                message: 'Fecha requerida'
             });
         }
+        
         if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) {
             return res.status(400).json({
                 status: 'ERROR',
-                message: 'Formato de fecha inválido. Debe ser YYYY-MM-DD'
+                message: 'Formato de fecha inválido. Usar YYYY-MM-DD'
             });
         }
-        // Generar horarios disponibles con verificación de base de datos
-        let availableSlots = [];
-        try {
-            availableSlots = await generateTimeSlotsWithAvailability(date);
-        } catch (dbError) {
-            console.error('❌ Error al consultar la base de datos:', dbError);
-            return res.status(500).json({
-                status: 'ERROR',
-                message: 'Error al consultar la base de datos',
-                error: process.env.NODE_ENV === 'development' ? dbError.message : undefined
-            });
-        }
-        console.log('✅ Vercel - Slots generados:', availableSlots.length);
+        
+        console.log('🎯 Procesando solicitud para fecha:', date);
+        
+        // Generar horarios con disponibilidad desde MySQL
+        const availableSlots = await generateAvailableSlots(date);
+        
+        console.log('✅ Horarios generados exitosamente:', availableSlots.length);
+        
         return res.status(200).json({
             status: 'SUCCESS',
-            data: availableSlots || [],
-            dataSource: 'mysql_database',
-            message: 'Horarios cargados correctamente',
-            generated: true
+            data: availableSlots,
+            message: 'Horarios obtenidos desde base de datos MySQL',
+            timestamp: new Date().toISOString()
         });
+        
     } catch (error) {
-        console.error('❌ Vercel - Error general en handler available-slots:', error);
+        console.error('❌ Error en API available-slots:', error);
+        
         return res.status(500).json({
             status: 'ERROR',
-            message: 'Error interno en handler available-slots',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Error al consultar horarios en base de datos MySQL',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
         });
     }
 };
