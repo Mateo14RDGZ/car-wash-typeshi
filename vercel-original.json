@@ -10,18 +10,21 @@
             }
         },
         {
-            "src": "api/diagnostico-vercel.js",
-            "use": "@vercel/node"
+            "src": "api/**/*.js",
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": ["src/**"]
+            }
         }
     ],
     "routes": [
         {
             "src": "/api/api-bridge",
-            "dest": "/api/diagnostico-vercel.js"
+            "dest": "/api/api-bridge-vercel.js"
         },
         {
-            "src": "/api/diagnostico",
-            "dest": "/api/diagnostico-vercel.js"
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
         },
         {
             "src": "/(.*)",
@@ -29,8 +32,12 @@
         }
     ],
     "functions": {
-        "api/diagnostico-vercel.js": {
-            "maxDuration": 10
+        "api/**/*.js": {
+            "maxDuration": 30,
+            "memory": 1024
         }
+    },
+    "env": {
+        "NODE_ENV": "production"
     }
 }
