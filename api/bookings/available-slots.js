@@ -69,12 +69,13 @@ function generateBaseTimeSlots(date) {
 
 // Importar modelo Booking real
 const { Op } = require('sequelize');
-const Booking = require('../../src/database/models/BookingSimple');
+const { Booking } = require('../../src/database/init');
 
 // Función para verificar horarios ocupados en la base de datos
 async function checkBookedSlots(date) {
+    console.log(' Verificando horarios ocupados para:', date);
+    
     try {
-        console.log('🔍 [MEJORADO] Verificando horarios ocupados para:', date);
         
         // Crear las fechas de inicio y fin del día en la zona horaria local
         const startOfDay = new Date(date + 'T00:00:00');

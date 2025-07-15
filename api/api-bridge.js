@@ -1,68 +1,78 @@
 /**
- * API Bridge para Vercel - Función Serverless
- * Versión simplificada para producción
+ * 🔥 API BRIDGE - SOLO BASE DE DATOS MYSQL - SIN FALLBACKS
+ * 
+ * VERSIÓN SIMPLIFICADA (15/07/2025)
+ * 
+ * ⚠️ IMPORTANTE ⚠️
+ * Este bridge funciona EXCLUSIVAMENTE con la base de datos MySQL.
+ * NO hay sistemas de fallback, ni respuestas simuladas.
+ * Si la base de datos falla, devuelve un error 500.
  */
 
+const path = require('path');
+
 module.exports = async (req, res) => {
-  try {
+    console.log('🔥 API BRIDGE - SOLO BASE DE DATOS MYSQL');
+    console.log('📝 Método:', req.method);
+    console.log('🔗 URL:', req.url);
+    
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
     
+    // Manejar OPTIONS (preflight)
     if (req.method === 'OPTIONS') {
-      return res.status(200).end();
+        return res.status(200).end();
     }
-
-    // --- PROTECCIÓN: responder /system/status antes de cualquier import ---
-    let endpoint = req.query.endpoint;
-    if (!endpoint && req.url) {
-      const urlParts = req.url.split('?');
-      if (urlParts[1]) {
-        const params = new URLSearchParams(urlParts[1]);
-        endpoint = params.get('endpoint');
-      }
+    
+    try {
+        const { endpoint } = req.query;
+        
+        if (!endpoint) {
+            return res.status(400).json({
+                status: 'ERROR',
+                message: 'Endpoint requerido'
+            });
+        }
+        
+        console.log('🎯 Endpoint solicitado:', endpoint);
+        
+        // Determinar qué handler usar basado en el endpoint
+        let handler;
+        
+        if (endpoint.includes('available-slots')) {
+            // Horarios disponibles
+            handler = require('./bookings/available-slots');
+        } else if (endpoint.startsWith('/bookings')) {
+            // Reservas
+            handler = require('./bookings/index');
+        } else if (endpoint.includes('system/status')) {
+            // Estado del sistema
+            return res.status(200).json({
+                status: 'SUCCESS',
+                message: 'Sistema MySQL funcionando correctamente',
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            return res.status(404).json({
+                status: 'ERROR',
+                message: 'Endpoint no encontrado'
+            });
+        }
+        
+        // Ejecutar handler
+        console.log('🚀 Ejecutando handler para:', endpoint);
+        await handler(req, res);
+        
+    } catch (error) {
+        console.error('❌ Error en API Bridge:', error);
+        
+        // Error de base de datos - sin fallbacks
+        return res.status(500).json({
+            status: 'ERROR',
+            message: 'Error de base de datos MySQL',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
+        });
     }
-    if (!endpoint) endpoint = '/bookings/available-slots';
-    if (endpoint.includes('/system/status')) {
-      console.log('[API-BRIDGE] /system/status endpoint called');
-      return res.status(200).json({
-        status: 'SUCCESS',
-        serverTime: new Date().toISOString(),
-        environment: 'production',
-        message: 'Sistema funcionando en Vercel'
-      });
-    }
-    // --- FIN PROTECCIÓN ---
-
-    // Importar handlers solo si no es /system/status
-    const availableSlotsHandler = require('./bookings/available-slots');
-    const bookingsHandler = require('./bookings/index');
-
-    // Routing simple para Vercel
-    if (endpoint.includes('/bookings/available-slots')) {
-      const urlParams = new URLSearchParams(req.url?.split('?')[1] || '');
-      const date = urlParams.get('date') || req.query.date;
-      if (date) req.query.date = date;
-      return availableSlotsHandler(req, res);
-    }
-    if (endpoint === '/bookings') {
-      return bookingsHandler(req, res);
-    }
-    // Default: endpoint no encontrado
-    return res.status(404).json({
-      status: 'ERROR',
-      message: `Endpoint no encontrado: ${endpoint}`,
-      availableEndpoints: ['/bookings/available-slots', '/bookings', '/system/status']
-    });
-  } catch (err) {
-    console.error('[API-BRIDGE] ERROR FATAL:', err);
-    return res.status(500).json({
-      status: 'ERROR',
-      message: 'Error interno en API Bridge',
-      error: err && (err.message || String(err)),
-      stack: err && err.stack
-    });
-  }
 };

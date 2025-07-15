@@ -1,7 +1,7 @@
 // API Route para Vercel - Crear Reservas
 
 const { Op } = require('sequelize');
-const Booking = require('../../src/database/models/BookingSimple');
+const { Booking } = require('../../src/database/init');
 
 module.exports = async (req, res) => {
     console.log('>>> [API BOOKINGS INDEX] Handler ejecutado');
@@ -17,6 +17,7 @@ module.exports = async (req, res) => {
     }
     
     try {
+        
         if (req.method === 'GET') {
             // Obtener todas las reservas o filtrar por fecha
             const { date } = req.query;

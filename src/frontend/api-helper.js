@@ -1,28 +1,23 @@
 /**
- * 🚨🚨🚨 API HELPER - SOLUCIÓN DEFINITIVA PARA HORARIOS 🚨🚨🚨
+ * 🔥 API HELPER - SOLO BASE DE DATOS MYSQL - SIN FALLBACKS
  * 
- * VERSIÓN FINAL CORREGIDA (17/06/2025) - ¡NO MODIFICAR!
+ * VERSIÓN SIMPLIFICADA (15/07/2025)
  * 
  * ⚠️ IMPORTANTE ⚠️
- * Este archivo es la IMPLEMENTACIÓN ÚNICA Y OFICIAL para realizar
- * peticiones HTTP en la aplicación. REEMPLAZA todas las versiones
- * anteriores de cualquier API client, helper o servicio.
+ * Este archivo funciona EXCLUSIVAMENTE con la base de datos MySQL.
+ * NO hay sistemas de fallback, ni generación local de horarios.
+ * Si la base de datos falla, la aplicación mostrará un error.
  * 
- * 🌟 CARACTERÍSTICAS 🌟
- * - Usa EXCLUSIVAMENTE api-bridge - SIN EXCEPCIONES
- * - NO intenta NUNCA conexiones a otros servidores
- * - Sistema autónomo con generación local de horarios
- * - Prevención de errores integrado para 100% disponibilidad
- * 
- * 📌 INSTRUCCIONES 📌
- * - Este archivo DEBE ser cargado antes que otros scripts
- * - NO DEBE coexistir con otras implementaciones (api-client.js)
- * - Utiliza apiRequest() para TODAS las peticiones HTTP
+ * 🎯 CARACTERÍSTICAS 🎯
+ * - Usa EXCLUSIVAMENTE la base de datos MySQL
+ * - Sin sistemas de fallback ni recuperación
+ * - Errores claros cuando la BD no está disponible
+ * - Horarios disponibles SOLO desde la base de datos
  */
 
-// Anunciar inicialización del sistema único
-if (typeof window !== 'undefined') { // Verificar que estamos en el navegador (no en Vercel build)
-    console.log('🔵🔵🔵 SISTEMA ÚNICO API HELPER INICIADO - CONEXIÓN MYSQL 🔵🔵🔵');
+// Anunciar inicialización del sistema
+if (typeof window !== 'undefined') {
+    console.log('🔥 API HELPER - SOLO BASE DE DATOS MYSQL INICIADO');
     console.log('📌 Timestamp:', new Date().toISOString());
     
     // Eliminar posibles implementaciones duplicadas
@@ -33,44 +28,43 @@ if (typeof window !== 'undefined') { // Verificar que estamos en el navegador (n
         console.log('✅ Primera inicialización de apiRequest() - OK');
     }
     
-    // Forzar variables globales a valores seguros
-    window.API_URL = null;
-    window.API_URLS_FALLBACK = null;
-    
-    // Establecer conexión de prueba al servidor para verificar acceso a la BD
+    // Verificar conexión con el servidor
     console.log('🔌 Verificando conexión con la base de datos MySQL...');
     setTimeout(() => {
         fetch('/api/api-bridge?endpoint=/system/status&_=' + Date.now())
             .then(res => {
                 if (res.ok) {
-                    console.log('✅ Conexión con el servidor establecida correctamente');
+                    console.log('✅ Conexión con la base de datos MySQL establecida');
                 } else {
-                    console.warn('⚠️ Conexión al servidor establecida, pero con advertencias');
+                    console.error('❌ Error de conexión con la base de datos MySQL:', res.status);
                 }
             })
-            .catch(err => console.error('❌ Error al verificar estado del servidor:', err));
+            .catch(err => console.error('❌ Error al verificar conexión MySQL:', err));
     }, 1000);
 }
+
+/**
+ * Función principal para realizar peticiones HTTP
+ * SOLO funciona con la base de datos MySQL
+ */
 async function apiRequest(endpoint, options = {}) {
-    // ⚠️ SOLUCIÓN DEFINITIVA: Implementación única y oficial
-    // Cada llamada genera un ID único para rastreo y depuración
     const callId = Math.random().toString(36).substring(2, 8);
     
-    console.log(`🔹[${callId}] INICIANDO PETICIÓN`);
-    console.log(`🔹[${callId}] Endpoint solicitado: ${endpoint}`);
+    console.log(`🔹[${callId}] PETICIÓN A BASE DE DATOS MYSQL`);
+    console.log(`🔹[${callId}] Endpoint: ${endpoint}`);
     
-    // Comprobación de seguridad - impedir intentos de conexión a otros servidores
+    // Verificar que no sea una URL absoluta
     if (endpoint.startsWith('http')) {
-        console.error(`❌[${callId}] ERROR: No se permiten URLs absolutas`, endpoint);
-        endpoint = endpoint.split('/').pop(); // Extraer solo el final del path
-        console.log(`🛠️[${callId}] Convertido a endpoint relativo: ${endpoint}`);
+        console.error(`❌[${callId}] ERROR: No se permiten URLs absolutas`);
+        throw new Error('URL absoluta no permitida');
     }
     
-    // SOLUCIÓN PARA VERCEL: Usar rutas correctas para funciones serverless
+    // Construir URL para Vercel
     const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2);
     const url = `/api/api-bridge?endpoint=${encodeURIComponent(endpoint)}&_=${uniqueId}`;
-    console.log(`✅[${callId}] URL Vercel: ${url}`);
-    // Opciones optimizadas para web
+    console.log(`✅[${callId}] URL: ${url}`);
+    
+    // Configurar opciones de la petición
     const fetchOptions = {
         method: options.method || 'GET',
         mode: 'cors',
@@ -78,351 +72,84 @@ async function apiRequest(endpoint, options = {}) {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache',
+            'X-Request-ID': callId,
+            'Pragma': 'no-cache',
             ...(options.headers || {})
         }
     };
-      // Agregar body si es necesario
+    
+    // Agregar body si es necesario
     if (options.body) {
-        console.log(`📦[${callId}] Body recibido:`, options.body);
-        console.log(`📦[${callId}] Tipo de body:`, typeof options.body);
+        console.log(`📦[${callId}] Body:`, options.body);
         
         if (typeof options.body === 'string') {
             fetchOptions.body = options.body;
         } else if (typeof options.body === 'object') {
             fetchOptions.body = JSON.stringify(options.body);
         }
-        
-        console.log(`📦[${callId}] Body final para enviar:`, fetchOptions.body);
-    }// Sistema principal de peticiones con multi-timeout
+    }
+    
+    // Realizar petición con timeout
     try {
-        console.log(`🚀[${callId}] Enviando petición...`);
+        console.log(`🚀[${callId}] Consultando base de datos MySQL...`);
         
-        // 🔄 Sistema de timeout mejorado (2 y 5 segundos)
         const controller = new AbortController();
-        
-        // Sistema de alertas previas para mejor depuración
-        const advanceWarningId = setTimeout(() => {
-            console.warn(`⏰[${callId}] ADVERTENCIA: La petición está tardando más de 2 segundos`);
-        }, 2000);
-        
-        // Timeout principal - más corto para mejor experiencia
         const timeoutId = setTimeout(() => {
-            console.error(`⏰[${callId}] TIMEOUT: Abortando petición después de 5 segundos`);
+            console.error(`⏰[${callId}] TIMEOUT: Base de datos no responde`);
             controller.abort();
-        }, 5000);
+        }, 10000); // 10 segundos timeout
         
-        // Configuración mejorada de la petición
         const response = await fetch(url, {
             ...fetchOptions,
-            signal: controller.signal,
-            cache: 'no-store', // Forzar sin caché
-            headers: {
-                ...fetchOptions.headers,
-                'X-Request-ID': callId, // Añadir ID para rastreo
-                'Pragma': 'no-cache'
-            }
+            signal: controller.signal
         });
-          // Limpiar ambos timeouts
-        clearTimeout(advanceWarningId);
-        clearTimeout(timeoutId);
-        console.log(`📊[${callId}] Respuesta recibida - Status: ${response.status} - Tiempo: ${Date.now() - uniqueId.split('-')[0]}ms`);
         
-        // Procesar respuesta exitosa
+        clearTimeout(timeoutId);
+        
+        console.log(`📊[${callId}] Respuesta MySQL - Status: ${response.status}`);
+        
         if (response.ok) {
             try {
                 const data = await response.json();
-                console.log(`✅[${callId}] Petición completada correctamente:`, data);
-                console.log(`🔹[${callId}] PETICIÓN FINALIZADA CON ÉXITO`);
+                console.log(`✅[${callId}] Datos obtenidos de MySQL:`, data);
                 return data;
             } catch (parseError) {
-                console.error(`❌[${callId}] Error al parsear JSON:`, parseError);
-                throw new Error('Formato de respuesta inválido');
+                console.error(`❌[${callId}] Error al parsear respuesta de MySQL:`, parseError);
+                throw new Error('Respuesta inválida de la base de datos');
             }
         } else {
-            console.error(`❌[${callId}] Error HTTP: ${response.status}`);
-            console.error(`❌[${callId}] URL que falló: ${response.url}`);
-            console.error(`❌[${callId}] Método: ${options.method || 'GET'}`);
+            console.error(`❌[${callId}] Error de base de datos MySQL: ${response.status}`);
+            
             // Intentar obtener detalles del error
             try {
                 const errorData = await response.json();
-                console.log(`📋[${callId}] Detalles del error:`, errorData);
-                throw new Error(errorData.message || `Error del servidor (${response.status})`);
+                console.error(`📋[${callId}] Detalles del error MySQL:`, errorData);
+                throw new Error(errorData.message || `Error de base de datos (${response.status})`);
             } catch (e) {
-                console.error(`❌[${callId}] No se pudo parsear respuesta de error:`, e.message);
-                throw new Error(`Error de comunicación (${response.status})`);
-            }
-        }      } catch (error) {        // SISTEMA DE RECUPERACIÓN DE MÁXIMA SEGURIDAD
-        console.error(`❌[${callId}] ERROR EN PETICIÓN:`, error.message);
-        console.log(`🛟[${callId}] ACTIVANDO SISTEMA DE RECUPERACIÓN GARANTIZADO - NIVEL MÁXIMO`);
-        
-        // Intentar cargar el archivo de respaldo slots-fallback.json como último recurso
-        let fallbackAttempted = false;
-          // SOLUCIÓN DEFINITIVA PARA HORARIOS
-        if (endpoint.includes('available-slots')) {
-            // NUEVO: Intento de carga del archivo fallback.json local
-            try {
-                console.log(`🔄[${callId}] Intentando cargar archivo de respaldo slots-fallback.json`);
-                fallbackAttempted = true;
-                
-                // Intentar cargar el archivo de respaldo con timestamp para evitar caché
-                const fallbackResponse = await fetch('slots-fallback.json?' + new Date().getTime());
-                if (fallbackResponse.ok) {
-                    const fallbackData = await fallbackResponse.json();
-                    console.log(`✅[${callId}] RECUPERACIÓN EXITOSA usando archivo fallback:`, fallbackData);
-                    return fallbackData;
-                }            } catch (fallbackError) {
-                console.error(`❌[${callId}] No se pudo cargar el archivo de respaldo:`, fallbackError);
-                
-                // Intentar con el respaldo embebido en el HTML
-                try {
-                    console.log(`🆘[${callId}] ÚLTIMO RECURSO: Cargando respaldo embebido en el HTML`);
-                    const embeddedElement = document.getElementById('embedded-slots-fallback');
-                    
-                    if (embeddedElement && embeddedElement.textContent) {
-                        const embeddedData = JSON.parse(embeddedElement.textContent);
-                        console.log(`✅[${callId}] RECUPERACIÓN EXITOSA usando respaldo embebido:`, embeddedData);
-                        return embeddedData;
-                    }
-                } catch (embeddedError) {
-                    console.error(`💀[${callId}] ERROR CRÍTICO: Todos los sistemas de respaldo fallaron`, embeddedError);
-                    // Continuar con el sistema de emergencia si falla
-                }
-            }
-            
-            console.log(`🔄[${callId}] GENERADOR LOCAL DE HORARIOS ACTIVADO`);
-            
-            // Obtener la fecha de forma ultra robusta (múltiples métodos)
-            let dateStr;
-            
-            // Método 1: Extraer de la URL
-            const dateMatch = endpoint.match(/date=(\d{4}-\d{2}-\d{2})/);
-            if (dateMatch && dateMatch[1]) {
-                dateStr = dateMatch[1];
-                console.log(`📅[${callId}] Fecha extraída de URL: ${dateStr}`);
-            } 
-            // Método 2: Obtener de parámetros de la función
-            else if (options.params && options.params.date) {
-                dateStr = options.params.date;
-                console.log(`📅[${callId}] Fecha obtenida de params: ${dateStr}`);
-            }
-            // Método 3: Fecha actual como respaldo
-            else {
-                dateStr = new Date().toISOString().split('T')[0];
-                console.log(`📅[${callId}] Usando fecha actual como respaldo: ${dateStr}`);
-            }
-            
-            try {
-                // SISTEMA DE DETECCIÓN DE DÍAS ULTRA PRECISO
-                console.log(`🔍[${callId}] Analizando fecha: ${dateStr}`);
-                
-                // Conversión de fecha multi-método para máxima precisión
-                const [year, month, day] = dateStr.split('-').map(num => parseInt(num, 10));
-                
-                // Método 1: Date normal
-                const date1 = new Date(year, month-1, day);
-                
-                // Método 2: Date con UTC
-                const date2 = new Date(Date.UTC(year, month-1, day));
-                
-                // Método 3: Timestamp constructor
-                const date3 = new Date(`${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T12:00:00Z`);
-                
-                console.log(`🗓️[${callId}] Análisis múltiple de fecha:`, {
-                    método1: date1.toDateString() + ' (día: ' + date1.getDay() + ')',
-                    método2: date2.toUTCString() + ' (día: ' + date2.getDay() + ')',
-                    método3: date3.toISOString() + ' (día: ' + date3.getDay() + ')'
-                });
-                
-                // Sistema avanzado de detección de día de semana
-                let esDomingo = false;
-                let esSabado = false;
-                
-                // Combinación de todos los métodos para máxima precisión
-                const días = [date1.getDay(), date2.getDay(), date3.getDay()];
-                console.log(`📊[${callId}] Resultados de días:`, días);
-                
-                // Si cualquier método detecta domingo, considerarlo domingo
-                if (días.includes(0)) {
-                    esDomingo = true;
-                    console.log(`⚠️[${callId}] DOMINGO DETECTADO`);
-                }
-                
-                // Si cualquier método detecta sábado, considerarlo sábado
-                if (días.includes(6)) {
-                    esSabado = true;
-                    console.log(`ℹ️[${callId}] SÁBADO DETECTADO`);
-                }
-                
-                // Método adicional: verificación por calendario específico 2025
-                if (month === 6) { // Junio
-                    if (day === 1 || day === 8 || day === 15 || day === 22 || day === 29) {
-                        esDomingo = true;
-                        console.log(`📆[${callId}] DOMINGO CONFIRMADO por calendario específico`);
-                    }
-                    if (day === 7 || day === 14 || day === 21 || day === 28) {
-                        esSabado = true;
-                        console.log(`📆[${callId}] SÁBADO CONFIRMADO por calendario específico`);
-                    }
-                }
-                
-                // Domingo: sin horarios
-                if (esDomingo) {
-                    console.log(`🔒[${callId}] Generando respuesta para DOMINGO (cerrado)`);
-                    return {
-                        status: 'SUCCESS',
-                        data: [],
-                        message: 'Cerrado los domingos. Por favor seleccione otro día.'
-                    };
-                }
-                  // GENERADOR DE HORARIOS 100% GARANTIZADO
-                console.log(`🕒[${callId}] Generando horarios para ${esSabado ? 'SÁBADO' : 'DÍA NORMAL'}`);
-                
-                // Horarios de mañana (todos los días)
-                const horariosMañana = [
-                    { 
-                        time: '08:30 - 10:00', 
-                        start: '08:30', 
-                        end: '10:00', 
-                        duration: 90, 
-                        isBooked: false,
-                        available: true
-                    },
-                    { 
-                        time: '10:00 - 11:30', 
-                        start: '10:00', 
-                        end: '11:30', 
-                        duration: 90, 
-                        isBooked: false,
-                        available: true
-                    },
-                    { 
-                        time: '11:30 - 13:00', 
-                        start: '11:30', 
-                        end: '13:00', 
-                        duration: 90, 
-                        isBooked: false,
-                        available: true
-                    }
-                ];
-                
-                // Horarios de tarde (solo días entre semana)
-                const horariosTarde = [
-                    { 
-                        time: '14:00 - 15:30', 
-                        start: '14:00', 
-                        end: '15:30', 
-                        duration: 90, 
-                        isBooked: false,
-                        available: true
-                    },
-                    { 
-                        time: '15:30 - 17:00', 
-                        start: '15:30', 
-                        end: '17:00', 
-                        duration: 90, 
-                        isBooked: false,
-                        available: true
-                    }
-                ];
-                
-                // Generar slots según día de la semana
-                let slots = [];
-                if (esSabado) {
-                    slots = [...horariosMañana]; // Sábados: solo horarios de mañana
-                    console.log(`📋[${callId}] Generados ${slots.length} horarios para SÁBADO`);
-                } else {
-                    slots = [...horariosMañana, ...horariosTarde]; // Días normales: horarios completos
-                    console.log(`📋[${callId}] Generados ${slots.length} horarios para DÍA ENTRE SEMANA`);
-                }
-                
-                console.log(`✅[${callId}] HORARIOS GENERADOS CORRECTAMENTE`);
-                  return {
-                    status: 'SUCCESS',
-                    data: slots,
-                    message: 'Horarios cargados correctamente',
-                    generated: true
-                };
-            } catch (innerError) {
-                // ÚLTIMO RECURSO - Si todo lo demás falla
-                console.error(`🔥[${callId}] ERROR CRÍTICO EN GENERADOR DE HORARIOS:`, innerError);
-                console.log(`🚨[${callId}] ACTIVANDO SISTEMA DE ÚLTIMA OPORTUNIDAD`);
-                
-                // Horarios mínimos garantizados
-                const horariosGarantizados = [
-                    { time: '08:30 - 10:00', start: '08:30', end: '10:00', duration: 90, isBooked: false },
-                    { time: '10:00 - 11:30', start: '10:00', end: '11:30', duration: 90, isBooked: false },
-                    { time: '11:30 - 13:00', start: '11:30', end: '13:00', duration: 90, isBooked: false }
-                ];
-                
-                console.log(`⚠️[${callId}] Devolviendo horarios de emergencia mínimos`);
-                
-                return {
-                    status: 'SUCCESS',
-                    data: horariosGarantizados,
-                    message: 'Horarios disponibles',
-                    emergency: true
-                };
+                throw new Error(`Error de comunicación con la base de datos (${response.status})`);
             }
         }
         
-        // SISTEMA DE RECUPERACIÓN PARA RESERVAS (CRÍTICO)
-        if (endpoint.includes('/bookings') && (options.method === 'POST' || options.method === 'PUT')) {
-            console.log(`🆘[${callId}] ACTIVANDO SISTEMA DE EMERGENCIA PARA RESERVAS`);
-            console.log(`📝[${callId}] Generando respuesta de emergencia para creación de reserva`);
-            
-            // Parsear el body si es string
-            let bodyData = {};
-            if (options.body) {
-                try {
-                    bodyData = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
-                } catch (parseError) {
-                    console.error(`❌[${callId}] Error parseando body:`, parseError);
-                    bodyData = {};
-                }
-            }
-            
-            const bookingId = Math.floor(100000 + Math.random() * 900000);
-            const fallbackResponse = {
-                status: 'SUCCESS',
-                data: {
-                    id: bookingId,
-                    ...bodyData,
-                    status: 'confirmed',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                },
-                message: 'Reserva registrada correctamente',
-                emergency: true,
-                source: 'fallback'
-            };
-            
-            console.log(`✅[${callId}] RESPUESTA DE EMERGENCIA GENERADA:`, fallbackResponse);
-            return fallbackResponse;
+    } catch (error) {
+        console.error(`❌[${callId}] ERROR EN BASE DE DATOS MYSQL:`, error.message);
+        
+        // SIN FALLBACKS - Solo mostrar error claro
+        if (error.name === 'AbortError') {
+            throw new Error('Timeout: La base de datos MySQL no responde');
         }
         
-        // Para otros tipos de peticiones que no sean horarios ni reservas
-        console.log(`⚠️[${callId}] Endpoint no reconocido, lanzando error original`);
-        throw error;
-        
-        // Respuesta genérica para otros endpoints
-        console.log(`ℹ️[${callId}] Generando respuesta genérica`);
-        return {
-            status: 'SUCCESS',
-            message: 'Operación completada correctamente',
-            timestamp: new Date().toISOString()
-        };
+        throw new Error(`Error de base de datos: ${error.message}`);
     }
 }
 
-// Exportar apiRequest para uso global
+// Exportar función
 if (typeof window !== 'undefined') {
     window.apiRequest = apiRequest;
-    console.log('📤 apiRequest exportada correctamente a window');
-    
-    // Verificar la exportación
-    if (typeof window.apiRequest === 'function') {
-        console.log('✅ Verificación: window.apiRequest está disponible como función');
-    } else {
-        console.error('❌ ERROR: window.apiRequest no es una función');
-    }
+    console.log('📤 apiRequest disponible globalmente');
+    console.log('✅ Sistema listo - SOLO BASE DE DATOS MYSQL');
+}
+
+// Exportar para Node.js
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { apiRequest };
 }
