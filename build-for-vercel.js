@@ -146,6 +146,16 @@ const apiPath = path.join(__dirname, 'api');
 if (fs.existsSync(apiPath)) {
     const apiFiles = fs.readdirSync(apiPath);
     console.log(`   ✅ API disponible: ${apiFiles.join(', ')}`);
+    
+    // Verificar estructura específica para Vercel
+    const apiBridgePath = path.join(apiPath, 'api-bridge');
+    if (fs.existsSync(apiBridgePath)) {
+        console.log(`   ✅ Estructura api-bridge/ existe`);
+        const apiBridgeFiles = fs.readdirSync(apiBridgePath);
+        console.log(`   📄 Archivos en api-bridge/: ${apiBridgeFiles.join(', ')}`);
+    } else {
+        console.log(`   ⚠️  Estructura api-bridge/ no existe`);
+    }
 } else {
     console.log('   ❌ Carpeta API no encontrada');
 }
