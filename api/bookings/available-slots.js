@@ -74,11 +74,15 @@ const Booking = require('../../src/database/models/BookingSimple');
 // Función para verificar horarios ocupados en la base de datos
 async function checkBookedSlots(date) {
     try {
+        console.log('🔍 [MEJORADO] Verificando horarios ocupados para:', date);
+        
         // Crear las fechas de inicio y fin del día en la zona horaria local
         const startOfDay = new Date(date + 'T00:00:00');
         const endOfDay = new Date(date + 'T23:59:59');
 
-        console.log('🔍 Consultando reservas para:', date, 'entre', startOfDay.toISOString(), 'y', endOfDay.toISOString());
+        console.log('� Rango de consulta:');
+        console.log('  - Inicio:', startOfDay.toISOString(), '(Local:', startOfDay.toString(), ')');
+        console.log('  - Fin:', endOfDay.toISOString(), '(Local:', endOfDay.toString(), ')');
 
         // Buscar reservas confirmadas para la fecha
         const bookings = await Booking.findAll({
@@ -86,30 +90,43 @@ async function checkBookedSlots(date) {
                 date: { [Op.between]: [startOfDay, endOfDay] },
                 status: { [Op.in]: ['confirmed', 'pending', 'in_progress'] }
             },
-            attributes: ['date', 'status', 'clientName', 'serviceType', 'vehiclePlate']
+            attributes: ['date', 'status', 'clientName', 'serviceType', 'vehiclePlate'],
+            raw: true // Para obtener objetos planos
         });
-        console.log('🟠 Todas las reservas encontradas para el día:');
-        bookings.forEach(b => {
-            const d = new Date(b.date);
-            console.log(`  - ${b.clientName} | ${b.serviceType} | ${b.vehiclePlate} | Local: ${d.toString()} | ISO: ${d.toISOString()}`);
-        });
+        
+        console.log('� Reservas encontradas:', bookings.length);
+        
+        if (bookings.length === 0) {
+            console.log('✅ No hay reservas para esta fecha - todos los horarios están disponibles');
+            return [];
+        }
 
-        console.log('📋 Reservas encontradas:', bookings.length);
-
-        // Extraer horarios ocupados
-        const bookedTimes = bookings.map(booking => {
+        // Procesar cada reserva con logging detallado
+        const bookedTimes = bookings.map((booking, index) => {
             const bookingDate = new Date(booking.date);
             const hours = String(bookingDate.getHours()).padStart(2, '0');
             const minutes = String(bookingDate.getMinutes()).padStart(2, '0');
-            return `${hours}:${minutes}`;
+            const formattedTime = `${hours}:${minutes}`;
+            
+            console.log(`📍 Reserva ${index + 1}:`);
+            console.log(`   Cliente: ${booking.clientName}`);
+            console.log(`   Servicio: ${booking.serviceType}`);
+            console.log(`   Fecha DB: ${booking.date}`);
+            console.log(`   Fecha parseada: ${bookingDate.toISOString()}`);
+            console.log(`   Fecha local: ${bookingDate.toString()}`);
+            console.log(`   Hora formateada: ${formattedTime}`);
+            console.log(`   Status: ${booking.status}`);
+            
+            return formattedTime;
         });
 
-        console.log('⏰ Horarios ocupados:', bookedTimes);
-
+        console.log('⏰ Horarios ocupados (lista final):', bookedTimes);
+        
         return bookedTimes;
 
     } catch (error) {
         console.error('❌ Error al consultar base de datos:', error);
+        console.error('❌ Stack:', error.stack);
         return []; // Si hay error, devolver array vacío (todos disponibles)
     }
 }
