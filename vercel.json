@@ -10,18 +10,18 @@
             }
         },
         {
-            "src": "api/api-bridge-production.js",
+            "src": "api/api-bridge.js",
             "use": "@vercel/node"
         }
     ],
     "routes": [
         {
             "src": "/api/api-bridge",
-            "dest": "/api/api-bridge-production.js"
+            "dest": "/api/api-bridge.js"
         },
         {
             "src": "/api/(.*)",
-            "dest": "/api/api-bridge-production.js"
+            "dest": "/api/api-bridge.js"
         },
         {
             "src": "/(.*)",
@@ -29,7 +29,7 @@
         }
     ],
     "functions": {
-        "api/api-bridge-production.js": {
+        "api/api-bridge.js": {
             "maxDuration": 30,
             "memory": 512
         }
