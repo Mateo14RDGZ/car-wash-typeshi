@@ -1,0 +1,20 @@
+{
+    "version": 2,
+    "name": "car-wash-typeshi",
+    "builds": [
+        {
+            "src": "api/diagnostico-vercel.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/diagnostico-vercel.js"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/api/diagnostico-vercel.js"
+        }
+    ]
+}
