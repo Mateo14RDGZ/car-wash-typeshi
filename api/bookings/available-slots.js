@@ -132,8 +132,12 @@ async function generateTimeSlotsWithAvailability(date) {
             const slotStartTime = slot.start;
             const isBooked = bookedTimes.some(bookedTime => {
                 // Verificar si el horario de inicio coincide con alguna reserva
-                return bookedTime === slotStartTime;
+                const matches = bookedTime === slotStartTime;
+                console.log(`🔍 Comparando slot ${slotStartTime} con reserva ${bookedTime}: ${matches ? 'OCUPADO' : 'LIBRE'}`);
+                return matches;
             });
+
+            console.log(`📍 Slot ${slot.time} (${slotStartTime}): ${isBooked ? '🔒 OCUPADO' : '🟢 DISPONIBLE'}`);
 
             return {
                 ...slot,
