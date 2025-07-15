@@ -38,10 +38,10 @@ module.exports = async (req, res) => {
         
         if (endpoint.includes('available-slots')) {
             console.log('📅 Manejando solicitud de horarios disponibles');
-            handler = require('./bookings/available-slots');
+            handler = require('../bookings/available-slots');
         } else if (endpoint.startsWith('/bookings')) {
             console.log('📝 Manejando solicitud de reservas');
-            handler = require('./bookings/index');
+            handler = require('../bookings/index');
         } else if (endpoint.includes('system/status')) {
             console.log('🔍 Verificando estado del sistema');
             return res.status(200).json({

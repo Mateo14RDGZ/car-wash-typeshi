@@ -17,7 +17,7 @@
     "routes": [
         {
             "src": "/api/api-bridge",
-            "dest": "/api/api-bridge.js"
+            "dest": "/api/api-bridge/index.js"
         },
         {
             "src": "/api/(.*)",
