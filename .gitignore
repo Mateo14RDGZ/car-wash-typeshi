@@ -65,3 +65,4 @@ vendor/
 # Directorios de build
 dist/
 build/ 
+.vercel
