@@ -312,10 +312,10 @@ document.getElementById('fecha')?.addEventListener('change', async function () {
         window.debugLog('DEBUG - Datos recibidos del servidor:', data);
 
         // Solo aceptar datos si vienen de la base de datos (no generados ni fallback)
-        if (data && data.data && Array.isArray(data.data)) {
+        if (data && data.data && Array.isArray(data.data.availableSlots)) {
             console.log('✅ DATOS VÁLIDOS RECIBIDOS - Procesando horarios');
-            window.debugLog('DEBUG - Cantidad de slots disponibles:', data.data.length);
-            procesarHorariosDisponibles(data.data);
+            window.debugLog('DEBUG - Cantidad de slots disponibles:', data.data.availableSlots.length);
+            procesarHorariosDisponibles(data.data.availableSlots);
         } else {
             // Si no hay datos válidos, mostrar error y NO mostrar horarios
             if (infoText) {
@@ -1441,8 +1441,8 @@ function procesarHorariosDisponibles(horarios) {
     // Log detallado de cada horario
     horarios.forEach((slot, index) => {
         console.log(`📋 Horario ${index + 1}:`, {
-            time: slot.time,
-            isBooked: slot.isBooked,
+            timeSlot: slot.timeSlot,
+            available: slot.available,
             start: slot.start,
             end: slot.end,
             slot: slot
@@ -1460,26 +1460,44 @@ function procesarHorariosDisponibles(horarios) {
     
     // Limpiar contenido anterior
     horariosGrid.innerHTML = '';
-    // Filtrar para mostrar solo los NO reservados
-    const horariosDisponibles = horarios.filter(slot => !slot.isBooked);
+    
+    // Filtrar para mostrar solo los DISPONIBLES
+    const horariosDisponibles = horarios.filter(slot => slot.available);
+    
     if (horariosDisponibles.length === 0) {
         horariosGrid.innerHTML = '<div class="alert alert-info">No hay horarios disponibles para esta fecha</div>';
         return;
     }
+    
     // Renderizar solo los horarios disponibles
     horariosDisponibles.forEach(slot => {
-        if (slot && slot.time) {
+        if (slot && slot.timeSlot) {
             const horarioBtn = document.createElement('button');
             horarioBtn.type = 'button';
-            horarioBtn.textContent = slot.time;
-            horarioBtn.value = slot.time;
+            horarioBtn.textContent = slot.timeSlot;
+            horarioBtn.value = slot.timeSlot;
             horarioBtn.className = 'horario-slot-btn available';
             horarioBtn.onclick = function() {
                 document.querySelectorAll('.horarios-grid .horario-slot-btn.available').forEach(btn => {
                     btn.classList.remove('selected');
                 });
                 this.classList.add('selected');
-                window.horarioSeleccionado = slot.time;
+                window.horarioSeleccionado = slot.timeSlot;
+            };
+            horariosGrid.appendChild(horarioBtn);
+        }
+    });
+    
+    // Actualizar info de carga
+    const infoText = document.getElementById('carga-info');
+    if (infoText) {
+        infoText.innerHTML = `<span class="badge bg-success"><i class="fas fa-check me-1"></i> ${horariosDisponibles.length} horarios disponibles</span>`;
+    }
+    
+    console.log('✅ HORARIOS PROCESADOS EXITOSAMENTE:', horariosDisponibles.length, 'horarios disponibles');
+}
+                this.classList.add('selected');
+                window.horarioSeleccionado = slot.timeSlot;
                 let horarioInput = document.getElementById('horarioSeleccionado');
                 if (!horarioInput) {
                     horarioInput = document.createElement('input');
@@ -1488,21 +1506,19 @@ function procesarHorariosDisponibles(horarios) {
                     horarioInput.id = 'horarioSeleccionado';
                     document.getElementById('reservaForm').appendChild(horarioInput);
                 }
-                horarioInput.value = slot.time;
+                horarioInput.value = slot.timeSlot;
             };
             horariosGrid.appendChild(horarioBtn);
         }
     });
-    // OCULTAR MENSAJES SUPERIORES
-    const header = horariosContainer.querySelector('.horarios-header');
-    const info = horariosContainer.querySelector('.horarios-info');
-    if (header) header.style.display = 'none';
-    if (info) info.style.display = 'none';
-    // También ocultar el mensaje de carga si existe
-    const infoText = document.getElementById('carga-info');
-    if (infoText) infoText.style.display = 'none';
     
-    console.log('✅ Horarios procesados y mostrados correctamente');
+    // Actualizar info de carga
+    const infoText = document.getElementById('carga-info');
+    if (infoText) {
+        infoText.innerHTML = `<span class="badge bg-success"><i class="fas fa-check me-1"></i> ${horariosDisponibles.length} horarios disponibles</span>`;
+    }
+    
+    console.log('✅ HORARIOS PROCESADOS EXITOSAMENTE:', horariosDisponibles.length, 'horarios disponibles');
 }
 
 // Función antigua comentada (mantener como referencia)
