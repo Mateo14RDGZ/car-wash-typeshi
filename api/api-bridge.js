@@ -4,7 +4,7 @@
  */
 
 module.exports = async (req, res) => {
-    console.log('🚀 [API BRIDGE VERCEL] Iniciando...');
+    console.log('🚀 [API BRIDGE] Iniciando...');
     console.log('📝 Método:', req.method);
     console.log('🔗 URL:', req.url);
     console.log('📄 Query:', req.query);

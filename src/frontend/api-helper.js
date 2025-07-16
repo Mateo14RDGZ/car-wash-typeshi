@@ -1,24 +1,21 @@
 /**
- * 🔥 API HELPER - SOLO BASE DE DATOS MYSQL - SIN FALLBACKS
- * 
- * VERSIÓN SIMPLIFICADA (15/07/2025)
- * 
- * ⚠️ IMPORTANTE ⚠️
- * Este archivo funciona EXCLUSIVAMENTE con la base de datos MySQL.
- * NO hay sistemas de fallback, ni generación local de horarios.
- * Si la base de datos falla, la aplicación mostrará un error.
- * 
- * 🎯 CARACTERÍSTICAS 🎯
- * - Usa EXCLUSIVAMENTE la base de datos MySQL
- * - Sin sistemas de fallback ni recuperación
- * - Errores claros cuando la BD no está disponible
- * - Horarios disponibles SOLO desde la base de datos
+ * � API HELPER - CAR WASH TYPESHI
+ * Helper para comunicarse con la API de Vercel
+ * URL: https://car-wash-typeshi.vercel.app/api/
  */
+
+// Configuración de la API
+const API_CONFIG = {
+    baseURL: '/api',
+    timeout: 30000,
+    retries: 3
+};
 
 // Anunciar inicialización del sistema
 if (typeof window !== 'undefined') {
-    console.log('🔥 API HELPER - SOLO BASE DE DATOS MYSQL INICIADO');
+    console.log('� API HELPER - CAR WASH TYPESHI INICIADO');
     console.log('📌 Timestamp:', new Date().toISOString());
+    console.log('🌐 Base URL:', API_CONFIG.baseURL);
     
     // Eliminar posibles implementaciones duplicadas
     if (window.apiRequestInitialized) {
@@ -27,27 +24,167 @@ if (typeof window !== 'undefined') {
         window.apiRequestInitialized = true;
         console.log('✅ Primera inicialización de apiRequest() - OK');
     }
-    
-    // Verificar conexión con el servidor
-    console.log('🔌 Verificando conexión con la base de datos MySQL...');
-    setTimeout(() => {
-        fetch('/api/api-bridge?endpoint=/system/status&_=' + Date.now())
-            .then(res => {
-                if (res.ok) {
-                    console.log('✅ Conexión con la base de datos MySQL establecida');
-                } else {
-                    console.error('❌ Error de conexión con la base de datos MySQL:', res.status);
-                }
-            })
-            .catch(err => console.error('❌ Error al verificar conexión MySQL:', err));
-    }, 1000);
 }
 
 /**
  * Función principal para realizar peticiones HTTP
- * SOLO funciona con la base de datos MySQL
+ * @param {string} endpoint - Endpoint de la API
+ * @param {Object} options - Opciones de la petición
+ * @returns {Promise} - Promesa con la respuesta
  */
 async function apiRequest(endpoint, options = {}) {
+    const {
+        method = 'GET',
+        data = null,
+        headers = {},
+        retries = API_CONFIG.retries
+    } = options;
+    
+    console.log(`� [API] ${method} ${endpoint}`);
+    
+    // Construir URL completa
+    const url = `${API_CONFIG.baseURL}${endpoint}`;
+    
+    // Configurar headers
+    const requestHeaders = {
+        'Content-Type': 'application/json',
+        'X-Request-ID': Math.random().toString(36).substring(7),
+        ...headers
+    };
+    
+    // Configurar opciones de fetch
+    const fetchOptions = {
+        method,
+        headers: requestHeaders,
+        mode: 'cors',
+        credentials: 'same-origin'
+    };
+    
+    // Agregar body si es necesario
+    if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
+        fetchOptions.body = JSON.stringify(data);
+    }
+    
+    // Función para realizar el fetch con reintentos
+    const fetchWithRetry = async (attempt = 1) => {
+        try {
+            console.log(`🔄 Intento ${attempt}/${retries + 1}: ${url}`);
+            
+            const response = await fetch(url, fetchOptions);
+            
+            console.log(`📊 Respuesta: ${response.status} ${response.statusText}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            console.log('✅ Respuesta exitosa:', result);
+            return result;
+            
+        } catch (error) {
+            console.error(`❌ Error en intento ${attempt}:`, error);
+            
+            if (attempt <= retries) {
+                const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+                console.log(`⏱️ Reintentando en ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return fetchWithRetry(attempt + 1);
+            }
+            
+            throw error;
+        }
+    };
+    
+    return fetchWithRetry();
+}
+
+/**
+ * Funciones específicas para cada endpoint
+ */
+
+// Verificar estado del sistema
+async function checkSystemStatus() {
+    console.log('🔍 Verificando estado del sistema...');
+    return apiRequest('/status');
+}
+
+// Obtener servicios disponibles
+async function getServices() {
+    console.log('🛠️ Obteniendo servicios disponibles...');
+    return apiRequest('/services');
+}
+
+// Obtener horarios disponibles
+async function getAvailableSlots(date) {
+    console.log(`📅 Obteniendo horarios para: ${date}`);
+    
+    if (!date) {
+        throw new Error('Fecha requerida');
+    }
+    
+    return apiRequest(`/available-slots?date=${encodeURIComponent(date)}`);
+}
+
+// Obtener reservas
+async function getBookings() {
+    console.log('📋 Obteniendo reservas...');
+    return apiRequest('/bookings');
+}
+
+// Crear nueva reserva
+async function createBooking(bookingData) {
+    console.log('📝 Creando nueva reserva:', bookingData);
+    
+    // Validar datos requeridos
+    const required = ['name', 'email', 'phone', 'date', 'timeSlot', 'serviceType'];
+    for (const field of required) {
+        if (!bookingData[field]) {
+            throw new Error(`Campo requerido: ${field}`);
+        }
+    }
+    
+    return apiRequest('/bookings', {
+        method: 'POST',
+        data: bookingData
+    });
+}
+
+// Verificar conexión inicial
+if (typeof window !== 'undefined') {
+    // Verificar conexión después de cargar
+    setTimeout(() => {
+        checkSystemStatus()
+            .then(result => {
+                console.log('✅ Conexión con API establecida:', result);
+            })
+            .catch(error => {
+                console.error('❌ Error de conexión con API:', error);
+            });
+    }, 1000);
+}
+
+// Exportar funciones (para compatibilidad con diferentes entornos)
+if (typeof window !== 'undefined') {
+    // Navegador
+    window.apiRequest = apiRequest;
+    window.checkSystemStatus = checkSystemStatus;
+    window.getServices = getServices;
+    window.getAvailableSlots = getAvailableSlots;
+    window.getBookings = getBookings;
+    window.createBooking = createBooking;
+} else if (typeof module !== 'undefined' && module.exports) {
+    // Node.js
+    module.exports = {
+        apiRequest,
+        checkSystemStatus,
+        getServices,
+        getAvailableSlots,
+        getBookings,
+        createBooking
+    };
+}
     const callId = Math.random().toString(36).substring(2, 8);
     
     console.log(`🔹[${callId}] PETICIÓN A BASE DE DATOS MYSQL`);

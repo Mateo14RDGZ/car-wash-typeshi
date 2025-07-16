@@ -1,5 +1,6 @@
 {
     "version": 2,
+    "name": "car-wash-typeshi",
     "builds": [
         {
             "src": "package.json",
@@ -9,20 +10,25 @@
             }
         },
         {
-            "src": "api/api-bridge.js",
+            "src": "api/index.js",
             "use": "@vercel/node"
         }
     ],
     "routes": [
         {
             "src": "/api/(.*)",
-            "dest": "/api/api-bridge.js"
+            "dest": "/api/index.js"
         },
         {
             "src": "/(.*)",
             "dest": "/public/$1"
         }
     ],
+    "functions": {
+        "api/index.js": {
+            "maxDuration": 30
+        }
+    },
     "env": {
         "NODE_ENV": "production"
     }

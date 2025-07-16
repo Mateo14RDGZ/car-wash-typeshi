@@ -1,14 +1,19 @@
 {
-    "name": "car-wash-booking",
+    "name": "car-wash-typeshi",
     "version": "1.0.0",
     "description": "Sistema de reservas para lavado de autos",
-    "main": "api/api-bridge.js",
+    "main": "api/index.js",
     "scripts": {
         "build": "node build-production.js",
         "vercel-build": "node build-production.js",
-        "start": "node api/api-bridge-production.js"
+        "start": "node api/index.js",
+        "dev": "node api/index.js",
+        "migrate": "node migrate-database.js"
     },
-    "dependencies": {},
+    "dependencies": {
+        "mysql2": "^3.6.0",
+        "dotenv": "^16.3.1"
+    },
     "engines": {
         "node": "18.x",
         "npm": ">=8.0.0"
@@ -17,7 +22,7 @@
         "type": "git",
         "url": "https://github.com/Mateo14RDGZ/car-wash-typeshi.git"
     },
-    "keywords": ["car-wash", "booking", "vercel", "api"],
+    "keywords": ["car-wash", "booking", "vercel", "api", "mysql"],
     "author": "Mateo14RDGZ",
     "license": "MIT"
 }

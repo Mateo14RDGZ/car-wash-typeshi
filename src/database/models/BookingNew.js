@@ -33,14 +33,14 @@ const Booking = sequelize.define('Booking', {
         allowNull: false,
         validate: {
             isDate: true,
-            isAfter: new Date().toISOString().split('T')[0] // No reservas en el pasado
+            isAfter: new Date().toISOString().split('T')[0]
         }
     },
     time_slot: {
         type: DataTypes.STRING(20),
         allowNull: false,
         validate: {
-            is: /^[0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}$/ // Formato HH:MM-HH:MM
+            is: /^[0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}$/
         }
     },
     start_time: {
@@ -143,12 +143,14 @@ Booking.findByCustomer = function(email) {
 
 // Método para verificar disponibilidad
 Booking.isTimeSlotAvailable = async function(date, timeSlot) {
+    const { Op } = require('sequelize');
+    
     const existing = await this.findOne({
         where: {
             booking_date: date,
             time_slot: timeSlot,
             status: {
-                [sequelize.Sequelize.Op.ne]: 'cancelled'
+                [Op.ne]: 'cancelled'
             }
         }
     });
@@ -157,20 +159,3 @@ Booking.isTimeSlotAvailable = async function(date, timeSlot) {
 };
 
 module.exports = Booking;
-    totalPrice: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
-    },
-    paymentStatus: {
-        type: DataTypes.ENUM('pending', 'paid', 'refunded'),
-        defaultValue: 'pending'
-    },
-    notes: {
-        type: DataTypes.TEXT
-    }
-}, {
-    sequelize,
-    modelName: 'Booking'
-});
-
-module.exports = Booking; 
