@@ -1,190 +1,10 @@
 /**
- * � API HELPER - CAR WASH TYPESHI
- * Helper para comunicarse con la API de Vercel
- * URL: https://car-wash-typeshi.vercel.app/api/
+ * 🔧 API Helper - Funciones para comunicación con la API
+ * Versión simplificada para conexión directa con MySQL
  */
 
-// Configuración de la API
-const API_CONFIG = {
-    baseURL: '/api',
-    timeout: 30000,
-    retries: 3
-};
-
-// Anunciar inicialización del sistema
-if (typeof window !== 'undefined') {
-    console.log('� API HELPER - CAR WASH TYPESHI INICIADO');
-    console.log('📌 Timestamp:', new Date().toISOString());
-    console.log('🌐 Base URL:', API_CONFIG.baseURL);
-    
-    // Eliminar posibles implementaciones duplicadas
-    if (window.apiRequestInitialized) {
-        console.error('🚨 ALERTA: Intento de doble inicialización de apiRequest()');
-    } else {
-        window.apiRequestInitialized = true;
-        console.log('✅ Primera inicialización de apiRequest() - OK');
-    }
-}
-
-/**
- * Función principal para realizar peticiones HTTP
- * @param {string} endpoint - Endpoint de la API
- * @param {Object} options - Opciones de la petición
- * @returns {Promise} - Promesa con la respuesta
- */
+// Función principal para peticiones a la API
 async function apiRequest(endpoint, options = {}) {
-    const {
-        method = 'GET',
-        data = null,
-        headers = {},
-        retries = API_CONFIG.retries
-    } = options;
-    
-    console.log(`� [API] ${method} ${endpoint}`);
-    
-    // Construir URL completa
-    const url = `${API_CONFIG.baseURL}${endpoint}`;
-    
-    // Configurar headers
-    const requestHeaders = {
-        'Content-Type': 'application/json',
-        'X-Request-ID': Math.random().toString(36).substring(7),
-        ...headers
-    };
-    
-    // Configurar opciones de fetch
-    const fetchOptions = {
-        method,
-        headers: requestHeaders,
-        mode: 'cors',
-        credentials: 'same-origin'
-    };
-    
-    // Agregar body si es necesario
-    if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
-        fetchOptions.body = JSON.stringify(data);
-    }
-    
-    // Función para realizar el fetch con reintentos
-    const fetchWithRetry = async (attempt = 1) => {
-        try {
-            console.log(`🔄 Intento ${attempt}/${retries + 1}: ${url}`);
-            
-            const response = await fetch(url, fetchOptions);
-            
-            console.log(`📊 Respuesta: ${response.status} ${response.statusText}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            
-            console.log('✅ Respuesta exitosa:', result);
-            return result;
-            
-        } catch (error) {
-            console.error(`❌ Error en intento ${attempt}:`, error);
-            
-            if (attempt <= retries) {
-                const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-                console.log(`⏱️ Reintentando en ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return fetchWithRetry(attempt + 1);
-            }
-            
-            throw error;
-        }
-    };
-    
-    return fetchWithRetry();
-}
-
-/**
- * Funciones específicas para cada endpoint
- */
-
-// Verificar estado del sistema
-async function checkSystemStatus() {
-    console.log('🔍 Verificando estado del sistema...');
-    return apiRequest('/status');
-}
-
-// Obtener servicios disponibles
-async function getServices() {
-    console.log('🛠️ Obteniendo servicios disponibles...');
-    return apiRequest('/services');
-}
-
-// Obtener horarios disponibles
-async function getAvailableSlots(date) {
-    console.log(`📅 Obteniendo horarios para: ${date}`);
-    
-    if (!date) {
-        throw new Error('Fecha requerida');
-    }
-    
-    return apiRequest(`/available-slots?date=${encodeURIComponent(date)}`);
-}
-
-// Obtener reservas
-async function getBookings() {
-    console.log('📋 Obteniendo reservas...');
-    return apiRequest('/bookings');
-}
-
-// Crear nueva reserva
-async function createBooking(bookingData) {
-    console.log('📝 Creando nueva reserva:', bookingData);
-    
-    // Validar datos requeridos
-    const required = ['name', 'email', 'phone', 'date', 'timeSlot', 'serviceType'];
-    for (const field of required) {
-        if (!bookingData[field]) {
-            throw new Error(`Campo requerido: ${field}`);
-        }
-    }
-    
-    return apiRequest('/bookings', {
-        method: 'POST',
-        data: bookingData
-    });
-}
-
-// Verificar conexión inicial
-if (typeof window !== 'undefined') {
-    // Verificar conexión después de cargar
-    setTimeout(() => {
-        checkSystemStatus()
-            .then(result => {
-                console.log('✅ Conexión con API establecida:', result);
-            })
-            .catch(error => {
-                console.error('❌ Error de conexión con API:', error);
-            });
-    }, 1000);
-}
-
-// Exportar funciones (para compatibilidad con diferentes entornos)
-if (typeof window !== 'undefined') {
-    // Navegador
-    window.apiRequest = apiRequest;
-    window.checkSystemStatus = checkSystemStatus;
-    window.getServices = getServices;
-    window.getAvailableSlots = getAvailableSlots;
-    window.getBookings = getBookings;
-    window.createBooking = createBooking;
-} else if (typeof module !== 'undefined' && module.exports) {
-    // Node.js
-    module.exports = {
-        apiRequest,
-        checkSystemStatus,
-        getServices,
-        getAvailableSlots,
-        getBookings,
-        createBooking
-    };
-}
     const callId = Math.random().toString(36).substring(2, 8);
     
     console.log(`🔹[${callId}] PETICIÓN A BASE DE DATOS MYSQL`);
@@ -196,9 +16,9 @@ if (typeof window !== 'undefined') {
         throw new Error('URL absoluta no permitida');
     }
     
-    // Construir URL para Vercel
+    // Construir URL para la API
     const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2);
-    const url = `/api/api-bridge?endpoint=${encodeURIComponent(endpoint)}&_=${uniqueId}`;
+    const url = `/api${endpoint}${endpoint.includes('?') ? '&' : '?'}_=${uniqueId}`;
     console.log(`✅[${callId}] URL: ${url}`);
     
     // Configurar opciones de la petición
@@ -279,14 +99,85 @@ if (typeof window !== 'undefined') {
     }
 }
 
-// Exportar función
+// Función para verificar estado del sistema
+async function checkSystemStatus() {
+    try {
+        const response = await apiRequest('/status');
+        return response;
+    } catch (error) {
+        console.error('Error al verificar estado del sistema:', error);
+        throw error;
+    }
+}
+
+// Función para obtener servicios
+async function getServices() {
+    try {
+        const response = await apiRequest('/services');
+        return response;
+    } catch (error) {
+        console.error('Error al obtener servicios:', error);
+        throw error;
+    }
+}
+
+// Función para obtener slots disponibles
+async function getAvailableSlots(date) {
+    try {
+        const response = await apiRequest(`/available-slots?date=${date}`);
+        return response;
+    } catch (error) {
+        console.error('Error al obtener slots disponibles:', error);
+        throw error;
+    }
+}
+
+// Función para obtener reservas
+async function getBookings() {
+    try {
+        const response = await apiRequest('/bookings');
+        return response;
+    } catch (error) {
+        console.error('Error al obtener reservas:', error);
+        throw error;
+    }
+}
+
+// Función para crear reserva
+async function createBooking(bookingData) {
+    try {
+        const response = await apiRequest('/bookings', {
+            method: 'POST',
+            body: bookingData
+        });
+        return response;
+    } catch (error) {
+        console.error('Error al crear reserva:', error);
+        throw error;
+    }
+}
+
+// Exportar para el navegador
 if (typeof window !== 'undefined') {
     window.apiRequest = apiRequest;
-    console.log('📤 apiRequest disponible globalmente');
-    console.log('✅ Sistema listo - SOLO BASE DE DATOS MYSQL');
+    window.checkSystemStatus = checkSystemStatus;
+    window.getServices = getServices;
+    window.getAvailableSlots = getAvailableSlots;
+    window.getBookings = getBookings;
+    window.createBooking = createBooking;
+    
+    console.log('📤 API Helper cargado correctamente');
+    console.log('✅ Funciones disponibles: apiRequest, checkSystemStatus, getServices, getAvailableSlots, getBookings, createBooking');
 }
 
 // Exportar para Node.js
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { apiRequest };
+    module.exports = {
+        apiRequest,
+        checkSystemStatus,
+        getServices,
+        getAvailableSlots,
+        getBookings,
+        createBooking
+    };
 }
