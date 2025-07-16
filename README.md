@@ -5,12 +5,15 @@
 ![Vercel](https://img.shields.io/badge/Vercel-Deployed-green)
 
 ## 🌐 Aplicación en Vivo
+
 **[https://car-wash-typeshi.vercel.app](https://car-wash-typeshi.vercel.app)**
 
 ## 📋 Descripción
+
 Sistema de reservas moderno para lavado de autos con interfaz Bootstrap, conexión directa a MySQL y despliegue en Vercel.
 
 ## ✨ Características
+
 - 🎨 **Interfaz moderna** con Bootstrap 5
 - 🗄️ **Base de datos MySQL** con conexión directa
 - 📱 **Responsive design** para todos los dispositivos
@@ -19,6 +22,7 @@ Sistema de reservas moderno para lavado de autos con interfaz Bootstrap, conexi�
 - 📊 **Gestión de horarios** inteligente
 
 ## 🛠️ Tecnologías Utilizadas
+
 - **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
 - **Backend**: Node.js, Express-style API
 - **Base de datos**: MySQL
@@ -28,11 +32,13 @@ Sistema de reservas moderno para lavado de autos con interfaz Bootstrap, conexi�
 ## 🗄️ Estructura de Base de Datos
 
 ### Servicios Disponibles:
+
 1. **Lavado Básico** - $600
-2. **Lavado Premium** - $1,100  
+2. **Lavado Premium** - $1,100
 3. **Detailing Completo** - $3,850
 
 ### Tablas:
+
 - `services` - Servicios disponibles
 - `users` - Información de clientes
 - `bookings` - Reservas realizadas
