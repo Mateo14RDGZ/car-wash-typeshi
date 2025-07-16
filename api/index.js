@@ -7,15 +7,24 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Configuración de conexión MySQL
+// Configuración de conexión MySQL Railway
 const dbConfig = {
-    host: process.env.DB_HOST || '127.0.0.1',
+    host: process.env.DB_HOST || 'mysql.railway.internal',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || '',
+    password: process.env.DB_PASS || 'Mateo54764325%$',
     database: process.env.DB_NAME || 'car_wash_db',
     port: process.env.DB_PORT || 3306,
     charset: 'utf8mb4'
 };
+
+// Debug: Mostrar configuración de DB (sin password)
+console.log('🔧 Configuración de base de datos:', {
+    host: dbConfig.host,
+    user: dbConfig.user,
+    database: dbConfig.database,
+    port: dbConfig.port,
+    password: dbConfig.password ? '***configurado***' : '❌SIN_PASSWORD'
+});
 
 // Pool de conexiones para mejor rendimiento
 let pool;
