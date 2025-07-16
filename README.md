@@ -1,21 +1,47 @@
-# Sistema de Reservas para Lavado de Autos - Extreme Wash
+# 🚗 Car Wash Typeshi - Sistema de Reservas
 
-Aplicación web para la gestión y reserva de turnos de lavado de autos.
+![Car Wash Typeshi](https://img.shields.io/badge/Car%20Wash-Typeshi-blue)
+![MySQL](https://img.shields.io/badge/MySQL-Ready-orange)
+![Vercel](https://img.shields.io/badge/Vercel-Deployed-green)
 
-## Características Principales
+## 🌐 Aplicación en Vivo
+**[https://car-wash-typeshi.vercel.app](https://car-wash-typeshi.vercel.app)**
 
-- Reserva de turnos online
-- Selección de servicios de lavado (Básico, Premium, Detailing)
-- Selección de fecha y horario
-- Gestión de datos del cliente y vehículo
-- Persistencia en base de datos MySQL
-- Interfaz de usuario intuitiva y responsive
+## 📋 Descripción
+Sistema de reservas moderno para lavado de autos con interfaz Bootstrap, conexión directa a MySQL y despliegue en Vercel.
+
+## ✨ Características
+- 🎨 **Interfaz moderna** con Bootstrap 5
+- 🗄️ **Base de datos MySQL** con conexión directa
+- 📱 **Responsive design** para todos los dispositivos
+- ⚡ **API optimizada** con Node.js
+- 🔒 **Validación de datos** en tiempo real
+- 📊 **Gestión de horarios** inteligente
+
+## 🛠️ Tecnologías Utilizadas
+- **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
+- **Backend**: Node.js, Express-style API
+- **Base de datos**: MySQL
+- **Despliegue**: Vercel
+- **Dependencias**: mysql2, dotenv
+
+## 🗄️ Estructura de Base de Datos
+
+### Servicios Disponibles:
+1. **Lavado Básico** - $600
+2. **Lavado Premium** - $1,100  
+3. **Detailing Completo** - $3,850
+
+### Tablas:
+- `services` - Servicios disponibles
+- `users` - Información de clientes
+- `bookings` - Reservas realizadas
 
 ## 🚀 Configuración y Ejecución
 
 ### Requisitos Previos
 
-- Node.js (versión 14 o superior)
+- Node.js (versión 22 o superior)
 - MySQL (local o remoto)
 - npm o yarn
 
