@@ -1483,21 +1483,8 @@ function procesarHorariosDisponibles(horarios) {
                 });
                 this.classList.add('selected');
                 window.horarioSeleccionado = slot.timeSlot;
-            };
-            horariosGrid.appendChild(horarioBtn);
-        }
-    });
-    
-    // Actualizar info de carga
-    const infoText = document.getElementById('carga-info');
-    if (infoText) {
-        infoText.innerHTML = `<span class="badge bg-success"><i class="fas fa-check me-1"></i> ${horariosDisponibles.length} horarios disponibles</span>`;
-    }
-    
-    console.log('✅ HORARIOS PROCESADOS EXITOSAMENTE:', horariosDisponibles.length, 'horarios disponibles');
-}
-                this.classList.add('selected');
-                window.horarioSeleccionado = slot.timeSlot;
+                
+                // Crear input oculto para el formulario
                 let horarioInput = document.getElementById('horarioSeleccionado');
                 if (!horarioInput) {
                     horarioInput = document.createElement('input');
