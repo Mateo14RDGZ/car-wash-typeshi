@@ -7,13 +7,13 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Configuración de conexión MySQL Railway (URL pública)
+// Configuración de conexión MySQL Railway (valores originales)
 const dbConfig = {
-    host: process.env.DB_HOST || 'roundhouse.proxy.rlwy.net',
+    host: process.env.DB_HOST || 'mysql.railway.internal',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || 'Mateo54764325%$',
-    database: process.env.DB_NAME || 'car_wash_db',
-    port: process.env.DB_PORT || 47292,
+    password: process.env.DB_PASS || 'UVjnBgHKhkQwsdhJLshjXYTmYFfQUaQA',
+    database: process.env.DB_NAME || 'railway',
+    port: process.env.DB_PORT || 3306,
     charset: 'utf8mb4'
 };
 
