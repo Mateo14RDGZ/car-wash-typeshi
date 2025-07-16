@@ -147,3 +147,98 @@ module.exports = async (req, res) => {
         });
     }
 };
+                                message: 'El horario seleccionado no está disponible'
+                            });
+                            return;
+                        }
+                        
+                        // Crear o encontrar usuario
+                        let userId = null;
+                        const [existingUser] = await connection.execute(
+                            'SELECT id FROM users WHERE email = ?',
+                            [email]
+                        );
+                        
+                        if (existingUser.length > 0) {
+                            userId = existingUser[0].id;
+                        } else {
+                            const [userResult] = await connection.execute(
+                                'INSERT INTO users (name, email, phone) VALUES (?, ?, ?)',
+                                [name, email, phone]
+                            );
+                            userId = userResult.insertId;
+                        }
+                        
+                        // Extraer horas del time_slot
+                        const [startTime, endTime] = timeSlot.split('-');
+                        
+                        // Crear reserva
+                        const [result] = await connection.execute(`
+                            INSERT INTO bookings (
+                                user_id, service_id, booking_date, time_slot, start_time, end_time,
+                                customer_name, customer_email, customer_phone, total_price, status
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
+                        `, [
+                            userId, service.id, date, timeSlot, startTime + ':00', endTime + ':00',
+                            name, email, phone, service.price
+                        ]);
+                        
+                        const newBooking = {
+                            id: result.insertId,
+                            user_id: userId,
+                            service_id: service.id,
+                            booking_date: date,
+                            time_slot: timeSlot,
+                            customer_name: name,
+                            customer_email: email,
+                            customer_phone: phone,
+                            total_price: service.price,
+                            status: 'confirmed',
+                            service: service
+                        };
+                        
+                        res.status(201).json({
+                            status: 'SUCCESS',
+                            message: 'Reserva creada exitosamente',
+                            data: {
+                                booking: newBooking
+                            }
+                        });
+                        
+                    } catch (parseError) {
+                        res.status(400).json({
+                            status: 'ERROR',
+                            message: 'Error al procesar datos de la reserva',
+                            error: parseError.message
+                        });
+                    }
+                });
+                
+                return;
+            }
+        }
+        
+        // Endpoint no encontrado
+        res.status(404).json({
+            status: 'ERROR',
+            message: 'Endpoint no encontrado',
+            path: path,
+            availableEndpoints: [
+                '/api/status',
+                '/api/services',
+                '/api/available-slots?date=YYYY-MM-DD',
+                '/api/bookings'
+            ]
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en API:', error);
+        
+        res.status(500).json({
+            status: 'ERROR',
+            message: 'Error interno del servidor',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+};
