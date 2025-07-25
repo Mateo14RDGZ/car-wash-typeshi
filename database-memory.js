@@ -45,12 +45,12 @@ let bookings = [
         name: 'Juan Pérez',
         email: 'juan@ejemplo.com',
         phone: '123-456-7890',
-        booking_date: '2025-07-20',
+        booking_date: '2025-07-25',
         time_slot: '09:00-10:30',
         start_time: '09:00',
         end_time: '10:30',
         service_id: 1,
-        status: 'confirmed',
+        status: 'pending',
         created_at: new Date().toISOString()
     },
     {
@@ -58,12 +58,38 @@ let bookings = [
         name: 'María García',
         email: 'maria@ejemplo.com',
         phone: '098-765-4321',
-        booking_date: '2025-07-21',
+        booking_date: '2025-07-25',
         time_slot: '14:00-15:30',
         start_time: '14:00',
         end_time: '15:30',
         service_id: 2,
         status: 'confirmed',
+        created_at: new Date().toISOString()
+    },
+    {
+        id: 3,
+        name: 'Carlos López',
+        email: 'carlos@ejemplo.com',
+        phone: '555-123-4567',
+        booking_date: '2025-07-26',
+        time_slot: '10:00-11:30',
+        start_time: '10:00',
+        end_time: '11:30',
+        service_id: 3,
+        status: 'pending',
+        created_at: new Date().toISOString()
+    },
+    {
+        id: 4,
+        name: 'Ana Martínez',
+        email: 'ana@ejemplo.com',
+        phone: '777-888-9999',
+        booking_date: '2025-07-26',
+        time_slot: '15:30-17:00',
+        start_time: '15:30',
+        end_time: '17:00',
+        service_id: 1,
+        status: 'cancelled',
         created_at: new Date().toISOString()
     }
 ];
@@ -158,12 +184,36 @@ function createBooking(bookingData) {
         start_time: timeSlot.split('-')[0],
         end_time: timeSlot.split('-')[1],
         service_id: service.id,
-        status: 'confirmed',
+        status: 'pending',
         created_at: new Date().toISOString()
     };
     
     bookings.push(newBooking);
     return newBooking;
+}
+
+// Función para confirmar una reserva
+function confirmBooking(bookingId) {
+    const booking = bookings.find(b => b.id === parseInt(bookingId));
+    if (!booking) {
+        throw new Error('Reserva no encontrada');
+    }
+    
+    booking.status = 'confirmed';
+    booking.updated_at = new Date().toISOString();
+    return booking;
+}
+
+// Función para cancelar una reserva
+function cancelBooking(bookingId) {
+    const booking = bookings.find(b => b.id === parseInt(bookingId));
+    if (!booking) {
+        throw new Error('Reserva no encontrada');
+    }
+    
+    booking.status = 'cancelled';
+    booking.updated_at = new Date().toISOString();
+    return booking;
 }
 
 // Función para obtener horarios disponibles
@@ -184,6 +234,8 @@ module.exports = {
     getBookingsByDate,
     getAllBookings,
     createBooking,
+    confirmBooking,
+    cancelBooking,
     getAvailableSlots,
     generateTimeSlots
 };

@@ -124,6 +124,70 @@ module.exports = async (req, res) => {
                 return;
             }
         }
+
+        // Endpoint: Administrador - Confirmar reserva
+        if (path.includes('/admin/bookings/confirm') || query?.endpoint?.includes('admin-confirm')) {
+            if (method === 'PUT') {
+                let body = '';
+                
+                req.on('data', chunk => {
+                    body += chunk.toString();
+                });
+                
+                req.on('end', async () => {
+                    try {
+                        const { bookingId } = JSON.parse(body);
+                        const updatedBooking = db.confirmBooking(bookingId);
+                        
+                        res.status(200).json({
+                            status: 'SUCCESS',
+                            message: 'Reserva confirmada exitosamente',
+                            data: {
+                                booking: updatedBooking
+                            }
+                        });
+                    } catch (error) {
+                        res.status(400).json({
+                            status: 'ERROR',
+                            message: error.message
+                        });
+                    }
+                });
+                return;
+            }
+        }
+
+        // Endpoint: Administrador - Cancelar reserva
+        if (path.includes('/admin/bookings/cancel') || query?.endpoint?.includes('admin-cancel')) {
+            if (method === 'PUT') {
+                let body = '';
+                
+                req.on('data', chunk => {
+                    body += chunk.toString();
+                });
+                
+                req.on('end', async () => {
+                    try {
+                        const { bookingId } = JSON.parse(body);
+                        const updatedBooking = db.cancelBooking(bookingId);
+                        
+                        res.status(200).json({
+                            status: 'SUCCESS',
+                            message: 'Reserva cancelada exitosamente',
+                            data: {
+                                booking: updatedBooking
+                            }
+                        });
+                    } catch (error) {
+                        res.status(400).json({
+                            status: 'ERROR',
+                            message: error.message
+                        });
+                    }
+                });
+                return;
+            }
+        }
         
         // Endpoint no encontrado
         res.status(404).json({
@@ -134,7 +198,9 @@ module.exports = async (req, res) => {
                 'GET /api/services',
                 'GET /api/available-slots?date=YYYY-MM-DD',
                 'GET /api/bookings',
-                'POST /api/bookings'
+                'POST /api/bookings',
+                'PUT /api/admin/bookings/confirm',
+                'PUT /api/admin/bookings/cancel'
             ]
         });
         

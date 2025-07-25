@@ -7,8 +7,7 @@
         "build": "node build-production.js",
         "vercel-build": "node build-production.js",
         "start": "node api/index.js",
-        "dev": "node api/index.js",
-        "migrate": "node migrate-database.js"
+        "dev": "node api/index.js"
     },
     "dependencies": {
         "mysql2": "^3.6.0",

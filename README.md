@@ -1,8 +1,9 @@
 # 🚗 Car Wash Typeshi - Sistema de Reservas
 
 ![Car Wash Typeshi](https://img.shields.io/badge/Car%20Wash-Typeshi-blue)
-![MySQL](https://img.shields.io/badge/MySQL-Ready-orange)
+![Memory Database](https://img.shields.io/badge/Memory%20DB-Ready-orange)
 ![Vercel](https://img.shields.io/badge/Vercel-Deployed-green)
+![Admin Panel](https://img.shields.io/badge/Admin%20Panel-Active-purple)
 
 ## 🌐 Aplicación en Vivo
 
@@ -10,14 +11,23 @@
 
 ## 📋 Descripción
 
-Sistema de reservas moderno para lavado de autos con interfaz Bootstrap, conexión directa a MySQL y despliegue en Vercel.
+Sistema completo de reservas para lavado de autos con:
 
-## ✨ Características
+- **Panel de administrador** para gestión de reservas
+- **Base de datos en memoria** (sin dependencias externas)
+- **Interfaz moderna** con Bootstrap 5
+- **Despliegue optimizado** en Vercel
 
-- 🎨 **Interfaz moderna** con Bootstrap 5
-- 🗄️ **Base de datos MySQL** con conexión directa
+## ✨ Características Principales
+
+- 🎨 **Interfaz moderna** con Bootstrap 5 y animaciones
+- 🗄️ **Base de datos en memoria** (sin MySQL, sin configuración)
 - 📱 **Responsive design** para todos los dispositivos
 - ⚡ **API optimizada** con Node.js
+- 🔐 **Panel de administrador** con autenticación
+- 📊 **Gestión completa** de reservas (confirmar/cancelar)
+- 🔄 **Estados de reserva** (pendiente/confirmada/cancelada)
+- 🎯 **Filtros avanzados** por fecha y estado
 - 🔒 **Validación de datos** en tiempo real
 - 📊 **Gestión de horarios** inteligente
 
