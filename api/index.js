@@ -189,6 +189,44 @@ module.exports = async (req, res) => {
             return;
         }
         
+        // Endpoint: Búsqueda de reservas por teléfono y fecha
+        if (path.includes('/bookings/search') || query?.endpoint?.includes('bookings-search')) {
+            if (method === 'GET') {
+                const phone = query?.phone || new URLSearchParams(url.split('?')[1] || '').get('phone');
+                const date = query?.date || new URLSearchParams(url.split('?')[1] || '').get('date');
+                
+                if (!phone || !date) {
+                    res.status(400).json({
+                        status: 'ERROR',
+                        message: 'Teléfono y fecha son requeridos para la búsqueda'
+                    });
+                    return;
+                }
+                
+                try {
+                    const connection = await getConnection();
+                    const [bookings] = await connection.execute(
+                        'SELECT * FROM bookings WHERE phone = ? AND booking_date = ? AND status != "cancelled" ORDER BY created_at DESC',
+                        [phone, date]
+                    );
+                    
+                    res.status(200).json({
+                        status: 'SUCCESS',
+                        message: bookings.length > 0 ? 'Reservas encontradas' : 'No se encontraron reservas',
+                        data: bookings
+                    });
+                } catch (error) {
+                    console.error('Error buscando reservas:', error);
+                    res.status(500).json({
+                        status: 'ERROR',
+                        message: 'Error buscando reservas en la base de datos',
+                        error: error.message
+                    });
+                }
+                return;
+            }
+        }
+
         // Endpoint: Reservas
         if (path.includes('/bookings') || query?.endpoint?.includes('bookings')) {
             if (method === 'GET') {
@@ -368,6 +406,7 @@ module.exports = async (req, res) => {
                 'GET /api/services',
                 'GET /api/available-slots?date=YYYY-MM-DD',
                 'GET /api/bookings',
+                'GET /api/bookings/search?phone=XXX&date=YYYY-MM-DD',
                 'POST /api/bookings',
                 'PUT /api/admin/bookings/confirm',
                 'PUT /api/admin/bookings/cancel'
